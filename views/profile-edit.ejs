@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('partials/head', { title }) %></head>
+<body>
+  <%- await include('partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Profile editor</p>
+    <h1>Edit <%= profile.username %></h1>
+    <p><a href="/dashboard">Back to dashboard</a></p>
+    <% if (error) { %><p class="error" role="alert"><%= error %></p><% } %>
+    <% if (warning) { %><p class="error" role="alert"><%= warning %> <a href="/account/content-flags">Review content flags</a>.</p><% } %>
+    <% if (saved) { %><p role="status">Profile saved.</p><% } %>
+
+    <form method="post" action="/profiles/<%= profile.id %>/edit">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="_save_id" value="<%= saveId %>">
+
+      <label>Display name
+        <input name="display_name" maxlength="80" required value="<%= values.displayName %>">
+      </label>
+      <label>Description
+        <input name="description" maxlength="200" value="<%= values.description %>">
+      </label>
+      <label>Identity notes
+        <input name="notes" maxlength="300" value="<%= values.notes %>">
+      </label>
+
+      <fieldset>
+        <legend>Names</legend>
+        <% values.names.forEach(function (name, i) { %>
+          <label>Name <%= i + 1 %><input name="name_<%= i %>" maxlength="80" value="<%= name %>"></label>
+        <% }); %>
+      </fieldset>
+
+      <fieldset>
+        <legend>Pronoun sets</legend>
+        <% values.pronouns.forEach(function (row, i) { %>
+          <section aria-label="Pronoun set <%= i + 1 %>">
+            <h2>Set <%= i + 1 %></h2>
+            <label>Subject <input name="subject_<%= i %>" maxlength="40" value="<%= row.subject %>"></label>
+            <label>Object <input name="object_<%= i %>" maxlength="40" value="<%= row.object %>"></label>
+            <label>Possessive determiner <input name="possessive_determiner_<%= i %>" maxlength="40" value="<%= row.possessiveDeterminer %>"></label>
+            <label>Possessive pronoun <input name="possessive_pronoun_<%= i %>" maxlength="40" value="<%= row.possessivePronoun %>"></label>
+            <label>Reflexive <input name="reflexive_<%= i %>" maxlength="40" value="<%= row.reflexive %>"></label>
+          </section>
+        <% }); %>
+      </fieldset>
+
+      <fieldset>
+        <legend>Links</legend>
+        <% values.links.forEach(function (row, i) { %>
+          <section aria-label="Link <%= i + 1 %>">
+            <label>Label <input name="link_label_<%= i %>" maxlength="80" value="<%= row.label %>"></label>
+            <label>HTTPS URL <input name="link_url_<%= i %>" maxlength="2048" value="<%= row.url %>"></label>
+          </section>
+        <% }); %>
+      </fieldset>
+
+      <label class="choice"><input type="checkbox" name="published" <%= values.published ? 'checked' : '' %>><span>Publish this profile</span></label>
+      <button type="submit">Save profile</button>
+    </form>
+  </main>
+  <%- await include('partials/site-footer') %>
+</body>
+</html>

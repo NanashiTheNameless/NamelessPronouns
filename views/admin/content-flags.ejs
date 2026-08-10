@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Administrator tools</p>
+    <h1>Content flag reviews</h1>
+    <section class="panel stack">
+      <h2>Your pending flags</h2>
+      <p>Administrators and Owners may create an exemption only for the exact rule version, field, value, account, and selected profile shown in the confirmation screen.</p>
+      <% if (selfFlags.length === 0) { %>
+        <p>You have no pending enforcing flags.</p>
+      <% } else { %>
+        <ul>
+          <% selfFlags.forEach(function (flag) { %>
+            <li><a href="/admin/content-flags/self/<%= flag.id %>">Review your <%= flag.policy_category %> flag in <%= flag.field_type %></a> | <%= flag.severity %> | <%= flag.createdAt %></li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </section>
+    <h2>Requested reviews</h2>
+    <% if (reviews.length === 0) { %>
+      <p>No pending content flag reviews.</p>
+    <% } else { %>
+      <ul>
+        <% reviews.forEach(function (review) { %>
+          <li><a href="/admin/content-flags/<%= review.id %>"><%= review.policy_category %> in <%= review.field_type %></a> | <%= review.severity %> | requested <%= review.requestedAt %></li>
+        <% }); %>
+      </ul>
+    <% } %>
+    <p><a href="/admin">Back to administration</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

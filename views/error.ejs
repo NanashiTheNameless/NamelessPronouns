@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- await include('partials/head', { title }) %>
+</head>
+<body>
+  <%- await include('partials/site-header') %>
+  <main class="container">
+    <h1><%= status %></h1>
+    <p><%= message %></p>
+    <p><a href="/">Return home</a></p>
+  </main>
+  <%- await include('partials/site-footer') %>
+</body>
+</html>

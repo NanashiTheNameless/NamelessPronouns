@@ -1,0 +1,38 @@
+<!doctype html><html><body>
+<img id="avatar-preview" src="data:image/svg+xml,initial-identicon" alt="preview">
+<form id="avatar-form" data-max-bytes="65536" data-current-source="identicon" data-identicon="data:image/svg+xml,initial-identicon" data-gravatar="https://www.gravatar.com/avatar/test">
+  <input id="avatar-file" type="file"><input id="avatar-data-uri" name="avatar_data_uri">
+  <input type="radio" name="avatar_source" value="identicon" checked><input type="radio" name="avatar_source" value="gravatar"><input type="radio" name="avatar_source" value="data">
+  <p id="avatar-size"></p><p id="avatar-error" hidden></p><button id="avatar-strip-svg" type="button" hidden>Strip disallowed SVG content</button><button id="avatar-save">Save</button>
+</form>
+<output id="browser-result">pending</output>
+<script>
+  window.previewMutations = [];
+  new MutationObserver(() => window.previewMutations.push(document.querySelector('#avatar-preview').src)).observe(document.querySelector('#avatar-preview'), { attributes: true, attributeFilter: ['src'] });
+</script>
+<script src="../../public/js/avatar-upload.js"></script>
+<script>
+  (async () => {
+    const unsafe = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><scr' + 'ipt>alert(1)</scr' + 'ipt><circle cx="5" cy="5" r="4" fill="red"/></svg>';
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([unsafe], 'unsafe.svg', { type: 'image/svg+xml' }));
+    const input = document.querySelector('#avatar-file');
+    input.files = transfer.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const before = {
+      warning: document.querySelector('#avatar-error').textContent,
+      refused: document.querySelector('#avatar-size').textContent,
+      stripOffered: !document.querySelector('#avatar-strip-svg').hidden,
+      preview: document.querySelector('#avatar-preview').getAttribute('src'),
+      value: document.querySelector('#avatar-data-uri').value,
+      mutations: [...window.previewMutations],
+    };
+    document.querySelector('#avatar-strip-svg').click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const afterUri = document.querySelector('#avatar-preview').getAttribute('src');
+    let decoded = '';
+    if (afterUri.startsWith('data:image/svg+xml;base64,')) decoded = atob(afterUri.split(',')[1]);
+    document.querySelector('#browser-result').textContent = JSON.stringify({ before, afterUri, decoded });
+  })();
+</script></body></html>

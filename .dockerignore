@@ -1,0 +1,11 @@
+node_modules
+.yarn/cache
+.yarn/install-state.gz
+.pnp.*
+.git
+.env
+.env.*
+!.env.example
+backups
+coverage
+*.log

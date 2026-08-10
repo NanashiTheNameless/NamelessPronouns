@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "groups": [
+    {
+      "category": "profanity",
+      "severity": "warning",
+      "explanation": "Profanity or vulgar insult. Whole-token matching and shadow mode limit false positives.",
+      "terms": [
+        "arse", "arsehole", "arseholes", "asshat", "asshats", "asswipe", "asswipes", "assclown", "assclowns", "assface", "assfaces", "assbag", "assbags", "assmunch", "assmuncher", "asswad", "asswads", "bollocks", "bugger", "buggers", "buggered", "buggery", "crap", "crappy", "crapping", "dammit", "damn", "damned", "goddamn", "goddammit", "hell", "piss", "pissed", "pisser", "pissers", "pissing", "pisshead", "pissheads", "piss off", "sod off", "screw you", "bloody hell", "douche", "douches", "douchebag", "douchebags", "jackass", "jackasses", "dumbass", "dumbasses", "shit", "shits", "shitty", "shitting", "bullshit", "bullshits", "bullshitted", "bullshitting", "shithead", "shitheads", "shitface", "shitfaced", "shitbag", "shitbags", "shitshow", "shitshows", "shitstorm", "shitstorms", "dipshit", "dipshits", "batshit", "horseshit", "dogshit", "chickenshit", "clusterfuck", "clusterfucks", "fuck", "fucks", "fucked", "fucker", "fuckers", "fucking", "fuckery", "fuckface", "fuckfaces", "fuckhead", "fuckheads", "fuckwit", "fuckwits", "fuckwad", "fuckwads", "fuckstick", "fucksticks", "fuckboy", "fuckboys", "fuck off", "fuck you", "motherfucker", "motherfuckers", "motherfucking", "motherfucked", "motherfuckin", "cocksucker", "cocksuckers", "bitch", "bitches", "bitchass", "bitchy", "bitching", "son of a bitch", "sons of bitches", "asshole", "assholes", "bastard", "bastards", "cunt", "cunts", "stfu", "gtfo"
+      ]
+    },
+    {
+      "category": "harassment",
+      "severity": "warning",
+      "explanation": "Insult or degrading term. Context requires human review.",
+      "terms": [
+        "idiot", "idiots", "moron", "morons", "imbecile", "imbeciles", "dumbfuck", "dumbfucks", "loser", "losers", "scumbag", "scumbags", "dirtbag", "dirtbags", "douchecanoe", "douchecanoes", "douchewaffle", "douchewaffles", "fucknut", "fucknuts", "numbnuts", "shit for brains", "airhead", "airheads", "bonehead", "boneheads", "dickhead", "dickheads", "dickwad", "dickwads", "dickface", "dickfaces", "prick", "pricks", "wanker", "wankers", "tosser", "tossers", "twat", "twats", "bellend", "bellends", "knobhead", "knobheads", "pillock", "pillocks", "git", "gits", "berk", "berks", "muppet", "muppets", "cuntface", "cuntfaces", "cuntwaffle", "cuntwaffles", "cuntbag", "cuntbags", "whore", "whores", "slut", "sluts", "skank", "skanks", "hoe", "hoes", "tramp", "tramps", "pig", "pigs", "creep", "creeps", "freak", "freaks", "psycho", "psychos", "lunatic", "lunatics", "jackoff", "jackoffs", "jerkoff", "jerkoffs", "fucktard", "fucktards", "dickweed", "dickweeds", "shitstain", "shitstains", "waste of space", "piece of shit", "pieces of shit"
+      ]
+    },
+    {
+      "category": "threat",
+      "severity": "critical",
+      "explanation": "Potential threat or encouragement of self-harm. Human review is required.",
+      "terms": [
+        "kys", "kill yourself", "go kill yourself", "drop dead", "hope you die", "you should die", "neck yourself", "go die", "unalive yourself", "commit suicide", "hang yourself", "shoot yourself"
+      ]
+    },
+    {
+      "category": "sexual",
+      "severity": "warning",
+      "explanation": "Sexually explicit term. Shadow mode allows contextual review.",
+      "terms": [
+        "anal", "anus", "blowjob", "blowjobs", "handjob", "handjobs", "rimjob", "rimjobs", "boobjob", "boobjobs", "sex", "sexy", "porn", "porno", "pornography", "pornographic", "hentai", "rule34", "gangbang", "gangbangs", "bukkake", "creampie", "creampies", "cum", "cums", "cumming", "cumshot", "cumshots", "jizz", "jizzed", "jizzing", "semen", "sperm", "dildo", "dildos", "vibrator", "vibrators", "fleshlight", "fleshlights", "butt plug", "butt plugs", "bondage", "bdsm", "fetish", "fetishes", "kink", "kinks", "kinky", "incest", "bestiality", "zoophilia", "rape", "rapes", "raped", "raping", "rapist", "rapists", "molest", "molested", "molesting", "molester", "molesters", "molestation", "pedophile", "pedophiles", "paedophile", "paedophiles", "pedo", "pedos", "child porn", "child pornography", "csam", "underage sex", "nude", "nudes", "sexting", "boob", "boobs", "tit", "tits", "titties", "cock", "cocks", "dick", "dicks", "penis", "penises", "pussy", "pussies", "vagina", "vaginas", "vulva", "vulvas", "clit", "clits", "clitoris", "scrotum", "testicle", "testicles", "ballsack", "ballsacks", "foreskin", "erection", "erections", "orgy", "orgies", "orgasm", "orgasms", "masturbate", "masturbates", "masturbated", "masturbating", "masturbation", "jerk off", "jerking off", "wank", "wanks", "wanked", "wanking", "sodomy", "deepthroat", "deepthroating", "titfuck", "titfucking", "assfuck", "assfucking", "rimmed", "rimming", "pegging", "doggystyle", "missionary sex", "oral sex", "phone sex", "cybersex", "camgirl", "camgirls", "camwhore", "camwhores", "sugar daddy", "sugar baby", "onlyfans", "stripper", "strippers", "prostitute", "prostitutes", "prostitution", "escort service", "happy ending"
+      ]
+    },
+    {
+      "category": "hate",
+      "severity": "critical",
+      "explanation": "Identity-directed slur or dehumanizing phrase. Context requires human review.",
+      "terms": [
+        "nigger", "niggers", "nigga", "niggas", "faggot", "faggots", "fag", "fags", "kike", "kikes", "kyke", "kykes", "spic", "spics", "chink", "chinks", "tranny", "trannies", "retard", "retards", "retarded", "wetback", "wetbacks", "coon", "coons", "darkie", "darkies", "porch monkey", "porch monkeys", "jungle bunny", "jungle bunnies", "cotton picker", "cotton pickers", "spear chucker", "spear chuckers", "sambo", "sambos", "jigaboo", "jigaboos", "pickaninny", "pickaninnies", "golliwog", "golliwogs", "kaffir", "kaffirs", "beaner", "beaners", "greaser", "greasers", "tacohead", "tacoheads", "border hopper", "border hoppers", "redskin", "redskins", "injun", "injuns", "wagon burner", "wagon burners", "prairie nigger", "squaw", "squaws", "ching chong", "gook", "gooks", "zipperhead", "zipperheads", "rice burner", "rice burners", "jap", "japs", "yellow peril", "towelhead", "towelheads", "raghead", "ragheads", "sand nigger", "sand niggers", "camel jockey", "camel jockeys", "paki", "pakis", "curry muncher", "curry munchers", "dothead", "dotheads", "hajji", "hajjis", "jewboy", "jewboys", "christ killer", "christ killers", "sheeny", "sheenies", "heeb", "heebs", "hymie", "hymies", "yid", "yids", "dyke", "dykes", "shemale", "shemales", "he she", "ladyboy", "ladyboys", "homo", "homos", "queer", "queers", "fairy", "fairies", "poof", "poofs", "poofter", "poofters", "sodomite", "sodomites", "lesbo", "lesbos", "muff diver", "muff divers", "pillow biter", "pillow biters", "butt pirate", "butt pirates", "gender traitor", "gender traitors", "groomer", "groomers", "troon", "troons", "feminazi", "feminazis", "foid", "foids", "femoid", "femoids", "roastie", "roasties", "thot", "thots", "spaz", "spazz", "spastic", "spastics", "mong", "mongs", "mongoloid", "mongoloids", "window licker", "window lickers", "cripple", "cripples", "kraut", "krauts", "limey", "limeys", "dago", "dagos", "wop", "wops", "polack", "polacks", "mick", "micks", "taig", "taigs", "fenian", "fenians", "gyppo", "gyppos", "pikey", "pikeys"
+      ]
+    },
+    {
+      "category": "regional_profanity",
+      "severity": "warning",
+      "explanation": "Regional or transliterated profanity. Context requires human review.",
+      "terms": [
+        "shite", "shites", "shat", "shitter", "shitters", "shithole", "shitholes", "shitehawk", "shitehawks", "cunty", "arsewipe", "arsewipes", "arsehat", "arsehats", "gobshite", "gobshites", "tosspot", "tosspots", "wazzock", "wazzocks", "plonker", "plonkers", "prat", "prats", "numpty", "numpties", "eejit", "eejits", "feck", "fecking", "frig", "frigging", "bugger off", "get stuffed", "sod", "sods", "sod it", "wankstain", "wankstains", "cockwomble", "cockwombles", "cockwaffle", "cockwaffles", "fucknugget", "fucknuggets", "shitcunt", "shitcunts", "dog cunt", "dog cunts", "drongo", "drongos", "galah", "galahs", "poes", "doos", "bliksem", "fok", "fokof", "voetsek", "mampara", "mamparas", "naai", "moer", "kak", "kakker", "kakpraat", "kont", "kut", "klootzak", "lul", "merde", "putain", "scheisse", "mierda", "carajo", "cabron", "cabrones", "pendejo", "pendejos", "pendeja", "pendejas", "pinche", "chinga", "chingada", "chingado", "hijo de puta", "hijos de puta"
+      ]
+    },
+    {
+      "category": "gaming_harassment",
+      "severity": "warning",
+      "explanation": "Gaming or online harassment vocabulary. Context requires human review.",
+      "terms": [
+        "noob", "noobs", "scrub", "scrubs", "tryhard", "tryhards", "ragequit", "ragequitter", "ragequitters", "trashcan", "trashcans", "bot", "bots", "npc", "npcs", "skill issue", "uninstall", "uninstall the game", "get good", "git gud", "ez clap", "dogwater", "hardstuck", "boosted", "feeder", "feeders", "griefer", "griefers", "hacker", "hackers", "cheater", "cheaters", "camper", "campers", "rat", "rats", "clown", "clowns", "soyboy", "soyboys", "cuck", "cucks", "cuckold", "cuckolds", "simp", "simps", "incel", "incels", "neckbeard", "neckbeards", "basement dweller", "basement dwellers", "virgin", "virgins", "fatass", "fatasses", "ugly ass", "ugly bitch", "crybaby", "crybabies", "snowflake", "snowflakes", "touch grass", "cope harder", "stay mad", "mad cuz bad", "delete the game", "go back to bots"
+      ]
+    },
+    {
+      "category": "threat",
+      "severity": "critical",
+      "explanation": "Threat, doxxing, or coercive intimidation phrase. Human review is required.",
+      "terms": [
+        "dox", "doxx", "doxed", "doxxed", "doxing", "doxxing", "swat", "swatted", "swatting", "ddos", "ddosed", "ddosing", "boot you offline", "leak your address", "leak your ip", "find your address", "know where you live", "coming for you", "watch your back", "hunt you down", "burn your house", "burn your house down", "kill your family", "hurt your family", "rape you", "stab you", "shoot you", "bomb your house", "bomb threat", "death threat", "put a bullet in you", "slit your throat", "break your neck", "beat you up", "jump you", "pull up on you", "catch you outside", "sleep with one eye open", "your ip is", "your address is", "i will find you", "i will kill you", "i will hurt you", "you are dead", "youre dead", "dead man walking"
+      ]
+    },
+    {
+      "category": "sexual_solicitation",
+      "severity": "critical",
+      "explanation": "Sexual solicitation or grooming language. Human review is required.",
+      "terms": [
+        "send nude", "send nudes", "send pics", "send pictures", "nude pics", "nude photos", "trade nudes", "swap nudes", "dm for nudes", "show me your body", "show me your tits", "show me your pussy", "show me your dick", "sext me", "sex chat", "hookup", "hookups", "friends with benefits", "ageplay", "ddlg", "barely legal", "jailbait", "loli", "lolicon", "shota", "shotacon", "teen porn", "underage nudes", "child nudes", "grooming", "groomed", "meet me alone", "keep this secret", "dont tell your parents", "are you alone", "turn on your camera", "get on webcam", "webcam sex", "cam sex", "explicit pics", "explicit photos", "intimate images", "private pictures", "nude trade", "selling nudes", "buying nudes", "dm me for content", "pay for content", "custom content", "meet for sex", "looking for sex", "discreet meetup", "no strings attached", "sugar dating", "daddy dom", "little girl roleplay", "little boy roleplay", "send me a pic", "take your clothes off", "show me more", "keep it between us", "our little secret", "dont tell anyone", "mature for your age", "you look older", "age is just a number"
+      ]
+    },
+    {
+      "category": "extremism",
+      "severity": "critical",
+      "explanation": "Extremist slogan, code, or advocacy phrase. Context requires human review.",
+      "terms": [
+        "white power", "white pride", "white genocide", "race war", "blood and soil", "fourteen words", "14 words", "1488", "14 88", "heil hitler", "sieg heil", "nazi", "nazis", "neo nazi", "neo nazis", "neonazi", "neonazis", "swastika", "stormfront", "great replacement", "replacement theory", "day of the rope", "boogaloo", "accelerationism", "ethnostate", "white ethnostate", "aryan nation", "aryan nations", "aryan race", "master race", "racial holy war", "rahowa", "gas the jews", "six million wasnt enough", "hitler was right", "remove kebab", "zionist occupied government", "zog", "white lives matter", "genocide denial", "holocaust denial", "blood tribe", "proud boy", "proud boys", "atomwaffen", "national socialist", "national socialism", "racial realism", "human biodiversity", "race mixing", "anti miscegenation", "secure the existence", "future for white children", "white resistance", "white revolution", "racial separatism", "racial purity", "pure blood", "race traitor", "race traitors", "jewish question", "final solution", "great awakening", "storm is coming", "global cabal", "cultural marxism"
+      ]
+    },
+    {
+      "category": "scam",
+      "severity": "warning",
+      "explanation": "Scam, credential-theft, or financial solicitation phrase. Context requires human review.",
+      "terms": [
+        "seed phrase", "recovery phrase", "wallet connect", "connect your wallet", "validate wallet", "validate your wallet", "verify your wallet", "wallet validation", "crypto giveaway", "double your crypto", "guaranteed returns", "guaranteed profit", "investment opportunity", "forex signal", "forex signals", "binary options", "pump and dump", "rug pull", "send bitcoin", "send crypto", "gift card", "gift cards", "steam card", "steam cards", "apple gift card", "google play card", "wire transfer", "western union", "money mule", "cashapp me", "cash app me", "venmo me", "paypal me", "dm me on telegram", "contact me on telegram", "whatsapp me", "move to telegram", "login here", "verify your account", "confirm your password", "send your password", "send your code", "send the code", "one time code", "otp code", "remote access", "anydesk", "teamviewer", "tech support", "account suspended", "urgent action required", "claim your prize", "you won", "lottery winner", "inheritance fund", "advance fee", "processing fee", "romance investment", "guaranteed income", "passive income", "work from home", "easy money", "free money", "risk free", "limited time offer", "act now", "click my bio", "link in bio", "dm for details", "message me privately", "secret investment", "account verification", "identity verification", "social security number", "bank account number", "routing number", "credit card number", "card verification", "cvv", "pin number", "verify your identity", "unlock your account", "security alert", "suspicious login", "refund pending", "payment pending", "package delivery fee", "customs fee", "tax payment", "irs payment", "police payment", "warrant payment", "crypto recovery", "recover your funds", "investment recovery", "guaranteed recovery"
+      ]
+    },
+    {
+      "category": "spam",
+      "severity": "info",
+      "explanation": "Likely promotional or engagement-spam phrase. Context requires human review.",
+      "terms": [
+        "follow for follow", "f4f", "sub for sub", "s4s", "like for like", "l4l", "check my profile", "check my bio", "promo", "promotion", "discount code", "referral code", "affiliate link", "sponsored post", "buy followers", "free followers", "cheap followers", "buy likes", "free likes", "cheap likes", "buy subscribers", "free subscribers", "viral promotion", "paid promotion", "dm for promo", "message for promo", "collab offer", "brand ambassador", "ambassador program", "earn per post", "paid per post", "limited slots", "join my channel", "join my group", "join my server", "telegram channel", "whatsapp group", "click the link", "visit my page", "visit my profile", "subscribe now", "follow me back", "instant followers", "real followers", "organic growth", "social media growth", "account growth", "engagement boost", "guaranteed followers"
+      ]
+    }
+  ]
+}

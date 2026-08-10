@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- await include('partials/head', { title }) %>
+</head>
+<body>
+  <%- await include('partials/site-header') %>
+  <main class="container hero">
+    <p class="eyebrow">Names and pronouns</p>
+    <h1>A profile page that stays simple.</h1>
+    <p class="lede">Create a focused public page for your names, pronouns, identity notes, and trusted links. No feeds, ads, messages, or user tracking.</p>
+    <div class="actions">
+      <% if (typeof user !== 'undefined' && user) { %>
+        <a class="button" href="/dashboard">Open dashboard</a>
+        <a class="button secondary" href="/settings">Account settings</a>
+      <% } else { %>
+        <a class="button" href="/signup">Request an account</a>
+        <a class="button secondary" href="/login">Sign in</a>
+      <% } %>
+    </div>
+  </main>
+  <%- await include('partials/site-footer') %>
+</body>
+</html>

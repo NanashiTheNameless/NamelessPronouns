@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('partials/head', { title }) %></head>
+<body>
+  <%- await include('partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Required access gate</p>
+    <h1>Before you continue</h1>
+    <p>Review the policies and confirm that you are eligible to use this service.</p>
+    <% if (error) { %><p role="alert" class="error"><%= error %></p><% } %>
+    <form method="post" action="/consent">
+      <input type="hidden" name="next" value="<%= next %>">
+      <label class="choice">
+        <input type="checkbox" name="policies" required>
+        <span>I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.</span>
+      </label>
+      <label class="choice">
+        <input type="checkbox" name="age18" required>
+        <span>I confirm that I am at least 18 years old.</span>
+      </label>
+      <button type="submit">Continue</button>
+    </form>
+    <p class="fineprint">
+      Cloudflare edge Analytics and the Cloudflare Web Analytics / RUM beacon may
+      process this consent request and policy-page visits before you submit. No
+      other third-party tracking is used. See the <a href="/privacy">Privacy Policy</a>.
+    </p>
+  </main>
+  <%- await include('partials/site-footer') %>
+</body>
+</html>

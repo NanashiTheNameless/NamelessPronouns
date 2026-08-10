@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('partials/head', { title }) %></head>
+<body>
+  <main class="container">
+    <div class="profile-heading">
+      <img class="avatar avatar-large" src="<%= avatar %>" alt="" width="96" height="96">
+      <div><h1><%= profile.display_name %></h1>
+    <p class="username">@<%= username %></p>
+      </div>
+    </div>
+    <% if (profile.description) { %><p><%- await obfuscateEmails(profile.description) %></p><% } %>
+
+    <% if (names.length) { %>
+      <section aria-labelledby="names-h">
+        <h2 id="names-h">Names</h2>
+        <ul><% names.forEach(function (n) { %><li><%= n.value %></li><% }); %></ul>
+      </section>
+    <% } %>
+
+    <% if (pronouns.length) { %>
+      <section aria-labelledby="pronouns-h">
+        <h2 id="pronouns-h">Pronouns</h2>
+        <ul>
+        <% pronouns.forEach(function (p) { %>
+          <li>
+            <span class="pronoun-set"><%= p.subject %>/<%= p.object %>/<%= p.possessive_determiner %>/<%= p.possessive_pronoun %>/<%= p.reflexive %></span>
+            <button type="button" class="copy" data-copy="<%= p.subject %>/<%= p.object %>">Copy</button>
+          </li>
+        <% }); %>
+        </ul>
+      </section>
+    <% } %>
+
+    <% if (profile.notes) { %>
+      <section aria-labelledby="notes-h">
+        <h2 id="notes-h">Notes</h2>
+        <p><%- await obfuscateEmails(profile.notes) %></p>
+      </section>
+    <% } %>
+
+    <% if (links.length) { %>
+      <section aria-labelledby="links-h">
+        <h2 id="links-h">Links</h2>
+        <ul>
+        <% links.forEach(function (l) { %>
+          <li><a href="<%= l.url %>" rel="noopener noreferrer nofollow"><%= l.label %></a></li>
+        <% }); %>
+        </ul>
+      </section>
+    <% } %>
+  </main>
+  <%- await include('partials/site-footer') %>
+  <script src="/static/js/copy.js"></script>
+</body>
+</html>

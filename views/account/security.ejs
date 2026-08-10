@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Settings</p>
+    <h1>Security</h1>
+    <% if (error) { %><p role="alert" class="error"><%= error %></p><% } %>
+    <p>Current second factor: <strong><%= method === 'totp' ? 'Authenticator app (TOTP)' : 'Email code' %></strong>.</p>
+
+    <% if (step === 'overview') { %>
+      <% if (method === 'email') { %>
+        <section aria-labelledby="enroll-h">
+          <h2 id="enroll-h">Switch to an authenticator app</h2>
+          <p>You confirmed your identity to reach this page. Your other sessions will be signed out when you finish.</p>
+          <form method="post" action="/account/security/totp/start">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit">Begin TOTP setup</button>
+          </form>
+        </section>
+      <% } else { %>
+        <section class="panel stack">
+          <h2>Authenticator recovery codes</h2>
+          <p><%= recoveryCodeCount %> unused recovery codes remain.</p>
+          <form method="post" action="/account/security/recovery-codes/regenerate">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label>Type REPLACE RECOVERY CODES
+              <input name="confirmation" autocomplete="off" required>
+            </label>
+            <button type="submit">Replace recovery codes</button>
+          </form>
+        </section>
+        <section class="panel stack">
+          <h2>Switch back to email codes</h2>
+          <p>This removes the authenticator secret and every recovery code, and signs out your other sessions.</p>
+          <form method="post" action="/account/security/totp/disable">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label>Type USE EMAIL CODES
+              <input name="confirmation" autocomplete="off" required>
+            </label>
+            <button type="submit" class="danger">Remove TOTP and use email</button>
+          </form>
+        </section>
+      <% } %>
+      <section class="panel stack">
+        <h2>Change password</h2>
+        <p>Changing your password signs out every other session.</p>
+        <form method="post" action="/account/security/password" data-common-password-check>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>New password
+            <input type="password" name="password" minlength="12" maxlength="256" autocomplete="new-password" required>
+          </label>
+          <p class="error" role="alert" data-common-password-message></p>
+          <p class="muted">Common-password screening uses lists from <a href="https://github.com/danielmiessler/SecLists" rel="noreferrer">SecLists</a>. Thank you to its maintainers and contributors.</p>
+          <label>Confirm new password
+            <input type="password" name="confirm_password" minlength="12" maxlength="256" autocomplete="new-password" required>
+          </label>
+          <button type="submit">Change password</button>
+        </form>
+      </section>
+      <section class="panel stack">
+        <h2>Change email address</h2>
+        <p>The new address must be confirmed within one hour. Completion signs out every session and notifies both addresses.</p>
+        <form method="post" action="/account/security/email">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>New email
+            <input type="email" name="email" maxlength="254" autocomplete="email" required>
+          </label>
+          <button type="submit">Send confirmation</button>
+        </form>
+      </section>
+      <section class="panel stack">
+        <h2>Sessions</h2>
+        <% sessions.forEach(function (session) { %>
+          <div>
+            <p><%= session.current ? 'Current session' : 'Other session' %>; created <%= session.createdAt %>; active <%= session.lastSeenAt %>.</p>
+            <% if (!session.current) { %>
+              <form method="post" action="/account/security/sessions/<%= session.manageId %>/revoke">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="secondary">Sign out this session</button>
+              </form>
+            <% } %>
+          </div>
+        <% }); %>
+        <form method="post" action="/account/security/sessions/revoke-others">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit" class="secondary">Sign out all other sessions</button>
+        </form>
+      </section>
+    <% } else if (step === 'confirm') { %>
+      <section aria-labelledby="confirm-h">
+        <h2 id="confirm-h">Scan and confirm</h2>
+        <p>Scan this QR code in your authenticator app, or enter the key manually.</p>
+        <img src="<%= qr %>" alt="TOTP setup QR code" width="200" height="200">
+        <p>Manual key: <code><%= secret %></code></p>
+        <form method="post" action="/account/security/totp/confirm">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <p><label for="code">Six-digit code</label><br>
+            <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code" required></p>
+          <button type="submit">Confirm and enable TOTP</button>
+        </form>
+      </section>
+    <% } %>
+    <div class="inline-actions"><a href="/settings">Back to settings</a><a href="/dashboard">Dashboard</a></div>
+  </main>
+  <%- await include('../partials/site-footer') %>
+  <script src="/static/js/common-password.js"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"><head><%- await include('../partials/head', { title }) %></head><body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Staff tools</p><h1>Recovery cases</h1>
+    <p>Recovery is denial-by-default. Record evidence categories only—never passwords, codes, identity documents, or raw evidence.</p>
+    <form method="post" action="/admin/recovery" class="panel stack">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <h2>Open a case</h2>
+      <label>Exact account email <input type="email" name="email" maxlength="254" required></label>
+      <label>Evidence category
+        <select name="evidence_category">
+          <option value="unverified_intake">Unverified intake only</option>
+          <option value="mailbox_and_offline_record">Mailbox plus offline account record</option>
+          <option value="mailbox_and_operator_record">Mailbox plus operator-held record</option>
+          <% if (user.staff_role === 'owner') { %><option value="owner_emergency">Owner documented emergency exception</option><% } %>
+        </select>
+      </label>
+      <label>General reason <input name="reason" maxlength="200" required></label>
+      <button type="submit">Open recovery case</button>
+    </form>
+    <% if (cases.length === 0) { %><p>No active recovery cases.</p><% } %>
+    <% for (const item of cases) { %>
+      <section class="panel stack">
+        <h2><%- await obfuscateEmail(item.email) %></h2>
+        <p>Status <%= item.status %>; evidence category <%= item.evidence_category %>; opened <%= item.createdAt %>.</p>
+        <p>Intake reason: <%- await obfuscateEmails(item.reason) %></p>
+        <% if (canDecide && item.status === 'pending' && item.user_id !== user.id) { %>
+          <form method="post" action="/admin/recovery/<%= item.id %>/decision" class="stack">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label>Decision reason <input name="reason" maxlength="200" required></label>
+            <label>Type APPROVE RECOVERY or DENY RECOVERY <input name="confirmation" autocomplete="off" required></label>
+            <button name="action" value="approved" type="submit">Approve recovery</button>
+            <button name="action" value="denied" type="submit" class="secondary">Deny recovery</button>
+          </form>
+        <% } %>
+      </section>
+    <% } %>
+    <p><a href="/admin">Back to administration</a></p>
+  </main><%- await include('../partials/site-footer') %>
+</body></html>

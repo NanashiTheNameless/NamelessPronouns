@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Account access</p>
+    <h1>Sign in</h1>
+    <p class="lede">Enter your password, then complete your selected second factor.</p>
+    <% if (error) { %><p role="alert" class="error"><%= error %></p><% } %>
+    <form method="post" action="/login" data-altcha='<%- altcha %>'>
+      <p><label for="email">Email</label><br>
+        <input id="email" name="email" type="email" autocomplete="email" required></p>
+      <p><label for="password">Password</label><br>
+        <input id="password" name="password" type="password" autocomplete="current-password" required></p>
+      <%- await include('../partials/altcha-field') %>
+      <button type="submit">Continue</button>
+    </form>
+    <div class="inline-actions"><a href="/forgot-password">Forgot password?</a><a href="/signup">Request an account</a><a href="/recover">Lost 2FA?</a></div>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

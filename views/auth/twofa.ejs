@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Second factor</p>
+    <h1>Enter your code</h1>
+    <% if (method === 'email') { %>
+      <p>We sent a six-digit code to your email. Enter it here, or open the link in this same browser.</p>
+    <% } else { %>
+      <p>Enter the six-digit code from your authenticator app.</p>
+    <% } %>
+    <% if (error) { %><p role="alert" class="error"><%= error %></p><% } %>
+    <form method="post" action="/login/2fa">
+      <p><label for="code">Code</label><br>
+        <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" required></p>
+      <button type="submit">Verify</button>
+    </form>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

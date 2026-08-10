@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Administrator tools</p>
+    <h1>Content rules</h1>
+    <p><a class="button" href="/admin/content-rules/new">Create rule</a> <a class="button secondary" href="/admin/content-rules/import">Import rules</a> <a class="button secondary" href="/admin/content-exemptions">Manage exemptions</a></p>
+    <p>Every change creates an immutable version. Scheduled enforcement remains metrics-only for seven days.</p>
+    <% if (rules.length === 0) { %>
+      <p>No content rules.</p>
+    <% } else { %>
+      <table>
+        <thead><tr><th>Rule</th><th>Version</th><th>Type</th><th>Category</th><th>Severity</th><th>Mode</th><th></th></tr></thead>
+        <tbody>
+          <% rules.forEach(function (rule) { %>
+            <tr>
+              <td><%= rule.id %></td><td><%= rule.version %></td><td><%= rule.rule_type %></td>
+              <td><%= rule.category %></td><td><%= rule.severity %></td>
+              <td><%= rule.effectiveMode %><%= rule.enforceAt && rule.effectiveMode === 'shadow' ? ` until ${rule.enforceAt}` : '' %></td>
+              <td><a href="/admin/content-rules/<%= rule.id %>/edit">Create version</a></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+    <p><a href="/admin">Back to administration</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Verification complete</p>
+    <h1>Email verified</h1>
+    <p>Your email is confirmed. If your account is approved you can now sign in.</p>
+    <p><a href="/login">Sign in</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

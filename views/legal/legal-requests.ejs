@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container legal-document">
+    <p class="eyebrow">Government and law enforcement</p>
+    <h1>Legal requests</h1>
+    <p>Legal requests are accepted at <strong><%- await obfuscateEmail('Nanashi@NamelessNanashi.dev') %></strong>.</p>
+
+    <h2>Required process</h2>
+    <p>NamelessNanashi requires valid and binding legal process before disclosing private account information. A judge-signed judicial warrant will be honored only when required by law and only within its legally valid scope.</p>
+    <p>Informal requests and non-binding administrative warrants, detainers, demands, or similar documents not signed by a judge will be refused. A subpoena, court order, or other process will be honored only when it is legally binding.</p>
+
+    <h2>Verification and scope</h2>
+    <p>Requester identity, authority, jurisdiction, signature, dates, legal basis, and scope are verified through an independently located official channel. Invalid, defective, non-binding, overbroad, or out-of-jurisdiction requests may be rejected, narrowed, or challenged.</p>
+
+    <h2>Disclosure and notice</h2>
+    <p>Only information required by valid process is disclosed. Affected users are notified before disclosure unless notice is legally prohibited. Delayed notice is considered after a temporary prohibition expires.</p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Administrator tools</p>
+    <h1>Content suspensions</h1>
+    <% if (suspensions.length === 0) { %>
+      <p>No pending content suspensions.</p>
+    <% } else { %>
+      <% for (const suspension of suspensions) { %>
+        <section class="panel stack">
+          <h2><%- await obfuscateEmail(suspension.email) %></h2>
+          <p>Status <%= suspension.status %>. <%= suspension.threshold_count %> distinct enforcing submissions in a <%= suspension.window_hours %>-hour window. Created <%= suspension.createdAt %>.</p>
+          <% if (suspension.user_id === user.id) { %>
+            <p class="error">You cannot decide your own suspension.</p>
+          <% } else { %>
+            <form method="post" action="/admin/suspensions/<%= suspension.id %>/decision">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <label>Decision reason
+                <textarea name="reason" maxlength="500" required></textarea>
+              </label>
+              <button type="submit" name="action" value="cleared">Clear false positive</button>
+              <button type="submit" name="action" value="restored" class="secondary">Restore with warning</button>
+            </form>
+            <form method="post" action="/admin/suspensions/<%= suspension.id %>/decision" class="panel stack">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <label>Staff-action reason
+                <textarea name="reason" maxlength="500" required></textarea>
+              </label>
+              <label>Type EXTEND SUSPENSION
+                <input name="confirmation" autocomplete="off" required>
+              </label>
+              <button type="submit" name="action" value="extended">Convert to staff suspension</button>
+            </form>
+            <form method="post" action="/admin/suspensions/<%= suspension.id %>/decision" class="panel stack">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <label>Termination reason
+                <textarea name="reason" maxlength="500" required></textarea>
+              </label>
+              <label>Type TERMINATE ACCOUNT
+                <input name="confirmation" autocomplete="off" required>
+              </label>
+              <button type="submit" name="action" value="terminated" class="danger">Terminate account</button>
+            </form>
+            <form method="post" action="/admin/suspensions/<%= suspension.id %>/decision" class="panel stack">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <label>Ban scope
+                <select name="ban_scope"><option value="both">Account and viewing</option><option value="account">Account only</option></select>
+              </label>
+              <label>Ban reason
+                <textarea name="reason" maxlength="500" required></textarea>
+              </label>
+              <label>Type BAN ACCOUNT
+                <input name="confirmation" autocomplete="off" required>
+              </label>
+              <button type="submit" name="action" value="banned" class="danger">Impose ban</button>
+            </form>
+          <% } %>
+        </section>
+      <% } %>
+    <% } %>
+    <p><a href="/admin">Back to administration</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

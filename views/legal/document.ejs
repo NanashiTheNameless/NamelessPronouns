@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title: document.title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container legal-document">
+    <h1><%= document.title %></h1>
+    <% for (const block of document.blocks) { %>
+      <% if (block.type === 'heading') { %>
+        <% if (block.level === 2) { %><h2><%- await obfuscateEmails(block.text) %></h2><% } %>
+        <% if (block.level === 3) { %><h3><%- await obfuscateEmails(block.text) %></h3><% } %>
+      <% } else if (block.type === 'list') { %>
+        <ul>
+          <% for (const item of block.items) { %><li><%- await obfuscateEmails(item) %></li><% } %>
+        </ul>
+      <% } else { %>
+        <p><%- await obfuscateEmails(block.text) %></p>
+      <% } %>
+    <% } %>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

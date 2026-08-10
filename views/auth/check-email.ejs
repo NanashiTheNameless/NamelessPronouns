@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Verification</p>
+    <h1>Check your email</h1>
+    <p>If the details you entered can be used, we sent a verification link. Open it
+       to confirm your address. The link expires in 24 hours.</p>
+    <p><a href="/login">Return to sign in</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

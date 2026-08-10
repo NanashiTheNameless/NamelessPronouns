@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('partials/head', { title }) %></head>
+<body>
+  <%- await include('partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Account access</p>
+    <h1>Account recovery</h1>
+    <p><strong>Forgot only your password?</strong> Use the <a href="/forgot-password">self-service password reset</a>.
+       It requires access to the verified email address and the account's configured second factor.</p>
+    <p>There is no self-service reset for a lost second factor. That recovery is handled case by case by an
+       Administrator or Owner, is not guaranteed, and should be assumed denied unless staff explicitly approve it.</p>
+    <p>Do not rely on recovery to regain access. Keep your recovery codes safe.</p>
+    <p>To request review, contact <a href="/contact">support</a>. This page takes no
+       email address and confirms nothing about any account.</p>
+  </main>
+  <%- await include('partials/site-footer') %>
+</body>
+</html>

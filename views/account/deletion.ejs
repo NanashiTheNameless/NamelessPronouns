@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en"><head><%- await include('../partials/head', { title }) %></head><body>
+  <%- await include('../partials/site-header') %>
+  <main class="container narrow">
+    <p class="eyebrow">Account lifecycle</p><h1>Delete account</h1>
+    <% if (deletion) { %>
+      <p>Your account is restricted and personal profiles are unpublished. The scheduled purge is <%= purgeAt %>.</p>
+      <% if (deletion.status === 'held') { %><p>A documented legal hold currently pauses final deletion. It does not restore account access or publication.</p><% } %>
+      <form method="post" action="/account/deletion/cancel" class="panel stack">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Type CANCEL DELETION <input name="confirmation" autocomplete="off" required></label>
+        <button type="submit">Cancel deletion</button>
+      </form>
+    <% } else { %>
+      <p>Requesting deletion immediately unpublishes personal profiles and restricts the account. You have 30 days to cancel after fresh password and selected-2FA verification.</p>
+      <form method="post" action="/account/deletion" class="panel stack">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Type DELETE MY ACCOUNT <input name="confirmation" autocomplete="off" required></label>
+        <button type="submit" class="danger">Request account deletion</button>
+      </form>
+    <% } %>
+    <p><a href="/settings">Back to settings</a></p>
+  </main><%- await include('../partials/site-footer') %>
+</body></html>

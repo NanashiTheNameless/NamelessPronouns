@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container narrow">
+    <p class="eyebrow">Administrator tools</p>
+    <h1>Content flag review</h1>
+    <dl class="details">
+      <div><dt>Account</dt><dd><%- await obfuscateEmail(review.email) %></dd></div>
+      <div><dt>Category</dt><dd><%= review.policy_category %></dd></div>
+      <div><dt>Severity</dt><dd><%= review.severity %></dd></div>
+      <div><dt>Field</dt><dd><%= review.field_type %><%= Number(review.field_index) >= 0 ? ` item ${Number(review.field_index) + 1}` : '' %></dd></div>
+      <div><dt>Rule</dt><dd><%= review.rule_id %> (<%= review.rule_type %>)</dd></div>
+      <div><dt>Status</dt><dd><%= review.review_status %></dd></div>
+    </dl>
+
+    <section class="panel stack">
+      <h2>Exact attempted value</h2>
+      <pre><code><%- await obfuscateEmails(attemptedValue) %></code></pre>
+      <p>This value is decrypted only for this authenticated Administrator view. Do not copy it into email or audit notes.</p>
+    </section>
+    <section class="panel stack">
+      <h2>User explanation</h2>
+      <p><%- await obfuscateEmails(review.explanation) %></p>
+    </section>
+
+    <% if (canDecide) { %>
+      <form method="post" action="/admin/content-flags/<%= review.id %>/decision" class="panel stack">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Decision reason
+          <textarea name="reason" maxlength="500" required></textarea>
+        </label>
+        <div class="actions">
+          <button type="submit" name="action" value="upheld">Uphold</button>
+          <button type="submit" name="action" value="cleared" class="secondary">Clear</button>
+          <button type="submit" name="action" value="exempted" class="secondary">Clear and exempt exact value</button>
+        </div>
+      </form>
+    <% } else if (review.user_id === user.id) { %>
+      <p class="error">You cannot decide your own content flag.</p>
+    <% } %>
+    <p><a href="/admin/content-flags">Back to review queue</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

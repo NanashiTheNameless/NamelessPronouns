@@ -1,0 +1,35 @@
+{
+  "name": "nameless-pronouns",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "yarn@4.18.0",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "migrate": "node scripts/migrate.js",
+    "import-content-rules": "node scripts/import-content-rules.js",
+    "build-password-index": "node scripts/build-password-wordlist-index.js",
+    "generate-env": "sh scripts/generate-env.sh",
+    "create-owner": "node scripts/create-owner.js",
+    "backup": "node scripts/backup.js",
+    "restore": "node scripts/restore.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@node-rs/argon2": "^2.0.0",
+    "altcha": "^3.2.1",
+    "altcha-lib": "^2.3.2",
+    "cookie-parser": "^1.4.7",
+    "ejs": "^6.0.1",
+    "express": "^5.0.0",
+    "pg": "^8.23.0",
+    "qrcode": "^1.5.4",
+    "yazl": "^3.3.1",
+    "zod": "^4.4.3"
+  }
+}

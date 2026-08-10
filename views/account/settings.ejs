@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Account</p>
+    <h1>Settings</h1>
+    <p class="lede">Manage your account and authentication settings.</p>
+
+    <div class="card-grid">
+      <section class="panel">
+        <h2>Account</h2>
+        <dl class="details">
+          <div><dt>Email</dt><dd><%- await obfuscateEmail(user.email) %></dd></div>
+          <div><dt>Status</dt><dd><%= user.signup_status %></dd></div>
+        </dl>
+      </section>
+      <section class="panel stack">
+        <h2>Profile icon</h2>
+        <img id="avatar-preview" class="avatar avatar-large" src="<%= avatar %>" alt="Avatar preview" width="96" height="96">
+        <form method="post" action="/account/avatar" id="avatar-form" class="stack" data-max-bytes="<%= maxAvatarBytes %>" data-current-source="<%= avatarSource %>" data-identicon="<%= identiconAvatar %>" data-gravatar="<%= gravatarAvatar %>">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label><input type="radio" name="avatar_source" value="identicon" <%= avatarSource === 'identicon' ? 'checked' : '' %>> Deterministic identicon</label>
+          <label><input type="radio" name="avatar_source" value="gravatar" <%= avatarSource === 'gravatar' ? 'checked' : '' %>> Gravatar for the verified email</label>
+          <label><input type="radio" name="avatar_source" value="data" <%= avatarSource === 'data' ? 'checked' : '' %>> Uploaded image stored as a small data URI</label>
+          <label>Choose image
+            <input id="avatar-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+          </label>
+          <input id="avatar-data-uri" type="hidden" name="avatar_data_uri" value="">
+          <p id="avatar-size" aria-live="polite">Select a raster image to resize and compress, or a safe SVG icon to sanitize, entirely in this browser.</p>
+          <p id="avatar-error" class="error" role="alert" hidden></p>
+          <button id="avatar-strip-svg" type="button" hidden>Strip disallowed SVG content</button>
+          <button id="avatar-save" type="submit">Save profile icon</button>
+        </form>
+      </section>
+      <section class="panel">
+        <h2>Delete account</h2>
+        <p>Request deletion with a 30-day cancellation period.</p>
+        <p><a class="button secondary" href="/account/deletion">Deletion settings</a></p>
+      </section>
+      <section class="panel">
+        <h2>Security</h2>
+        <p>Selected second factor: <strong><%= method === 'totp' ? 'Authenticator app' : 'Email code' %></strong></p>
+        <p><a class="button secondary" href="/account/security">Open security settings</a></p>
+      </section>
+      <section class="panel">
+        <h2>Profiles</h2>
+        <p>Edit publishing, names, pronouns, notes, and links from your dashboard.</p>
+        <p><a class="button secondary" href="/dashboard">Open dashboard</a></p>
+      </section>
+      <section class="panel">
+        <h2>Recovery</h2>
+        <p>Administrative recovery is case-by-case, not guaranteed, and should be assumed denied.</p>
+        <p><a href="/recover">Read the recovery policy</a></p>
+      </section>
+      <section class="panel">
+        <h2>Your data</h2>
+        <p>Download a copy of the account and profile data associated with you.</p>
+        <p><a class="button secondary" href="/account/export">Download my data</a></p>
+      </section>
+      <section class="panel">
+        <h2>Content flags</h2>
+        <p>Review enforcing profile-edit flags and request Administrator review.</p>
+        <p><a class="button secondary" href="/account/content-flags">View content flags</a></p>
+      </section>
+    </div>
+
+    <form method="post" action="/logout">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="secondary">Sign out</button>
+    </form>
+  </main>
+  <%- await include('../partials/site-footer') %>
+  <script src="/static/js/avatar-upload.js"></script>
+</body>
+</html>

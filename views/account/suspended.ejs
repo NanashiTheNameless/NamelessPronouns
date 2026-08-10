@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Staff review</p>
+    <h1>Account restricted</h1>
+    <p>Your account access is limited pending staff review. You can read this notice,
+       review flag categories, and submit a review request.</p>
+    <p><a class="button secondary" href="/account/content-flags">Review content flags</a></p>
+    <form method="post" action="/logout">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit">Sign out</button>
+    </form>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

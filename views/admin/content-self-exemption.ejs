@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container narrow">
+    <p class="eyebrow">Administrator tools</p>
+    <h1>Create personal content exemption</h1>
+    <p>This does not change the rule and does not exempt another account, rule version, field, or value.</p>
+    <dl class="details">
+      <div><dt>Account</dt><dd>Your account (<%- await obfuscateEmail(flag.email) %>)</dd></div>
+      <div><dt>Rule</dt><dd><%= flag.rule_id %>, immutable version <%= flag.version %> (<%= flag.rule_type %>)</dd></div>
+      <div><dt>Field</dt><dd><%= flag.field_type %><%= Number(flag.field_index) >= 0 ? ` item ${Number(flag.field_index) + 1}` : '' %></dd></div>
+      <div><dt>Category</dt><dd><%= flag.policy_category %></dd></div>
+    </dl>
+    <section class="panel stack">
+      <h2>Exact value</h2>
+      <pre><code><%- await obfuscateEmails(attemptedValue) %></code></pre>
+      <p>The value is decrypted only for this fresh-authenticated page and is not copied into email or audit details.</p>
+    </section>
+    <form method="post" action="/admin/content-flags/self/<%= flag.id %>" class="panel stack">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Scope
+        <select name="scope" required>
+          <% if (flag.profile_id) { %><option value="profile">Only this profile</option><% } %>
+          <option value="account">This account across profiles</option>
+        </select>
+      </label>
+      <label>Expiry
+        <select name="expiry" required>
+          <option value="7">7 days</option>
+          <option value="30">30 days</option>
+          <option value="90">90 days</option>
+          <option value="none">No expiry</option>
+        </select>
+      </label>
+      <label>Reason
+        <input name="reason" maxlength="200" required>
+      </label>
+      <label>Type <strong>CREATE EXEMPTION</strong> to confirm
+        <input name="confirmation" autocomplete="off" required>
+      </label>
+      <button type="submit">Create exact exemption</button>
+    </form>
+    <p><a href="/admin/content-flags">Cancel</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

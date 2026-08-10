@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Staff tools</p>
+    <h1>Administration</h1>
+    <% if (canReport) { %><p><a class="button secondary" href="/admin/reports">Operational reports</a></p><% } %>
+    <% if (canApprove) { %>
+      <p><a class="button secondary" href="/admin/content-flags">Review content flags</a></p>
+      <p><a class="button secondary" href="/admin/suspensions">Review content suspensions</a></p>
+      <p><a class="button secondary" href="/admin/content-rules">Manage content rules</a></p>
+      <p><a class="button secondary" href="/admin/recovery">Review recovery cases</a></p>
+      <p><a class="button secondary" href="/admin/legal-holds">Manage legal holds</a></p>
+      <p><a class="button secondary" href="/admin/bans">Manage bans</a></p>
+      <p><a class="button secondary" href="/admin/email-rules">Manage email-domain rules</a></p>
+      <p><a class="button secondary" href="/admin/audit">Browse audit log</a></p>
+    <% } %>
+
+    <section aria-labelledby="lookup-h">
+      <h2 id="lookup-h">Account lookup (exact email)</h2>
+      <form method="get" action="/admin">
+        <input name="email" type="email" value="<%= email %>" aria-label="Email">
+        <button type="submit">Search</button>
+      </form>
+      <% if (email && !searched) { %><p>No account with that exact email.</p><% } %>
+      <% if (searched) { %>
+        <p><%- await obfuscateEmail(searched.email) %> | <%= searched.signup_status %>, role <%= searched.staff_role %>, 2FA <%= searched.twofa_method %>. <a href="/admin/accounts/<%= searched.id %>">Open account</a></p>
+      <% } %>
+    </section>
+
+    <section aria-labelledby="pending-h">
+      <h2 id="pending-h">Pending approvals</h2>
+      <% if (pending.length === 0) { %>
+        <p>No pending requests.</p>
+      <% } else { %>
+        <ul>
+        <% for (const u of pending) { %>
+          <li>
+            <strong><%= u.requested_display_name %></strong> (@<%= u.requested_profile_username %>) | <%- await obfuscateEmail(u.email) %>
+            <% if (canApprove) { %>
+              <form method="post" action="/admin/accounts/<%= u.id %>/approve" style="display:inline">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit">Approve</button>
+              </form>
+              <form method="post" action="/admin/accounts/<%= u.id %>/deny" style="display:inline">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit">Deny</button>
+              </form>
+            <% } %>
+          </li>
+        <% } %>
+        </ul>
+      <% } %>
+    </section>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

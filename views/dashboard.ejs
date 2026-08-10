@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('partials/head', { title }) %></head>
+<body>
+  <%- await include('partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Your account</p>
+    <h1>Dashboard</h1>
+    <p class="lede">Signed in as <%- await obfuscateEmail(user.email) %>.</p>
+    <section aria-labelledby="profiles-h">
+      <h2 id="profiles-h">Profiles</h2>
+      <% if (profiles.length === 0) { %>
+        <p>No profiles are available.</p>
+      <% } else { %>
+        <ul>
+          <% profiles.forEach(function (profile) { %>
+            <li class="profile-card">
+              <strong><%= profile.display_name %></strong>
+              <p class="fineprint">/u/<%= profile.username %> | role: <%= profile.role %></p>
+              <div class="inline-actions">
+                <% if (profile.role === 'owner' || profile.role === 'editor') { %>
+                  <a href="/profiles/<%= profile.id %>/edit">Edit</a>
+                <% } %>
+                <% if (Number(profile.published) === 1) { %>
+                  <a href="/u/<%= profile.username %>">View public page</a>
+                <% } else { %>
+                  <span class="status-badge">Unpublished</span>
+                <% } %>
+              </div>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </section>
+    <div class="actions"><a class="button secondary" href="/settings">Account settings</a></div>
+  </main>
+  <%- await include('partials/site-footer') %>
+</body>
+</html>

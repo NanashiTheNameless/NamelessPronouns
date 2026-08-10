@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Security</p>
+    <h1>Save your recovery codes</h1>
+    <p>These ten one-use codes are shown <strong>once</strong>. Store them somewhere
+       safe. Each can be used once if you lose your authenticator. There is no
+       self-service reset if you lose both.</p>
+    <ul class="recovery-code-list">
+      <% codes.forEach(function (c) { %><li><code><%= c %></code></li><% }); %>
+    </ul>
+    <p><a href="/dashboard">I have saved these codes</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

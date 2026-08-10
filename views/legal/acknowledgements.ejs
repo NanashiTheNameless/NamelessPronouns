@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container legal-document">
+    <p class="eyebrow">Project credits</p>
+    <h1>Open Source Acknowledgements</h1>
+    <p>NamelessPronouns is built with open-source software. We thank the maintainers and contributors whose work makes this service possible.</p>
+
+    <h2>Application libraries</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Project</th><th>Use</th><th>License</th></tr></thead>
+        <tbody>
+          <% for (const item of packages) { %>
+            <tr>
+              <td><a href="<%= item.url %>" rel="noreferrer"><%= item.name %></a></td>
+              <td><%= item.purpose %></td>
+              <td><%= item.license %></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p>Exact versions and transitive JavaScript dependencies are recorded in the source-controlled <code>yarn.lock</code> file. License texts distributed by each package remain in its installed package directory.</p>
+
+    <h2>Fonts and data</h2>
+    <h3>0xProto</h3>
+    <p>The interface uses the vendored <a href="https://github.com/0xType/0xProto" rel="noreferrer">0xProto</a> typeface. It is distributed under the SIL Open Font License 1.1. The license text is included with the font files.</p>
+
+    <h3>SecLists</h3>
+    <p>The client-and-server common-password denial index is generated from password lists collected by <a href="https://github.com/danielmiessler/SecLists" rel="noreferrer">SecLists</a>. Thank you to Daniel Miessler and the SecLists maintainers and contributors for curating these resources. The source-list directory includes its own provenance and maintenance notes.</p>
+
+    <h2>Corrections</h2>
+    <p>If an acknowledgement or license reference is incomplete, contact <%- await obfuscateEmail('Nanashi@NamelessNanashi.dev') %>.</p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

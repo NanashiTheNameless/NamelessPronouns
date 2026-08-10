@@ -1,0 +1,13 @@
+<!DOCTYPE html><html lang="en"><head><%- await include('../partials/head', { title }) %></head><body>
+<%- await include('../partials/site-header') %><main class="container"><p class="eyebrow">Administrator tools</p>
+<h1>Account</h1><dl><dt>Email</dt><dd><%- await obfuscateEmail(account.email) %></dd><dt>Status</dt><dd><%= account.signup_status %></dd>
+<dt>Staff role</dt><dd><%= account.staff_role %></dd><dt>Second factor</dt><dd><%= account.twofa_method %></dd>
+<dt>Active sessions</dt><dd><%= activeSessions %></dd><dt>Created</dt><dd><%= new Date(Number(account.created_at)).toISOString() %></dd></dl>
+<h2>Profiles</h2><% if (!profiles.length) { %><p>No profiles.</p><% } else { %><ul><% profiles.forEach(function(p) { %><li>@<%= p.username_display %> — <%= p.published ? 'published' : 'unpublished' %></li><% }) %></ul><% } %>
+<% if (canManageRole) { %><section><h2>Staff role</h2><form method="post" action="/admin/accounts/<%= account.id %>/role" class="stack">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>"><label>Role <select name="role"><% roles.forEach(function(role) { %><option value="<%= role %>" <%= account.staff_role === role ? 'selected' : '' %>><%= role %></option><% }) %></select></label>
+<label>Type CHANGE STAFF ROLE <input name="confirmation" autocomplete="off"></label><button type="submit">Change staff role</button></form></section><% } %>
+<% if (canEmergency) { %><section><h2>Emergency session revocation</h2><p>Revokes every session and pending login or reauthentication challenge.</p>
+<form method="post" action="/admin/accounts/<%= account.id %>/revoke-sessions" class="stack"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+<label>Type REVOKE ALL SESSIONS <input name="confirmation" autocomplete="off"></label><button type="submit">Revoke all sessions</button></form></section><% } %>
+<p><a href="/admin">Back to administration</a></p></main><%- await include('../partials/site-footer') %></body></html>

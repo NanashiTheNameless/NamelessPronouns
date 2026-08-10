@@ -1,0 +1,30 @@
+<!doctype html><html><head><link rel="stylesheet" href="/static/css/main.css"></head><body>
+<form>
+  <altcha-widget
+    challenge='{"algorithm":"SHA-256","challenge":"1ec1ed7c6b0c56f9ff41b8c95b6f1bbaa2974ac64f6e539fad9f7d4d9b11324c","salt":"widget-test?expires=4102444800000","signature":"test","maxnumber":10}'
+    name="altcha" type="checkbox" display="standard" auto="onsubmit" language="en" theme="business"
+    configuration='{"codeChallengeDisplay":"standard","hideFooter":false,"hideLogo":true}'></altcha-widget>
+  <button type="submit">Submit</button>
+</form>
+<output id="browser-result">pending</output>
+<script type="module" src="/static/vendor/altcha/widget.js"></script>
+<script type="module">
+  await customElements.whenDefined('altcha-widget');
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  document.querySelector('altcha-widget input[type="checkbox"]').click();
+  for (let i = 0; i < 100; i += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    const payload = document.querySelector('input[name="altcha"]')?.value;
+    if (payload) {
+      const widget = document.querySelector('altcha-widget');
+      document.querySelector('#browser-result').textContent = JSON.stringify({
+        solved: true,
+        theme: widget.getAttribute('theme'),
+        logoVisible: Boolean(widget.querySelector('.altcha-logo')),
+        footerVisible: Boolean(widget.querySelector('.altcha-footer')),
+      });
+      break;
+    }
+  }
+</script>
+</body></html>

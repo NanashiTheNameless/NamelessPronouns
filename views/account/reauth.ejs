@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Security</p>
+    <h1>Confirm it is you</h1>
+    <p>This change is sensitive, so please confirm your password and your second factor before you continue.</p>
+    <% if (error) { %><p role="alert" class="error"><%= error %></p><% } %>
+
+    <form method="post" action="/account/reauth">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="next" value="<%= next %>">
+      <p><label for="password">Current password</label><br>
+        <input id="password" name="password" type="password" autocomplete="current-password" required></p>
+
+      <% if (method === 'totp') { %>
+        <p><label for="code">Authenticator code or recovery code</label><br>
+          <input id="code" name="code" autocomplete="one-time-code" required></p>
+      <% } else { %>
+        <p>We sent a confirmation code to your email. Enter it below.</p>
+        <p><label for="code">Email confirmation code</label><br>
+          <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code" required></p>
+      <% } %>
+
+      <button type="submit">Confirm and continue</button>
+    </form>
+
+    <% if (method !== 'totp') { %>
+      <form method="get" action="/account/reauth" class="inline-actions">
+        <input type="hidden" name="next" value="<%= next %>">
+        <button type="submit">Send a new code</button>
+      </form>
+    <% } %>
+
+    <div class="inline-actions"><a href="/settings">Back to settings</a></div>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

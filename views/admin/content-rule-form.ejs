@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container narrow">
+    <p class="eyebrow">Administrator tools</p>
+    <h1><%= title %></h1>
+    <% if (error) { %><p class="error"><%= error %></p><% } %>
+    <form method="post" class="panel stack">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Stable rule ID
+        <input name="id" value="<%= input.id %>" maxlength="100" <%= existing ? 'readonly' : 'required' %>>
+      </label>
+      <label>Rule type
+        <select name="type"><% types.forEach(function (value) { %><option value="<%= value %>" <%= input.type === value ? 'selected' : '' %>><%= value %></option><% }); %></select>
+      </label>
+      <label>Exact match value
+        <input name="match" value="<%= input.match %>" maxlength="2048" required>
+      </label>
+      <label>Policy category
+        <input name="category" value="<%= input.category %>" maxlength="50" required>
+      </label>
+      <label>Severity
+        <select name="severity"><% severities.forEach(function (value) { %><option value="<%= value %>" <%= input.severity === value ? 'selected' : '' %>><%= value %></option><% }); %></select>
+      </label>
+      <label>Requested mode
+        <select name="mode"><% modes.forEach(function (value) { %><option value="<%= value %>" <%= input.mode === value ? 'selected' : '' %>><%= value %></option><% }); %></select>
+      </label>
+      <label><input type="checkbox" name="urgent" <%= input.urgent ? 'checked' : '' %>> Activate enforcing mode immediately for an urgent documented safety threat</label>
+      <label>Internal explanation
+        <textarea name="explanation" maxlength="1000"><%= input.explanation %></textarea>
+      </label>
+      <label>Must match, one test per line
+        <textarea name="should_match" maxlength="10000" required><%= input.shouldMatch %></textarea>
+      </label>
+      <label>Must not match, one test per line
+        <textarea name="should_not_match" maxlength="10000" required><%= input.shouldNotMatch %></textarea>
+      </label>
+      <label>Change reason
+        <input name="reason" value="<%= input.reason %>" maxlength="200" required>
+      </label>
+      <button type="submit" name="action" value="preview">Run test-corpus preview</button>
+      <% if (preview) { %>
+        <section class="panel stack">
+          <input type="hidden" name="preview_proof" value="<%= previewProof %>">
+          <h2>Validated scope preview</h2>
+          <dl class="details">
+            <div><dt>Rule</dt><dd><%= preview.rule.id %></dd></div>
+            <div><dt>Type</dt><dd><%= preview.rule.type %></dd></div>
+            <div><dt>Normalized match</dt><dd><code><%= preview.rule.matchValue %></code></dd></div>
+            <div><dt>Category</dt><dd><%= preview.rule.category %></dd></div>
+            <div><dt>Mode</dt><dd><%= input.mode === 'enforcing' && !input.urgent ? 'shadow for seven days, then enforcing' : input.mode %></dd></div>
+            <div><dt>Corpus</dt><dd><%= preview.shouldMatch.length %> positive and <%= preview.shouldNotMatch.length %> negative tests passed</dd></div>
+          </dl>
+          <label>Type <strong><%= existing ? 'CREATE VERSION' : 'CREATE RULE' %></strong> to confirm
+            <input name="confirmation" autocomplete="off">
+          </label>
+          <button type="submit" name="action" value="save">Save immutable version</button>
+        </section>
+      <% } %>
+    </form>
+    <p><a href="/admin/content-rules">Cancel</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

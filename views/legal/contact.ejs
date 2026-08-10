@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container legal-document">
+    <p class="eyebrow">Operator contact</p>
+    <h1>Contact</h1>
+    <p>NamelessPronouns is operated by NamelessNanashi.</p>
+    <p>Contact email: <strong><%- await obfuscateEmail('Nanashi@NamelessNanashi.dev') %></strong></p>
+
+    <h2>Account and support requests</h2>
+    <p>Use the contact email for account access questions, administrative recovery requests, moderation appeals, privacy requests, and security reports. Administrative account recovery is case-by-case, not guaranteed, and should be assumed denied.</p>
+
+    <h2>Rights complaints</h2>
+    <p>Copyright, trademark, privacy, and impersonation complaints should identify the affected /u/username page, the disputed material, the basis for the claim, the requested action, a good-faith statement, and a reliable contact method.</p>
+
+    <h2>Response expectations</h2>
+    <p>Sending a request does not guarantee a response time, account recovery, content removal, or another particular outcome. Do not send passwords, authentication codes, TOTP secrets, recovery codes, or unnecessary identity documents.</p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

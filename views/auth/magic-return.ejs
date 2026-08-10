@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Browser-bound sign in</p>
+    <h1>Return to your original browser</h1>
+    <p>This sign-in link only works in the browser where you started signing in.
+       Go back to that browser and enter the six-digit code, or open the link there.</p>
+    <p>Opening it here changed nothing and did not use up the code.</p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

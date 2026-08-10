@@ -1,0 +1,397 @@
+{
+  "schemaVersion": 1,
+  "description": "Reviewed default content-rule seed. Stable rule IDs. Actual active rules live in the database; import is idempotent and never overwrites local rule versions or exemptions.",
+  "wordLists": ["bad-words.json"],
+  "rules": [
+    {
+      "id": "adult-host-pornhub",
+      "type": "host_suffix",
+      "category": "adult",
+      "severity": "critical",
+      "match": "pornhub.com",
+      "mode": "shadow",
+      "explanation": "Adults-only / pornographic destination. The adults-only rule is never a content exception.",
+      "tests": {
+        "shouldMatch": ["https://pornhub.com/", "https://www.pornhub.com/view_video.php"],
+        "shouldNotMatch": ["https://notpornhub.com/", "https://example.com/?next=pornhub.com"]
+      }
+    },
+    {
+      "id": "adult-host-xvideos",
+      "type": "host_suffix",
+      "category": "adult",
+      "severity": "critical",
+      "match": "xvideos.com",
+      "mode": "shadow",
+      "explanation": "Adults-only / pornographic destination. Host matching observes DNS label boundaries.",
+      "tests": {
+        "shouldMatch": ["https://xvideos.com/", "https://www.xvideos.com/video"],
+        "shouldNotMatch": ["https://notxvideos.com/", "https://example.com/xvideos.com"]
+      }
+    },
+    {
+      "id": "adult-host-xhamster",
+      "type": "host_suffix",
+      "category": "adult",
+      "severity": "critical",
+      "match": "xhamster.com",
+      "mode": "shadow",
+      "explanation": "Adults-only destination matched on DNS label boundaries.",
+      "tests": {
+        "shouldMatch": ["https://xhamster.com/", "https://www.xhamster.com/videos/example"],
+        "shouldNotMatch": ["https://notxhamster.com/", "https://example.com/xhamster.com"]
+      }
+    },
+    {
+      "id": "adult-host-xnxx",
+      "type": "host_suffix",
+      "category": "adult",
+      "severity": "critical",
+      "match": "xnxx.com",
+      "mode": "shadow",
+      "explanation": "Adults-only destination matched on DNS label boundaries.",
+      "tests": {
+        "shouldMatch": ["https://xnxx.com/", "https://www.xnxx.com/video-example"],
+        "shouldNotMatch": ["https://notxnxx.com/", "https://example.com/xnxx.com"]
+      }
+    },
+    {
+      "id": "adult-host-redtube",
+      "type": "host_suffix",
+      "category": "adult",
+      "severity": "critical",
+      "match": "redtube.com",
+      "mode": "shadow",
+      "explanation": "Adults-only destination matched on DNS label boundaries.",
+      "tests": {
+        "shouldMatch": ["https://redtube.com/", "https://www.redtube.com/example"],
+        "shouldNotMatch": ["https://notredtube.com/", "https://example.com/redtube.com"]
+      }
+    },
+    {
+      "id": "adult-host-youporn",
+      "type": "host_suffix",
+      "category": "adult",
+      "severity": "critical",
+      "match": "youporn.com",
+      "mode": "shadow",
+      "explanation": "Adults-only destination matched on DNS label boundaries.",
+      "tests": {
+        "shouldMatch": ["https://youporn.com/", "https://www.youporn.com/watch/example"],
+        "shouldNotMatch": ["https://notyouporn.com/", "https://example.com/youporn.com"]
+      }
+    },
+    {
+      "id": "hate-slur-n-word",
+      "type": "whole_token",
+      "category": "hate",
+      "severity": "critical",
+      "match": "nigger",
+      "mode": "shadow",
+      "explanation": "Anti-Black slur. Whole-token matching reduces substring false positives; context still requires human review.",
+      "tests": {
+        "shouldMatch": ["you nigger", "NIGGER"],
+        "shouldNotMatch": ["snigger", "sniggering"]
+      }
+    },
+    {
+      "id": "hate-slur-f-word",
+      "type": "whole_token",
+      "category": "hate",
+      "severity": "critical",
+      "match": "faggot",
+      "mode": "shadow",
+      "explanation": "Anti-LGBTQ slur. Whole-token matching reduces substring false positives; context still requires human review.",
+      "tests": {
+        "shouldMatch": ["you faggot", "FAGGOT"],
+        "shouldNotMatch": ["faggoting", "bundle"]
+      }
+    },
+    {
+      "id": "hate-slur-antisemitic-kike",
+      "type": "whole_token",
+      "category": "hate",
+      "severity": "critical",
+      "match": "kike",
+      "mode": "shadow",
+      "explanation": "Antisemitic slur. Context requires human review.",
+      "tests": {
+        "shouldMatch": ["you kike", "KIKE!"],
+        "shouldNotMatch": ["spikeless", "example"]
+      }
+    },
+    {
+      "id": "hate-slur-anti-latino-spic",
+      "type": "whole_token",
+      "category": "hate",
+      "severity": "critical",
+      "match": "spic",
+      "mode": "shadow",
+      "explanation": "Anti-Latino slur. Context requires human review.",
+      "tests": {
+        "shouldMatch": ["you spic", "SPIC!"],
+        "shouldNotMatch": ["spice", "spick-and-span"]
+      }
+    },
+    {
+      "id": "hate-slur-anti-asian-chink",
+      "type": "whole_token",
+      "category": "hate",
+      "severity": "critical",
+      "match": "chink",
+      "mode": "shadow",
+      "explanation": "Anti-Asian slur. Context requires human review.",
+      "tests": {
+        "shouldMatch": ["you chink", "CHINK!"],
+        "shouldNotMatch": ["chinking", "chainlink"]
+      }
+    },
+    {
+      "id": "hate-slur-anti-trans-tranny",
+      "type": "whole_token",
+      "category": "hate",
+      "severity": "critical",
+      "match": "tranny",
+      "mode": "shadow",
+      "explanation": "Anti-trans slur. Context requires human review.",
+      "tests": {
+        "shouldMatch": ["you tranny", "TRANNY!"],
+        "shouldNotMatch": ["transmission", "training"]
+      }
+    },
+    {
+      "id": "hate-slur-ableist-retard",
+      "type": "whole_token",
+      "category": "hate",
+      "severity": "critical",
+      "match": "retard",
+      "mode": "shadow",
+      "explanation": "Ableist slur. Context requires human review.",
+      "tests": {
+        "shouldMatch": ["you retard", "RETARD!"],
+        "shouldNotMatch": ["retardant", "retardation"]
+      }
+    },
+    {
+      "id": "hate-slur-anti-latino-wetback",
+      "type": "whole_token",
+      "category": "hate",
+      "severity": "critical",
+      "match": "wetback",
+      "mode": "shadow",
+      "explanation": "Anti-Latino slur. Context requires human review.",
+      "tests": {
+        "shouldMatch": ["you wetback", "WETBACK!"],
+        "shouldNotMatch": ["wetbacksplash", "wet backpack"]
+      }
+    },
+    {
+      "id": "profanity-fuck",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "fuck",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["fuck", "what the fuck?"],
+        "shouldNotMatch": ["firetruck", "fuckery"]
+      }
+    },
+    {
+      "id": "profanity-fucked",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "fucked",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["fucked", "totally fucked!"],
+        "shouldNotMatch": ["unfucked", "example"]
+      }
+    },
+    {
+      "id": "profanity-fucker",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "fucker",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["fucker", "fucker!"],
+        "shouldNotMatch": ["fuckers", "example"]
+      }
+    },
+    {
+      "id": "profanity-fuckers",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "fuckers",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["fuckers", "those fuckers!"],
+        "shouldNotMatch": ["motherfuckers", "example"]
+      }
+    },
+    {
+      "id": "profanity-fucking",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "fucking",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["fucking", "FUCKING!"],
+        "shouldNotMatch": ["unfuckingbelievable", "example"]
+      }
+    },
+    {
+      "id": "profanity-shit",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "shit",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["shit", "oh shit!"],
+        "shouldNotMatch": ["shiitake", "shirt"]
+      }
+    },
+    {
+      "id": "profanity-bullshit",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "bullshit",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["bullshit", "BULLSHIT!"],
+        "shouldNotMatch": ["bullshitting", "bull shirt"]
+      }
+    },
+    {
+      "id": "profanity-shitty",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "shitty",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["shitty", "a shitty day"],
+        "shouldNotMatch": ["shittier", "city"]
+      }
+    },
+    {
+      "id": "profanity-bitch",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "bitch",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["bitch", "BITCH!"],
+        "shouldNotMatch": ["bitchin", "stitch"]
+      }
+    },
+    {
+      "id": "profanity-bitches",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "bitches",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["bitches", "BITCHES!"],
+        "shouldNotMatch": ["witches", "example"]
+      }
+    },
+    {
+      "id": "profanity-asshole",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "asshole",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["asshole", "you asshole!"],
+        "shouldNotMatch": ["assholes", "grasshopper"]
+      }
+    },
+    {
+      "id": "profanity-assholes",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "assholes",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["assholes", "those assholes!"],
+        "shouldNotMatch": ["asshole", "example"]
+      }
+    },
+    {
+      "id": "profanity-bastard",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "bastard",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["bastard", "BASTARD!"],
+        "shouldNotMatch": ["bastardization", "example"]
+      }
+    },
+    {
+      "id": "profanity-cunt",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "cunt",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["cunt", "CUNT!"],
+        "shouldNotMatch": ["scunthorpe", "cunning"]
+      }
+    },
+    {
+      "id": "profanity-motherfucker",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "motherfucker",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["motherfucker", "MOTHERFUCKER!"],
+        "shouldNotMatch": ["motherfuckers", "mother figure"]
+      }
+    },
+    {
+      "id": "profanity-motherfuckers",
+      "type": "whole_token",
+      "category": "profanity",
+      "severity": "warning",
+      "match": "motherfuckers",
+      "mode": "shadow",
+      "explanation": "Strong profanity matched as a complete token.",
+      "tests": {
+        "shouldMatch": ["motherfuckers", "MOTHERFUCKERS!"],
+        "shouldNotMatch": ["motherfucker", "mother figures"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+<header class="site-header">
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a class="brand" href="/">NamelessPronouns</a>
+    <div class="nav-links">
+      <% if (typeof user !== 'undefined' && user) { %>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/settings">Settings</a>
+        <% if (['support', 'moderator', 'administrator', 'owner'].includes(user.staff_role)) { %>
+          <a href="/admin">Admin</a>
+        <% } %>
+      <% } else { %>
+        <a href="/login">Sign in</a>
+        <a class="nav-cta" href="/signup">Request account</a>
+      <% } %>
+    </div>
+  </nav>
+</header>

@@ -1,0 +1,5 @@
+<!DOCTYPE html><html lang="en"><head><%- await include('../partials/head', { title }) %></head><body><%- await include('../partials/site-header') %><main class="container">
+<p class="eyebrow">Administrator tools</p><h1>Audit log</h1><form method="get" action="/admin/audit"><label>Exact event type <input name="type" value="<%= eventType %>"></label><label>Subject user ID <input name="subject" value="<%= subject %>"></label><button>Filter</button></form>
+<p>Newest 200 matching append-only events. IP values and sensitive targets are not displayed.</p><% if (!events.length) { %><p>No events.</p><% } else { %><table><thead><tr><th>Time</th><th>Event</th><th>Actor</th><th>Subject</th><th>Target</th><th>Detail</th></tr></thead><tbody>
+<% events.forEach(function(e) { %><tr><td><%= new Date(Number(e.created_at)).toISOString() %></td><td><%= e.event_type %></td><td><%= e.actor_user_id || '' %></td><td><%= e.subject_user_id || '' %></td><td><%= e.target || '' %></td><td><%= e.detail || '' %></td></tr><% }) %></tbody></table><% } %>
+<p><a href="/admin">Back to administration</a></p></main><%- await include('../partials/site-footer') %></body></html>

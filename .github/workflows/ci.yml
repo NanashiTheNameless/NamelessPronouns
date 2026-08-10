@@ -1,0 +1,66 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: namelesspronouns
+          POSTGRES_USER: namelesspronouns
+          POSTGRES_PASSWORD: test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U namelesspronouns -d namelesspronouns"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NP_TEST_DATABASE_URL: postgres://namelesspronouns:test-password@127.0.0.1:5432/namelesspronouns
+      NODE_ENV: test
+      BASE_URL: https://test.example.com
+      COOKIE_SECRET: cookie-secret-xxxxxxxxxxxxxxxxxxx
+      POLICY_COOKIE_SECRET: policy-secret-xxxxxxxxxxxxxxxxxxx
+      TOKEN_HASH_KEY: token-hash-key-xxxxxxxxxxxxxxxxxxx
+      ALTCHA_HMAC_KEY: altcha-hmac-key-xxxxxxxxxxxxxxxx
+      PASSWORD_PEPPER: ''
+      TOTP_ENCRYPTION_KEY: BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=
+      CONTENT_FLAG_ENCRYPTION_KEY: CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk=
+      DB_BACKEND: postgres
+      DATABASE_URL: postgres://namelesspronouns:test-password@127.0.0.1:5432/namelesspronouns
+      RESEND_API_KEY: re_test_key
+      RESEND_FROM: Test <t@test.example.com>
+      ADMIN_NOTIFY_TO: Admin <admin@test.example.com>
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn migrate
+      - run: yarn test
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: namelesspronouns:ci
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: operations
+          push: false
+          tags: namelesspronouns:operations-ci

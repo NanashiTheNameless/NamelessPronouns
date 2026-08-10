@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container narrow">
+    <p class="eyebrow">Administrator tools</p>
+    <h1>Import content rules</h1>
+    <p>Imports create new stable IDs only. Every rule needs positive and negative tests. Requested enforcing rules spend seven days in shadow mode; urgent activation must be performed individually.</p>
+    <% if (error) { %><p class="error"><%= error %></p><% } %>
+    <form method="post" class="panel stack">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Schema-version 1 JSON
+        <textarea name="source" maxlength="30000" rows="18" required><%= source %></textarea>
+      </label>
+      <label>Import reason
+        <input name="reason" value="<%= reason %>" maxlength="200" required>
+      </label>
+      <button type="submit" name="action" value="preview">Validate and preview import</button>
+      <% if (preview) { %>
+        <section class="panel stack">
+          <input type="hidden" name="preview_proof" value="<%= previewProof %>">
+          <h2>Validated import preview</h2>
+          <ul><% preview.forEach(function (rule) { %><li><%= rule.id %>: <%= rule.type %>, <%= rule.category %>, <%= rule.severity %>, <%= rule.mode === 'enforcing' ? 'seven-day shadow then enforcing' : rule.mode %></li><% }); %></ul>
+          <label>Type <strong>IMPORT RULES</strong> to confirm
+            <input name="confirmation" autocomplete="off">
+          </label>
+          <button type="submit" name="action" value="save">Import immutable rules</button>
+        </section>
+      <% } %>
+    </form>
+    <p><a href="/admin/content-rules">Cancel</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

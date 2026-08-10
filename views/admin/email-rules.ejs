@@ -1,0 +1,6 @@
+<!DOCTYPE html><html lang="en"><head><%- await include('../partials/head', { title }) %></head><body><%- await include('../partials/site-header') %><main class="container">
+<p class="eyebrow">Administrator tools</p><h1>Email-domain rules</h1><form method="post" action="/admin/email-rules" class="stack"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+<label>Domain <input name="domain" placeholder="example.com" required></label><label>Rule <select name="rule_type"><option>blocklist</option><option>allowlist</option><option>disposable</option></select></label>
+<label>Type ADD EMAIL RULE <input name="confirmation" autocomplete="off"></label><button>Add rule</button></form>
+<h2>Configured rules</h2><% if (!rules.length) { %><p>No rules.</p><% } else { %><table><thead><tr><th>Domain</th><th>Rule</th><th>Source</th><th></th></tr></thead><tbody><% rules.forEach(function(r) { %><tr><td><%= r.domain %></td><td><%= r.rule_type %></td><td><%= r.source || '' %></td><td><form method="post" action="/admin/email-rules/<%= r.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input name="confirmation" aria-label="Type DELETE EMAIL RULE" required><button>Delete</button></form></td></tr><% }) %></tbody></table><% } %>
+<p><a href="/admin">Back to administration</a></p></main><%- await include('../partials/site-footer') %></body></html>
