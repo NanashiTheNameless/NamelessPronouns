@@ -1,6 +1,7 @@
 const EXACT = new Set([
   '/account/deletion', '/account/reauth', '/logout', '/consent', '/terms',
   '/privacy', '/contact', '/recover', '/legal-requests', '/acknowledgements',
+  '/altcha/challenge',
 ]);
 const PREFIX = ['/account/deletion', '/account/reauth', '/login', '/static/'];
 export function deletionSessionGate() {

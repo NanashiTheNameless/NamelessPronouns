@@ -1,6 +1,6 @@
 const ALLOWED_EXACT = new Set([
   '/account/suspended', '/consent', '/terms', '/privacy', '/contact',
-  '/legal-requests', '/acknowledgements', '/recover', '/logout',
+  '/legal-requests', '/acknowledgements', '/recover', '/logout', '/altcha/challenge',
 ]);
 const ALLOWED_PREFIX = ['/static/', '/account/content-flags', '/login'];
 export function restrictedSessionGate() {

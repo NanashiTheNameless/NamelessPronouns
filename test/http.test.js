@@ -154,3 +154,40 @@ test('generated password index is static but not year-long immutable', async (t)
   const manifest = await res.json();
   assert.ok(manifest.lists.length > 0);
 });
+
+test('the ALTCHA challenge endpoint answers JSON without any session or consent', async () => {
+  const res = await fetch(`${base}/altcha/challenge?for=signup`, { redirect: 'manual' });
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type') || '', /application\/json/);
+  assert.equal(res.headers.get('cache-control'), 'private, no-store');
+  const challenge = await res.json();
+  for (const field of ['algorithm', 'challenge', 'salt', 'signature', 'maxnumber']) {
+    assert.ok(challenge[field] !== undefined, `challenge carries ${field}`);
+  }
+  const unknown = await fetch(`${base}/altcha/challenge?for=nonsense`, { redirect: 'manual' });
+  assert.equal(unknown.status, 404);
+  assert.match(unknown.headers.get('content-type') || '', /application\/json/);
+});
+test('every session gate lets the challenge endpoint through', async () => {
+  const { restrictedSessionGate } = await import('../src/middleware/restricted-session.js');
+  const { deletionSessionGate } = await import('../src/middleware/deletion-session.js');
+  const run = (gate, req) => {
+    let passed = false;
+    let redirected = null;
+    gate({ ...req }, { redirect: (to) => { redirected = to; } }, () => { passed = true; });
+    return { passed, redirected };
+  };
+  const path = '/altcha/challenge';
+  assert.deepEqual(
+    run(restrictedSessionGate(), { path, session: { restricted: 1 } }),
+    { passed: true, redirected: null },
+    'a restricted session can still fetch a challenge for the login form it is allowed to use',
+  );
+  assert.deepEqual(
+    run(deletionSessionGate(), { path, deletionRequest: { id: 'del-1' } }),
+    { passed: true, redirected: null },
+    'a session pending deletion can still fetch a challenge',
+  );
+  assert.equal(run(restrictedSessionGate(), { path: '/dashboard', session: { restricted: 1 } }).redirected, '/account/suspended');
+  assert.equal(run(deletionSessionGate(), { path: '/dashboard', deletionRequest: { id: 'del-1' } }).redirected, '/account/deletion');
+});
