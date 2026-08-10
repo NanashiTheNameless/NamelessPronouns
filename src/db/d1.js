@@ -30,9 +30,11 @@ export function createD1Backend() {
     return toRows(result);
   }
   async function batch(statements) {
-    const sql = statements.map((s) => s.sql.trim().replace(/;+\s*$/, '')).join(';\n');
-    const params = statements.flatMap((s) => s.params ?? []);
-    const result = await call('/query', { sql, params });
+    const batch = statements.map((statement) => ({
+      sql: statement.sql,
+      params: statement.params ?? [],
+    }));
+    const result = await call('/query', { batch });
     const parts = Array.isArray(result) ? result : [result];
     return parts.map((r) => toRows(r));
   }

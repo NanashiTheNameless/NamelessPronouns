@@ -14,6 +14,7 @@ import { TERMS_VERSION, PRIVACY_VERSION, buildAcceptance } from '../src/policy.j
 import { safeConsentReturn } from '../src/consent-return.js';
 import config, { DEFAULT_EMAIL_DOMAIN_ALLOWLIST } from '../src/config.js';
 import { matchesEmailDomain } from '../src/email-domains.js';
+import { createD1Backend } from '../src/db/d1.js';
 test('rewrite: ? placeholders become $1..$n', () => {
   assert.equal(rewrite('SELECT * FROM t WHERE a = ? AND b = ?'), 'SELECT * FROM t WHERE a = $1 AND b = $2');
 });
@@ -109,6 +110,36 @@ test('email domain rules match approved parent domains and their subdomains only
   assert.equal(matchesEmailDomain('example.com', domains), true);
   assert.equal(matchesEmailDomain('mail.example.com', domains), true);
   assert.equal(matchesEmailDomain('notexample.com', domains), false);
+});
+test('D1 batch sends each parameterized statement as a separate query', async () => {
+  const originalFetch = globalThis.fetch;
+  let request;
+  globalThis.fetch = async (url, options) => {
+    request = { url, body: JSON.parse(options.body) };
+    return new Response(JSON.stringify({
+      success: true,
+      result: [
+        { success: true, results: [], meta: { changes: 1 } },
+        { success: true, results: [], meta: { changes: 1 } },
+      ],
+    }));
+  };
+  try {
+    const results = await createD1Backend().batch([
+      { sql: 'INSERT INTO users (id) VALUES (?)', params: ['user-id'] },
+      { sql: 'INSERT INTO audit_events (id) VALUES (?)', params: ['event-id'] },
+    ]);
+    assert.deepEqual(request.body, {
+      batch: [
+        { sql: 'INSERT INTO users (id) VALUES (?)', params: ['user-id'] },
+        { sql: 'INSERT INTO audit_events (id) VALUES (?)', params: ['event-id'] },
+      ],
+    });
+    assert.match(request.url, /\/query$/);
+    assert.deepEqual(results.map((result) => result.rowCount), [1, 1]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 test('net: ipInCidr IPv4 containment', () => {
   assert.ok(ipInCidr('203.0.113.42', '203.0.113.0', 24));
