@@ -5,9 +5,9 @@ import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { splitStatements } from '../src/db/migrate.js';
 const migrationsDir = fileURLToPath(new URL('../db/migrations/', import.meta.url));
-test('pre-release schema is consolidated into one init migration', async () => {
+test('the init schema stays consolidated and later migrations are additive', async () => {
   const files = (await readdir(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
-  assert.deepEqual(files, ['0001_init.sql']);
+  assert.deepEqual(files, ['0001_init.sql', '0002_profile_features.sql']);
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\bALTER\s+TABLE\b/i);
   assert.doesNotMatch(sql, /CHECK \(\(user_id IS NOT NULL AND profile_id IS NULL\)/);
@@ -26,6 +26,15 @@ test('pre-release schema is consolidated into one init migration', async () => {
     assert.match(sql, new RegExp(`CREATE TABLE ${table} \\(`));
   }
   assert.ok(splitStatements(sql).length > 30, 'init contains the complete schema');
+});
+test('profile features migration adds identity flags and pronoun preferences', async () => {
+  const sql = await readFile(new URL('../db/migrations/0002_profile_features.sql', import.meta.url), 'utf8');
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS profile_identity_flags/);
+  assert.match(sql, /FOREIGN KEY \(profile_id\) REFERENCES profiles \(id\) ON DELETE CASCADE/);
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS profile_pronoun_preferences/);
+  for (const key of ['any_pronouns', 'ask_me', 'varies', 'use_name', 'no_pronouns', 'mirror_pronouns', 'use_initials', 'alternate_sets']) {
+    assert.match(sql, new RegExp(`'${key}'`));
+  }
 });
 test('users table supports every staff role and the TOTP replay counter', async () => {
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');

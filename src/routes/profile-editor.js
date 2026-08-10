@@ -10,8 +10,18 @@ import { screenContent } from '../content-rules.js';
 import { encrypt, keyedHash } from '../util/crypto.js';
 import { newId, newToken } from '../util/ids.js';
 import { filterExemptMatches } from '../content-exemptions.js';
+import { consume } from '../ratelimit.js';
+import { PRONOUN_PREFERENCES } from '../pronoun-preferences.js';
+import { PRONOUN_PRESETS } from '../pronoun-presets.js';
+import {
+  emptyLink,
+  emptyPronoun,
+  fetchPronounsPageProfile,
+  mapPronounsPageProfile,
+  PRONOUNS_PAGE_FLAG_OPTIONS,
+} from '../pronouns-page-import.js';
 const router = express.Router();
-const ROWS = 3;
+const MAX_ROWS = 25;
 function optionalText(value, options) {
   if (value == null || String(value).trim() === '') return null;
   return V.displayText(String(value), options);
@@ -20,24 +30,52 @@ function optionalProse(value, options) {
   if (value == null || String(value).trim() === '') return null;
   return V.proseText(String(value), options);
 }
+function pronounText(value, field) {
+  const normalized = String(value).trim();
+  if (!normalized || normalized.length > 40 || !/^[A-Za-z0-9/'-]+$/.test(normalized)) {
+    throw new V.ValidationError(`${field} may contain only letters, numbers, slashes, apostrophes, and dashes.`);
+  }
+  return normalized;
+}
+function arrayField(body, name, legacyPrefix) {
+  if (body[name] !== undefined) return (Array.isArray(body[name]) ? body[name] : [body[name]]).slice(0, MAX_ROWS);
+  const indexes = Object.keys(body)
+    .map((key) => new RegExp(`^${legacyPrefix}_(\\d+)$`).exec(key))
+    .filter(Boolean)
+    .map((match) => Number(match[1]));
+  const count = indexes.length ? Math.min(Math.max(...indexes) + 1, MAX_ROWS) : 1;
+  return Array.from({ length: count }, (_, index) => body[`${legacyPrefix}_${index}`] ?? '');
+}
 function formValues(body = {}) {
+  const names = arrayField(body, 'name', 'name');
+  const subjects = arrayField(body, 'subject', 'subject');
+  const objects = arrayField(body, 'object', 'object');
+  const determiners = arrayField(body, 'possessive_determiner', 'possessive_determiner');
+  const possessives = arrayField(body, 'possessive_pronoun', 'possessive_pronoun');
+  const reflexives = arrayField(body, 'reflexive', 'reflexive');
+  const linkLabels = arrayField(body, 'link_label', 'link_label');
+  const linkUrls = arrayField(body, 'link_url', 'link_url');
   return {
     displayName: String(body.display_name ?? ''),
     description: String(body.description ?? ''),
     notes: String(body.notes ?? ''),
     published: body.published === 'on',
-    names: Array.from({ length: ROWS }, (_, i) => String(body[`name_${i}`] ?? '')),
-    pronouns: Array.from({ length: ROWS }, (_, i) => ({
-      subject: String(body[`subject_${i}`] ?? ''),
-      object: String(body[`object_${i}`] ?? ''),
-      possessiveDeterminer: String(body[`possessive_determiner_${i}`] ?? ''),
-      possessivePronoun: String(body[`possessive_pronoun_${i}`] ?? ''),
-      reflexive: String(body[`reflexive_${i}`] ?? ''),
+    names: names.map(String),
+    pronouns: subjects.map((value, i) => ({
+      subject: String(value ?? ''),
+      object: String(objects[i] ?? ''),
+      possessiveDeterminer: String(determiners[i] ?? ''),
+      possessivePronoun: String(possessives[i] ?? ''),
+      reflexive: String(reflexives[i] ?? ''),
     })),
-    links: Array.from({ length: ROWS }, (_, i) => ({
-      label: String(body[`link_label_${i}`] ?? ''),
-      url: String(body[`link_url_${i}`] ?? ''),
+    links: linkLabels.map((value, i) => ({
+      label: String(value ?? ''),
+      url: String(linkUrls[i] ?? ''),
     })),
+    flags: arrayField(body, 'profile_flag', 'profile_flag').map(String),
+    pronounPreferences: PRONOUN_PREFERENCES
+      .filter((preference) => body[`pronoun_pref_${preference.key}`] === 'on')
+      .map((preference) => preference.key),
   };
 }
 export function validateProfileForm(body) {
@@ -50,6 +88,8 @@ export function validateProfileForm(body) {
     names: raw.names.map((value) => optionalText(value, { field: 'Name', max: 80 })).filter(Boolean),
     pronouns: [],
     links: [],
+    flags: [],
+    pronounPreferences: raw.pronounPreferences,
   };
   for (const row of raw.pronouns) {
     const present = Object.values(row).some((value) => value.trim() !== '');
@@ -58,11 +98,11 @@ export function validateProfileForm(body) {
       throw new V.ValidationError('Every field in a pronoun set is required.');
     }
     values.pronouns.push({
-      subject: V.displayText(row.subject, { field: 'Pronoun subject', max: 40 }),
-      object: V.displayText(row.object, { field: 'Pronoun object', max: 40 }),
-      possessiveDeterminer: V.displayText(row.possessiveDeterminer, { field: 'Possessive determiner', max: 40 }),
-      possessivePronoun: V.displayText(row.possessivePronoun, { field: 'Possessive pronoun', max: 40 }),
-      reflexive: V.displayText(row.reflexive, { field: 'Reflexive pronoun', max: 40 }),
+      subject: pronounText(row.subject, 'Pronoun subject'),
+      object: pronounText(row.object, 'Pronoun object'),
+      possessiveDeterminer: pronounText(row.possessiveDeterminer, 'Possessive determiner'),
+      possessivePronoun: pronounText(row.possessivePronoun, 'Possessive pronoun'),
+      reflexive: pronounText(row.reflexive, 'Reflexive pronoun'),
     });
   }
   for (const row of raw.links) {
@@ -74,6 +114,12 @@ export function validateProfileForm(body) {
       label: V.displayText(row.label, { field: 'Link label', max: 80 }),
       url: V.httpsUrl(row.url, { field: 'Link URL' }),
     });
+  }
+  for (const rawFlag of raw.flags) {
+    const flag = rawFlag.trim();
+    if (!flag) continue;
+    if (!PRONOUNS_PAGE_FLAG_OPTIONS.includes(flag)) throw new V.ValidationError('Choose a flag from the available Pronouns.page flags.');
+    values.flags.push(flag);
   }
   return values;
 }
@@ -88,27 +134,29 @@ async function editableProfile(profileId, userId) {
   return rows[0] || null;
 }
 async function editorState(profile) {
-  const [names, pronouns, links] = await Promise.all([
+  const [names, pronouns, links, flags, pronounPreferences] = await Promise.all([
     db.query('SELECT value FROM profile_names WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT subject, object, possessive_determiner, possessive_pronoun, reflexive FROM pronoun_sets WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT label, url FROM profile_links WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT flag_key FROM profile_identity_flags WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT preference_key FROM profile_pronoun_preferences WHERE profile_id = ? ORDER BY position', [profile.id]),
   ]);
   return {
     displayName: profile.display_name,
     description: profile.description || '',
     notes: profile.notes || '',
     published: Number(profile.published) === 1,
-    names: Array.from({ length: ROWS }, (_, i) => names.rows[i]?.value || ''),
-    pronouns: Array.from({ length: ROWS }, (_, i) => ({
-      subject: pronouns.rows[i]?.subject || '',
-      object: pronouns.rows[i]?.object || '',
-      possessiveDeterminer: pronouns.rows[i]?.possessive_determiner || '',
-      possessivePronoun: pronouns.rows[i]?.possessive_pronoun || '',
-      reflexive: pronouns.rows[i]?.reflexive || '',
-    })),
-    links: Array.from({ length: ROWS }, (_, i) => ({
-      label: links.rows[i]?.label || '', url: links.rows[i]?.url || '',
-    })),
+    names: names.rows.length ? names.rows.map((row) => row.value) : [''],
+    pronouns: pronouns.rows.length ? pronouns.rows.map((row) => ({
+      subject: row.subject,
+      object: row.object,
+      possessiveDeterminer: row.possessive_determiner,
+      possessivePronoun: row.possessive_pronoun,
+      reflexive: row.reflexive,
+    })) : [emptyPronoun()],
+    links: links.rows.length ? links.rows.map((row) => ({ label: row.label, url: row.url })) : [emptyLink()],
+    flags: flags.rows.length ? flags.rows.map((row) => row.flag_key) : [''],
+    pronounPreferences: pronounPreferences.rows.map((row) => row.preference_key),
   };
 }
 function screeningInput(values) {
@@ -227,6 +275,8 @@ function acceptedSaveStatements(profileId, userId, values, now) {
     { sql: 'DELETE FROM profile_names WHERE profile_id = ?', params: [profileId] },
     { sql: 'DELETE FROM pronoun_sets WHERE profile_id = ?', params: [profileId] },
     { sql: 'DELETE FROM profile_links WHERE profile_id = ?', params: [profileId] },
+    { sql: 'DELETE FROM profile_identity_flags WHERE profile_id = ?', params: [profileId] },
+    { sql: 'DELETE FROM profile_pronoun_preferences WHERE profile_id = ?', params: [profileId] },
     ...values.names.map((value, position) => ({
       sql: 'INSERT INTO profile_names (id, profile_id, value, position) VALUES (?, ?, ?, ?)',
       params: [newId(), profileId, value, position],
@@ -241,6 +291,14 @@ function acceptedSaveStatements(profileId, userId, values, now) {
     ...values.links.map((row, position) => ({
       sql: 'INSERT INTO profile_links (id, profile_id, label, url, position) VALUES (?, ?, ?, ?, ?)',
       params: [newId(), profileId, row.label, row.url, position],
+    })),
+    ...values.flags.map((flag, position) => ({
+      sql: 'INSERT INTO profile_identity_flags (id, profile_id, flag_key, position) VALUES (?, ?, ?, ?)',
+      params: [newId(), profileId, flag, position],
+    })),
+    ...values.pronounPreferences.map((preference, position) => ({
+      sql: 'INSERT INTO profile_pronoun_preferences (profile_id, preference_key, position) VALUES (?, ?, ?)',
+      params: [profileId, preference, position],
     })),
     {
       sql: `INSERT INTO profile_revisions
@@ -267,8 +325,51 @@ router.get('/profiles/:id/edit', requireApproved, async (req, res) => {
     error: null,
     warning: null,
     saved: req.query.saved === '1',
+    importNotice: null,
+    flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS,
+    pronounPreferenceOptions: PRONOUN_PREFERENCES,
+    pronounPresetOptions: PRONOUN_PRESETS,
     saveId: newToken(24),
   });
+});
+router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, res) => {
+  const profile = await editableProfile(req.params.id, req.user.id);
+  if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
+  const current = await editorState(profile);
+  const limit = await consume('profile_import', req.user.id);
+  if (!limit.allowed) {
+    return res.status(429).render('profile-edit', {
+      title: `Edit ${profile.username}`, profile, values: current,
+      error: 'Too many import attempts. Try again later.', warning: null, saved: false,
+      importNotice: null, flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS,
+      pronounPreferenceOptions: PRONOUN_PREFERENCES, saveId: newToken(24),
+      pronounPresetOptions: PRONOUN_PRESETS,
+    });
+  }
+  try {
+    const imported = await fetchPronounsPageProfile(req.body.pronouns_page_profile);
+    const result = mapPronounsPageProfile(imported.payload, { locale: imported.locale, current });
+    const omissions = [];
+    if (result.skippedPronouns) omissions.push(`${result.skippedPronouns} pronoun set${result.skippedPronouns === 1 ? '' : 's'} that could not be expanded safely`);
+    if (result.skippedCustomFlags) omissions.push(`${result.skippedCustomFlags} custom flag${result.skippedCustomFlags === 1 ? '' : 's'} whose artwork cannot be transferred`);
+    if (result.skippedFlags) omissions.push(`${result.skippedFlags} unavailable built-in flag${result.skippedFlags === 1 ? '' : 's'}`);
+    const suffix = omissions.length ? ` Skipped ${omissions.join(' and ')}.` : '';
+    return res.render('profile-edit', {
+      title: `Edit ${profile.username}`, profile, values: result.values, error: null, warning: null,
+      saved: false, importNotice: `Imported the ${result.locale} profile for review.${suffix} Save the profile to keep these changes.`, saveId: newToken(24),
+      flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS,
+      pronounPreferenceOptions: PRONOUN_PREFERENCES,
+      pronounPresetOptions: PRONOUN_PRESETS,
+    });
+  } catch (error) {
+    return res.status(400).render('profile-edit', {
+      title: `Edit ${profile.username}`, profile, values: current, error: error.message, warning: null,
+      saved: false, importNotice: null, saveId: newToken(24),
+      flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS,
+      pronounPreferenceOptions: PRONOUN_PREFERENCES,
+      pronounPresetOptions: PRONOUN_PRESETS,
+    });
+  }
 });
 router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
   const profile = await editableProfile(req.params.id, req.user.id);
@@ -279,7 +380,7 @@ router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
   } catch (error) {
     if (!(error instanceof V.ValidationError)) throw error;
     return res.status(400).render('profile-edit', {
-      title: `Edit ${profile.username}`, profile, values: formValues(req.body), error: error.message, warning: null, saved: false, saveId: newToken(24),
+      title: `Edit ${profile.username}`, profile, values: formValues(req.body), error: error.message, warning: null, saved: false, importNotice: null, saveId: newToken(24), flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS, pronounPreferenceOptions: PRONOUN_PREFERENCES, pronounPresetOptions: PRONOUN_PRESETS,
     });
   }
   const rules = await loadCurrentRules();
@@ -323,6 +424,10 @@ router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
       error: null,
       warning: 'That edit matched a prohibited-content rule and was reverted. Do not submit it again. You may request Administrator review if the flag is incorrect.',
       saved: false,
+      importNotice: null,
+      flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS,
+      pronounPreferenceOptions: PRONOUN_PREFERENCES,
+      pronounPresetOptions: PRONOUN_PRESETS,
       saveId: newToken(24),
     });
   }

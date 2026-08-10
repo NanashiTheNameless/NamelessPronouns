@@ -1297,7 +1297,7 @@ test('account export supports direct and renewable-window emailed downloads', { 
   res = await post('/account/export/download', { _csrf: csrf }, cookies);
   assert.equal(res.status, 200);
   assert.match(res.headers.get('content-type'), /^application\/zip/);
-  assert.match(res.headers.get('content-disposition'), /^attachment; filename="nameless-export-\d{4}-\d{2}-\d{2}\.zip"$/);
+  assert.match(res.headers.get('content-disposition'), /^attachment; filename="NamelessPronouns-\d{4}\.\d{2}\.\d{2}-\d{10}\.zip"$/);
   const direct = Buffer.from(await res.arrayBuffer());
   assert.deepEqual(direct.subarray(0, 4), Buffer.from('PK\x03\x04', 'binary'));
   const { collectUserData } = await import('../src/data-export.js');

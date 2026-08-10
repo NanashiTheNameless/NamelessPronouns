@@ -14,7 +14,7 @@ import { randomBytes } from 'node:crypto';
 import { encrypt, decrypt, keyedHash, safeEqual } from '../util/crypto.js';
 import { newId, newToken } from '../util/ids.js';
 import { revokeAllForUser } from '../auth/session.js';
-import { collectUserData, buildExportZip } from '../data-export.js';
+import { collectUserData, buildExportZip, exportFilename } from '../data-export.js';
 import { matchAccountBan } from '../bans.js';
 import { evaluateEmailDomain } from '../email-domains.js';
 import * as V from '../validation.js';
@@ -122,16 +122,13 @@ router.post('/account/deletion/cancel', requireApproved, requireFreshAuth({ retu
   mail.securityNotice(req.user.email, 'The pending account deletion was cancelled and eligible profile publication state was restored.').catch(() => {});
   res.redirect('/settings');
 });
-function exportFilename() {
-  return `nameless-export-${new Date().toISOString().slice(0, 10)}.zip`;
-}
 async function streamExport(res, userId, acceptedAt = Date.now()) {
   const data = await collectUserData(userId, { generatedAt: new Date(acceptedAt).toISOString() });
   const zip = buildExportZip(data);
   res.status(200);
   res.set({
     'Content-Type': 'application/zip',
-    'Content-Disposition': `attachment; filename="${exportFilename()}"`,
+    'Content-Disposition': `attachment; filename="${exportFilename(acceptedAt)}"`,
     'Cache-Control': 'private, no-store',
   });
   zip.outputStream.pipe(res);

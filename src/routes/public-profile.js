@@ -5,6 +5,8 @@ import { matchViewingBan } from '../bans.js';
 import { clientIp } from '../util/net.js';
 import * as V from '../validation.js';
 import { avatarUrl } from '../avatar.js';
+import { flagLabel, pronounsPageFlagUrl } from '../pronouns-page-import.js';
+import { pronounPreferenceLabel } from '../pronoun-preferences.js';
 const router = express.Router();
 router.use(publicPageHeaders);
 function noStore(res) {
@@ -46,10 +48,12 @@ router.get('/u/:username', async (req, res) => {
   if (req.params.username !== profile.username_display) {
     return res.redirect(301, `/u/${encodeURIComponent(profile.username_display)}`);
   }
-  const [names, pronouns, links] = await Promise.all([
+  const [names, pronouns, links, flags, pronounPreferences] = await Promise.all([
     db.query('SELECT value FROM profile_names WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT subject, object, possessive_determiner, possessive_pronoun, reflexive FROM pronoun_sets WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT label, url FROM profile_links WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT flag_key FROM profile_identity_flags WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT preference_key FROM profile_pronoun_preferences WHERE profile_id = ? ORDER BY position', [profile.id]),
   ]);
   res.render('profile', {
     title: `${profile.display_name} (@${profile.username_display})`,
@@ -59,6 +63,8 @@ router.get('/u/:username', async (req, res) => {
     names: names.rows,
     pronouns: pronouns.rows,
     links: links.rows,
+    flags: flags.rows.map((row) => ({ key: row.flag_key, label: flagLabel(row.flag_key), imageUrl: pronounsPageFlagUrl(row.flag_key) })),
+    pronounPreferences: pronounPreferences.rows.map((row) => pronounPreferenceLabel(row.preference_key)),
   });
 });
 export default router;

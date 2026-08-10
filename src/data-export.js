@@ -62,6 +62,16 @@ export async function collectUserData(userId, { generatedAt = new Date().toISOSt
       WHERE ${profileScope} ORDER BY profile_id, position`,
     [userId, userId],
   );
+  const profileIdentityFlags = await db.query(
+    `SELECT id, profile_id, flag_key, position FROM profile_identity_flags
+      WHERE ${profileScope} ORDER BY profile_id, position`,
+    [userId, userId],
+  );
+  const profilePronounPreferences = await db.query(
+    `SELECT profile_id, preference_key, position FROM profile_pronoun_preferences
+      WHERE ${profileScope} ORDER BY profile_id, position`,
+    [userId, userId],
+  );
   const usernameClaims = await db.query(
     `SELECT username, username_display, state, pending_user_id,
             requested_display_name, profile_id, created_at
@@ -92,6 +102,8 @@ export async function collectUserData(userId, { generatedAt = new Date().toISOSt
     profile_names: profileNames.rows,
     pronoun_sets: pronounSets.rows,
     profile_links: profileLinks.rows,
+    profile_identity_flags: profileIdentityFlags.rows,
+    profile_pronoun_preferences: profilePronounPreferences.rows,
     public_username_claims: usernameClaims.rows,
     audit_events: auditEvents.rows,
   };
@@ -143,6 +155,13 @@ export function formatUserFriendlyDataset(name, value) {
   if (value.length === 0) return `${heading}\n${rule}\n\nNo records.\n`;
   const records = value.map((record, index) => `Record ${index + 1}\n--------\n${humanRecord(record)}`);
   return `${heading}\n${rule}\n\n${records.join('\n\n')}\n`;
+}
+export function exportFilename(generatedAt = Date.now()) {
+  const date = new Date(generatedAt);
+  if (Number.isNaN(date.getTime())) throw new TypeError('Export filename timestamp must be a valid date');
+  const calendarDate = date.toISOString().slice(0, 10).replaceAll('-', '.');
+  const unixTime = Math.floor(date.getTime() / 1000);
+  return `NamelessPronouns-${calendarDate}-${unixTime}.zip`;
 }
 export function buildExportZip(data) {
   const zip = new yazl.ZipFile();

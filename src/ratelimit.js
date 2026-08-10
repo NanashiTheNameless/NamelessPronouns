@@ -11,6 +11,7 @@ export const POLICIES = {
   invite_accept_ip: { max: 10, window: HOUR },
   invite_send_workspace: { max: 20, window: 24 * HOUR },
   export_request: { max: 5, window: 24 * HOUR },
+  profile_import: { max: 10, window: HOUR },
 };
 const counters = new Map();
 function sweep(now) {

@@ -29,6 +29,17 @@ test('GET /consent renders with baseline security headers and RUM allowance', as
   assert.equal((html.match(/type="checkbox"/g) || []).length, 2);
   assert.doesNotMatch(html, /version 2026|name="terms"|name="privacy"/);
 });
+test('CSP uses a fresh random script nonce for every response', async () => {
+  const first = await fetch(`${base}/consent`);
+  const second = await fetch(`${base}/consent`);
+  const firstNonce = /script-src[^;]*'nonce-([^']+)'/.exec(first.headers.get('content-security-policy'))?.[1];
+  const secondNonce = /script-src[^;]*'nonce-([^']+)'/.exec(second.headers.get('content-security-policy'))?.[1];
+  assert.ok(firstNonce);
+  assert.ok(secondNonce);
+  assert.equal(Buffer.from(firstNonce, 'base64').length, 16);
+  assert.equal(Buffer.from(secondNonce, 'base64').length, 16);
+  assert.notEqual(firstNonce, secondNonce);
+});
 test('signup reason is a tall 20 to 5000 character textarea', async () => {
   const consent = await fetch(`${base}/consent`, {
     method: 'POST',
@@ -105,6 +116,25 @@ test('static assets are exempt from the gate', async () => {
   const font = await fetch(`${base}/static/fonts/0xproto/0xProto-Regular.woff2`);
   assert.equal(font.status, 200);
   assert.match(font.headers.get('content-type') || '', /font\/woff2/);
+  const flag = await fetch(`${base}/static/flags/Nonbinary.png`);
+  assert.equal(flag.status, 200);
+  assert.match(flag.headers.get('content-type') || '', /image\/png/);
+});
+test('CSP keeps profile flag images on the local origin', async () => {
+  const res = await fetch(`${base}/consent`);
+  const csp = res.headers.get('content-security-policy');
+  assert.doesNotMatch(csp, /pronouns\.page/);
+  assert.match(csp, /img-src 'self'/);
+});
+test('site text colors stay white across semantic states', async () => {
+  const res = await fetch(`${base}/static/css/main.css`);
+  assert.equal(res.status, 200);
+  const css = await res.text();
+  for (const variable of ['text', 'muted', 'danger', 'success']) {
+    assert.match(css, new RegExp(`--${variable}: #ffffff`));
+  }
+  assert.doesNotMatch(css, /^\s*color:\s*var\(--(?:accent|accent-hover)\)/m);
+  assert.doesNotMatch(css, /^\s*color:\s*rgba\(/m);
 });
 test('generated password index is static but not year-long immutable', async () => {
   const res = await fetch(`${base}/static/password-wordlists/manifest.json`);

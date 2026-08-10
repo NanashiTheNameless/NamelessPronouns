@@ -5,7 +5,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { buildExportZip } from '../src/data-export.js';
+import { buildExportZip, exportFilename } from '../src/data-export.js';
 async function zipBuffer(data) {
   const zip = buildExportZip(data);
   const chunks = [];
@@ -67,4 +67,11 @@ test('account export has valid user-friendly and machine-readable versions', asy
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+test('account export filename includes UTC date and Unix time', () => {
+  assert.equal(
+    exportFilename('2026-08-09T12:34:56.000Z'),
+    'NamelessPronouns-2026.08.09-1786278896.zip',
+  );
+  assert.throws(() => exportFilename('invalid'), /valid date/);
 });

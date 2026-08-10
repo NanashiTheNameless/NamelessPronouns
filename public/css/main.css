@@ -24,15 +24,15 @@
   --bg: #16161c;
   --surface: rgba(29, 29, 37, 0.95);
   --surface-strong: #24242e;
-  --text: #f8f2f3;
-  --muted: #bdb1b4;
+  --text: #ffffff;
+  --muted: #ffffff;
   --border: #45414a;
   --accent: #e51b23;
   --accent-hover: #ff353d;
   --accent-soft: #3b171a;
-  --danger: #ff5c62;
+  --danger: #ffffff;
   --danger-soft: #451719;
-  --success: #78dca8;
+  --success: #ffffff;
   --success-soft: #17392b;
   --focus: #ff6469;
   --shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
@@ -135,7 +135,7 @@ h2 {
 }
 .eyebrow {
   margin: 0 0 0.4rem;
-  color: var(--accent);
+  color: var(--text);
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -222,13 +222,13 @@ p {
   margin: 0.75rem 0;
 }
 a {
-  color: var(--accent);
+  color: var(--text);
   font-weight: 650;
   text-underline-offset: 0.18em;
   text-decoration-thickness: 0.08em;
 }
 a:hover {
-  color: var(--accent-hover);
+  color: var(--text);
 }
 a:focus-visible,
 button:focus-visible,
@@ -264,6 +264,11 @@ select {
   font: inherit;
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
+input::placeholder,
+textarea::placeholder {
+  color: var(--text);
+  opacity: 1;
+}
 input:not([type="checkbox"]):not([type="radio"]):focus,
 textarea:focus,
 select:focus {
@@ -279,6 +284,63 @@ fieldset {
   padding: 1rem;
   border: 1px solid var(--border);
   border-radius: 1rem;
+}
+.import-panel {
+  margin-block: 1.5rem;
+}
+.inline-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.inline-form label {
+  flex: 1 1 22rem;
+}
+.repeat-rows {
+  display: grid;
+  gap: 0.85rem;
+}
+.repeat-row {
+  padding: 0.85rem;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+}
+.repeat-row-group h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+.pronoun-preset {
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 0.75rem;
+}
+.pronoun-preset label {
+  flex: 1 1 18rem;
+}
+.add-row {
+  margin-top: 0.85rem;
+}
+button.compact {
+  min-height: 2.25rem;
+  margin-top: 0.55rem;
+  padding: 0.4rem 0.75rem;
+}
+.identity-flags {
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+.identity-flags li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.identity-flags img {
+  width: 3rem;
+  height: 2rem;
+  object-fit: cover;
+  border-radius: 0.25rem;
 }
 legend {
   padding: 0 0.4rem;
@@ -307,7 +369,7 @@ button,
 }
 button.secondary,
 .button.secondary {
-  color: var(--accent);
+  color: var(--text);
   background: var(--accent-soft);
   box-shadow: none;
 }
@@ -334,6 +396,11 @@ button.secondary:hover,
   border: 1px solid var(--border);
   border-radius: 1rem;
   cursor: pointer;
+}
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 0.75rem;
 }
 .choice:hover {
   border-color: var(--accent);
@@ -475,7 +542,7 @@ altcha-widget[theme="business"] .altcha-input {
   border-color: #543039;
 }
 altcha-widget[theme="business"] .altcha-footer {
-  color: rgba(255, 255, 255, 0.72);
+  color: #ffffff;
 }
 altcha-widget[theme="business"][hidefooter] .altcha-footer,
 altcha-widget[theme="business"][hidelogo] .altcha-logo {
@@ -500,7 +567,7 @@ altcha-widget.email-obfuscation .email-reveal {
   min-height: 0;
   margin: 0;
   padding: 0;
-  color: var(--accent);
+  color: var(--text);
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -514,7 +581,7 @@ altcha-widget.email-obfuscation .email-reveal {
   vertical-align: baseline;
 }
 altcha-widget.email-obfuscation .email-reveal:hover {
-  color: var(--accent-hover);
+  color: var(--text);
   background: transparent;
   box-shadow: none;
   transform: none;

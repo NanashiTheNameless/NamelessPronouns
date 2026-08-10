@@ -11,6 +11,15 @@
     </div>
     <% if (profile.description) { %><p><%- await obfuscateEmails(profile.description) %></p><% } %>
 
+    <% if (flags.length) { %>
+      <section aria-labelledby="flags-h">
+        <h2 id="flags-h">Flags</h2>
+        <ul class="identity-flags">
+          <% flags.forEach(function (flag) { %><li><img src="<%= flag.imageUrl %>" alt="" width="48" height="32" loading="lazy"><span><%= flag.label %></span></li><% }); %>
+        </ul>
+      </section>
+    <% } %>
+
     <% if (names.length) { %>
       <section aria-labelledby="names-h">
         <h2 id="names-h">Names</h2>
@@ -29,6 +38,13 @@
           </li>
         <% }); %>
         </ul>
+      </section>
+    <% } %>
+
+    <% if (pronounPreferences.length) { %>
+      <section aria-labelledby="pronoun-preferences-h">
+        <h2 id="pronoun-preferences-h">Pronoun preferences</h2>
+        <ul><% pronounPreferences.forEach(function (preference) { %><li><%= preference %></li><% }); %></ul>
       </section>
     <% } %>
 
