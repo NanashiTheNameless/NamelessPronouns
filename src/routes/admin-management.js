@@ -330,13 +330,17 @@ router.post('/admin/accounts/:id/delete/now', requireStaff('administrator'), req
   }
   const deletionId = existing?.id || id;
   const email = target.email;
-  const purged = await purgeDeletion({ id: deletionId, user_id: target.id }, now);
+  const purged = await purgeDeletion(
+    { id: deletionId, user_id: target.id },
+    now,
+    { hardDelete: true, replacementActorUserId: req.user.id },
+  );
   if (!purged) return fail(res, 409, 'A legal hold covers this account. Release the hold before deleting it.');
   await audit.record({
-    type: 'account.deleted_immediately', actorUserId: req.user.id, subjectUserId: target.id,
+    type: 'account.deleted_immediately', actorUserId: req.user.id,
     target: deletionId, ipHash: ipPrefixHash(req), detail: { reason },
   });
-  mail.securityNotice(email, 'An Administrator deleted this account. The record has been erased and cannot be restored.').catch(() => {});
+  mail.securityNotice(email, 'An Administrator permanently deleted this account and its associated data. It cannot be restored.').catch(() => {});
   res.redirect('/admin/users');
 });
 router.post('/admin/accounts/:id/delete/cancel', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {

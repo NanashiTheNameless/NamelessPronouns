@@ -380,11 +380,11 @@ test('an Administrator can delete an account immediately with no grace period', 
   );
   assert.equal(res.status, 302);
   const purged = (await db.query('SELECT email, signup_status FROM users WHERE id = ?', [targetId])).rows[0];
-  assert.match(purged.email, /@deleted\.invalid$/, 'the account was erased without waiting');
-  assert.equal(purged.signup_status, 'terminated');
+  assert.equal(purged, undefined, 'the user row was deleted without waiting');
   assert.equal(
-    (await db.query('SELECT status FROM deletion_requests WHERE user_id = ?', [targetId])).rows[0].status,
-    'completed',
+    (await db.query('SELECT COUNT(*) AS c FROM deletion_requests WHERE user_id = ?', [targetId])).rows[0].c,
+    '0',
+    'the deletion request was removed with the user',
   );
   assert.equal(
     (await db.query('SELECT COUNT(*) AS c FROM sessions WHERE user_id = ?', [targetId])).rows[0].c,

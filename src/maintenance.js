@@ -59,7 +59,7 @@ export async function purgeDeniedSignups(now = Date.now()) {
   }
   return { denied_signups_purged: removed, denied_signups_retained: retained };
 }
-export async function purgeDeletion(deletion, now = Date.now()) {
+export async function purgeDeletion(deletion, now = Date.now(), { hardDelete = false, replacementActorUserId = null } = {}) {
   const hold = await db.query('SELECT id FROM legal_holds WHERE user_id = ? AND released_at IS NULL LIMIT 1', [deletion.user_id]);
   if (hold.rows.length) {
     await db.query("UPDATE deletion_requests SET status = 'held' WHERE id = ? AND status = 'pending'", [deletion.id]);
@@ -67,7 +67,7 @@ export async function purgeDeletion(deletion, now = Date.now()) {
   }
   const anon = `deleted:${keyedHash(deletion.user_id).slice(0, 32)}`;
   const deletedEmail = `${keyedHash(`deleted-email:${deletion.user_id}`).slice(0, 32)}@deleted.invalid`;
-  await db.batch([
+  const statements = [
     { sql: 'UPDATE audit_events SET actor_user_id = ? WHERE actor_user_id = ?', params: [anon, deletion.user_id] },
     { sql: 'UPDATE audit_events SET subject_user_id = ? WHERE subject_user_id = ?', params: [anon, deletion.user_id] },
     { sql: 'DELETE FROM content_suspensions WHERE user_id = ?', params: [deletion.user_id] },
@@ -89,15 +89,36 @@ export async function purgeDeletion(deletion, now = Date.now()) {
               (SELECT p.id FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
                 WHERE w.owner_user_id = ? AND w.kind = 'personal')`, params: [deletion.user_id, deletion.user_id] },
     { sql: "DELETE FROM workspaces WHERE owner_user_id = ? AND kind = 'personal'", params: [deletion.user_id] },
-    { sql: `UPDATE users SET email = ?, password_hash = ?, signup_status = 'terminated',
+  ];
+  if (hardDelete) {
+    if (!replacementActorUserId) throw new Error('A replacement actor is required for immediate deletion.');
+    statements.push(
+      { sql: 'UPDATE users SET decided_by = NULL WHERE decided_by = ?', params: [deletion.user_id] },
+      { sql: 'UPDATE recovery_cases SET decided_by = NULL WHERE decided_by = ?', params: [deletion.user_id] },
+      { sql: 'DELETE FROM recovery_cases WHERE opened_by = ?', params: [deletion.user_id] },
+      { sql: 'UPDATE legal_holds SET created_by = ? WHERE created_by = ?', params: [replacementActorUserId, deletion.user_id] },
+      { sql: 'UPDATE bans SET created_by = NULL WHERE created_by = ?', params: [deletion.user_id] },
+      { sql: 'UPDATE content_rule_versions SET created_by = NULL WHERE created_by = ?', params: [deletion.user_id] },
+      { sql: 'UPDATE content_rule_exemptions SET created_by = ? WHERE created_by = ?', params: [replacementActorUserId, deletion.user_id] },
+      { sql: 'UPDATE content_rule_exemptions SET revoked_by = NULL WHERE revoked_by = ?', params: [deletion.user_id] },
+      { sql: 'UPDATE content_flags SET decided_by = NULL WHERE decided_by = ?', params: [deletion.user_id] },
+      { sql: 'UPDATE content_flag_reviews SET decided_by = NULL WHERE decided_by = ?', params: [deletion.user_id] },
+      { sql: 'UPDATE content_suspensions SET decided_by = NULL WHERE decided_by = ?', params: [deletion.user_id] },
+      { sql: 'DELETE FROM users WHERE id = ?', params: [deletion.user_id] },
+    );
+  } else {
+    statements.push(
+      { sql: `UPDATE users SET email = ?, password_hash = ?, signup_status = 'terminated',
                   requested_profile_username = NULL, requested_profile_username_display = NULL,
                   requested_display_name = NULL, request_note = NULL, email_verified_at = NULL,
                   twofa_method = 'email', totp_secret_ciphertext = NULL, totp_secret_nonce = NULL,
                   totp_key_version = NULL, totp_confirmed_at = NULL, totp_last_step = NULL,
                   avatar_source = 'identicon', avatar_data_uri = NULL,
                   updated_at = ? WHERE id = ?`, params: [deletedEmail, keyedHash(`deleted-password:${deletion.user_id}`), now, deletion.user_id] },
-    { sql: "UPDATE deletion_requests SET status = 'completed', active_user_key = NULL, completed_at = ? WHERE id = ?", params: [now, deletion.id] },
-  ]);
+      { sql: "UPDATE deletion_requests SET status = 'completed', active_user_key = NULL, completed_at = ? WHERE id = ?", params: [now, deletion.id] },
+    );
+  }
+  await db.batch(statements);
   return true;
 }
 export async function runMaintenance({ now = Date.now(), log = console.log } = {}) {
