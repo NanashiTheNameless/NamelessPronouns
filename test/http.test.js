@@ -164,6 +164,9 @@ test('the ALTCHA challenge endpoint answers JSON without any session or consent'
   for (const field of ['algorithm', 'challenge', 'salt', 'signature', 'maxnumber']) {
     assert.ok(challenge[field] !== undefined, `challenge carries ${field}`);
   }
+  const expires = Number(new URLSearchParams(challenge.salt.split('?')[1]).get('expires'));
+  assert.ok(expires > Math.floor(Date.now() / 1000), 'challenge expiry is in the future');
+  assert.ok(expires < Math.floor(Date.now() / 1000) + 700, 'challenge expiry uses Unix seconds');
   const unknown = await fetch(`${base}/altcha/challenge?for=nonsense`, { redirect: 'manual' });
   assert.equal(unknown.status, 404);
   assert.match(unknown.headers.get('content-type') || '', /application\/json/);

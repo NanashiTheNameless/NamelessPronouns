@@ -416,7 +416,7 @@ router.post('/login/2fa', async (req, res) => {
   lc.clearPendingCookie(res);
   await audit.record({ type: 'login.success', subjectUserId: challenge.user_id, ipHash: ipPrefixHash(req) });
   const { rows } = await db.query('SELECT email FROM users WHERE id = ?', [challenge.user_id]);
-  if (rows[0]) mail.securityNotice(rows[0].email, 'A new sign-in to your account completed.').catch(() => {});
+  if (rows[0]) mail.securityNotice(rows[0].email, 'A new sign-in to your account was completed.').catch(() => {});
   res.redirect(restricted ? '/account/suspended' : '/dashboard');
 });
 router.get('/login/2fa/email-link/:token', async (req, res) => {

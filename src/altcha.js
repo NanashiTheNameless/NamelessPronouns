@@ -18,7 +18,7 @@ function signature(challenge, bind, expires) {
   return hmac(config.ALTCHA_HMAC_KEY, `${challenge}|${bind}|${expires}`);
 }
 export function createChallenge(req, endpoint, { now = Date.now() } = {}) {
-  const expires = now + TTL_MS;
+  const expires = Math.floor((now + TTL_MS) / 1000);
   const secretNumber = Math.floor(Math.random() * (MAX_NUMBER + 1));
   const salt = `${newId().replace(/-/g, '')}?expires=${expires}`;
   const challenge = sha256Hex(salt + secretNumber);
@@ -46,7 +46,8 @@ export async function verify(req, endpoint, payloadB64, { now = Date.now() } = {
   if (algorithm !== ALGORITHM || !challenge || !salt || typeof number !== 'number' || !sig) return false;
   if (number < 0 || number > MAX_NUMBER || !Number.isInteger(number)) return false;
   const expires = parseExpires(salt);
-  if (!expires || now > expires) return false;
+  const expiresAt = expires * 1000;
+  if (!expires || now > expiresAt) return false;
   const bind = binding(req, endpoint);
   if (!safeEqual(sig, signature(challenge, bind, expires))) return false;
   if (!safeEqual(challenge, sha256Hex(salt + number))) return false;
@@ -55,7 +56,7 @@ export async function verify(req, endpoint, payloadB64, { now = Date.now() } = {
        VALUES (?, ?, ?, 1, ?, ?)
      ON CONFLICT (challenge_hash) DO NOTHING
      RETURNING id`,
-    [newId(), keyedHash(challenge), keyedHash(bind), expires, now],
+    [newId(), keyedHash(challenge), keyedHash(bind), expiresAt, now],
   );
   return rows.length > 0;
 }

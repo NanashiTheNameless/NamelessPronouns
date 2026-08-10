@@ -34,6 +34,16 @@ test('critical mail bypasses the bucket even when it is empty', async () => {
   assert.equal(mail.outbox.length, 11);
   assert.equal(mail.queueDepth(), 0);
 });
+test('code warnings appear only in emails that contain authentication codes', async () => {
+  await mail.securityNotice('notice@test.example', 'A new sign-in was completed.');
+  assert.doesNotMatch(mail.outbox[0].text, /ask for this code|never share/i);
+  assert.doesNotMatch(mail.outbox[0].text, /Time:/);
+  assert.match(mail.outbox[0].text, /https:\/\/test\.example\.com\/contact/);
+
+  await mail.twofaEmail('code@test.example', '123456', 'https://test.example.com/login', 'code-warning');
+  assert.match(mail.outbox[1].text, /staff will never ask for this code/i);
+  assert.match(mail.outbox[1].text, /do not share it with anyone/i);
+});
 test('buckets are independent per recipient', async () => {
   for (let i = 0; i < 10; i++) await mail.securityNotice('a@test.example', `a${i}`);
   const other = await mail.securityNotice('b@test.example', 'b0');

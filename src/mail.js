@@ -1,7 +1,7 @@
 import config from './config.js';
 import logger from './logger.js';
 const ENDPOINT = 'https://api.resend.com/emails';
-const ANTIPHISH = 'A staff will never ask you for the code and never share it.';
+const CODE_WARNING = 'NamelessPronouns staff will never ask for this code. Do not share it with anyone.';
 export const outbox = [];
 const BUCKET_CAPACITY = 10;
 const REFILL_MS = 60 * 1000;
@@ -64,8 +64,8 @@ export function scheduleMailDrain() {
   handle.unref?.();
   return handle;
 }
-export async function sendEmail({ to, subject, text, idempotencyKey, critical = false }) {
-  text = `${text}\n\n${ANTIPHISH}`;
+export async function sendEmail({ to, subject, text, idempotencyKey, critical = false, codeWarning = false }) {
+  if (codeWarning) text = `${text}\n\n${CODE_WARNING}`;
   if (critical || takeToken(to)) return deliver({ to, subject, text, idempotencyKey });
   queue.push({ to, subject, text, idempotencyKey });
   return { id: 'queued' };
@@ -145,6 +145,7 @@ export function twofaEmail(to, code, link, idempotencyKey) {
     text: `Your sign-in code is: ${code}\n\nOr open this link in the same browser where you started signing in:\n${link}\n\nThe code and link expire in 10 minutes and can be used once.`,
     idempotencyKey,
     critical: true,
+    codeWarning: true,
   });
 }
 export function reauthEmail(to, code, idempotencyKey) {
@@ -154,6 +155,7 @@ export function reauthEmail(to, code, idempotencyKey) {
     text: `Your confirmation code is: ${code}\n\nEnter it to authorize a security-sensitive change to your account. The code expires in 10 minutes and can be used once. If you did not start this, ignore this message and your account is unchanged.`,
     idempotencyKey,
     critical: true,
+    codeWarning: true,
   });
 }
 export function passwordResetEmail(to, link, emailCode, secondCode, idempotencyKey) {
@@ -166,6 +168,7 @@ export function passwordResetEmail(to, link, emailCode, secondCode, idempotencyK
     text: `Open this reset page:\n\n${link}\n\nYour email verification code is: ${emailCode}${second}\n\nThe link and codes expire in 10 minutes and can be used once. A successful reset signs out every existing session. If you did not request this, ignore this message and your password remains unchanged.`,
     idempotencyKey,
     critical: true,
+    codeWarning: true,
   });
 }
 export function dataExportLink(to, link, idempotencyKey) {
@@ -181,7 +184,7 @@ export function securityNotice(to, summary) {
   return sendEmail({
     to,
     subject: 'Security notice',
-    text: `A security-relevant change occurred on your account:\n\n${summary}\n\nTime: ${new Date().toISOString()}\n\nIf this was not you, contact support.`,
+    text: `${summary}\n\nIf you do not recognize this activity, secure your account and contact support: ${config.BASE_URL}/contact`,
   });
 }
 const DECISION_HEADLINES = Object.freeze({
