@@ -1,12 +1,25 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomInt } from 'node:crypto';
 import config from './config.js';
-import db from './db/index.js';
-import { hmac, keyedHash, safeEqual } from './util/crypto.js';
+import { hmac, safeEqual } from './util/crypto.js';
 import { ipPrefixHash } from './util/net.js';
 import { newId } from './util/ids.js';
 const ALGORITHM = 'SHA-256';
 const MAX_NUMBER = config.ALTCHA_MAX_NUMBER;
 const TTL_MS = 10 * 60 * 1000;
+const MAX_TRACKED = 20000;
+const used = new Map();
+function sweep(now) {
+  for (const [key, expiresAt] of used) {
+    if (now >= expiresAt) used.delete(key);
+  }
+}
+function claim(challenge, expiresAt, now) {
+  const prior = used.get(challenge);
+  if (prior !== undefined && now < prior) return false;
+  if (used.size >= MAX_TRACKED) sweep(now);
+  used.set(challenge, expiresAt);
+  return true;
+}
 function sha256Hex(s) {
   return createHash('sha256').update(s).digest('hex');
 }
@@ -19,7 +32,7 @@ function signature(challenge, bind, expires) {
 }
 export function createChallenge(req, endpoint, { now = Date.now() } = {}) {
   const expires = Math.floor((now + TTL_MS) / 1000);
-  const secretNumber = Math.floor(Math.random() * (MAX_NUMBER + 1));
+  const secretNumber = randomInt(0, MAX_NUMBER);
   const salt = `${newId().replace(/-/g, '')}?expires=${expires}`;
   const challenge = sha256Hex(salt + secretNumber);
   const bind = binding(req, endpoint);
@@ -51,12 +64,8 @@ export async function verify(req, endpoint, payloadB64, { now = Date.now() } = {
   const bind = binding(req, endpoint);
   if (!safeEqual(sig, signature(challenge, bind, expires))) return false;
   if (!safeEqual(challenge, sha256Hex(salt + number))) return false;
-  const { rows } = await db.query(
-    `INSERT INTO altcha_challenges (id, challenge_hash, binding_hash, used, expires_at, created_at)
-       VALUES (?, ?, ?, 1, ?, ?)
-     ON CONFLICT (challenge_hash) DO NOTHING
-     RETURNING id`,
-    [newId(), keyedHash(challenge), keyedHash(bind), expiresAt, now],
-  );
-  return rows.length > 0;
+  return claim(challenge, expiresAt, now);
+}
+export function _reset() {
+  used.clear();
 }

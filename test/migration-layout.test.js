@@ -7,7 +7,12 @@ import { splitStatements } from '../src/db/migrate.js';
 const migrationsDir = fileURLToPath(new URL('../db/migrations/', import.meta.url));
 test('the init schema stays consolidated and later migrations are additive', async () => {
   const files = (await readdir(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
-  assert.deepEqual(files, ['0001_init.sql', '0002_profile_features.sql', '0003_profile_words_and_signup_decisions.sql']);
+  assert.deepEqual(files, [
+    '0001_init.sql',
+    '0002_profile_features.sql',
+    '0003_profile_words_and_signup_decisions.sql',
+    '0004_drop_altcha_challenges.sql',
+  ]);
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\bALTER\s+TABLE\b/i);
   assert.doesNotMatch(sql, /CHECK \(\(user_id IS NOT NULL AND profile_id IS NULL\)/);
@@ -72,6 +77,12 @@ test('password reset challenges store only keyed proofs and expire', async () =>
   assert.match(sql, /email_code_hash TEXT NOT NULL/);
   assert.match(sql, /second_code_hash TEXT/);
   assert.match(sql, /expires_at BIGINT NOT NULL/);
+});
+test('ALTCHA replay records are no longer persisted', async () => {
+  const sql = await readFile(new URL('../db/migrations/0004_drop_altcha_challenges.sql', import.meta.url), 'utf8');
+  assert.match(sql, /DROP TABLE IF EXISTS altcha_challenges/);
+  const source = await readFile(new URL('../src/altcha.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /altcha_challenges/, 'verification touches no table');
 });
 test('production Compose applies pending migrations before startup', async () => {
   const compose = await readFile(new URL('../docker-compose.yml', import.meta.url), 'utf8');

@@ -80,7 +80,7 @@ before(async () => {
   outbox = (await import('../src/mail.js')).outbox;
   ratelimit = await import('../src/ratelimit.js');
   ratelimit._reset();
-  await db.query('DELETE FROM altcha_challenges');
+  (await import('../src/altcha.js'))._reset();
   const { rows } = await db.query('SELECT COUNT(*) AS c FROM users');
   if (Number(rows[0].c) === 0) {
     await insertUser({ email: `seed-${Date.now()}@seed.example`, password: 'seed-account-passphrase', status: 'approved' });
@@ -343,12 +343,15 @@ test('an Administrator can delete an account, cancel it, and let the purge compl
   )).rows[0];
   const { runMaintenance } = await import('../src/maintenance.js');
   await runMaintenance({ now: Number(again.purge_after) + 1000, log: () => {} });
-  const purged = (await db.query('SELECT email, signup_status FROM users WHERE id = ?', [targetId])).rows[0];
-  assert.match(purged.email, /@deleted\.invalid$/, 'the address is released and the record anonymised');
-  assert.equal(purged.signup_status, 'terminated');
   assert.equal(
-    (await db.query('SELECT status FROM deletion_requests WHERE id = ?', [again.id])).rows[0].status,
-    'completed',
+    (await db.query('SELECT id FROM users WHERE id = ?', [targetId])).rows.length,
+    0,
+    'the user row and its address are gone once the grace period lapses',
+  );
+  assert.equal(
+    (await db.query('SELECT id FROM deletion_requests WHERE id = ?', [again.id])).rows.length,
+    0,
+    'the deletion request cascades away with the user',
   );
 });
 test('an Administrator can delete an account immediately with no grace period', { skip }, async () => {
@@ -1382,11 +1385,9 @@ test('account deletion restricts immediately, cancels freshly, and purges after 
     { sql: "UPDATE deletion_requests SET status = 'pending' WHERE id = ?", params: [deletion.id] },
   ]);
   await runMaintenance({ now: Date.now(), log: () => {} });
-  const tombstone = (await db.query('SELECT email, signup_status FROM users WHERE id = ?', [userId])).rows[0];
-  assert.equal(tombstone.signup_status, 'terminated');
-  assert.match(tombstone.email, /@deleted\.invalid$/);
+  assert.equal((await db.query('SELECT id FROM users WHERE id = ?', [userId])).rows.length, 0, 'the account and its address are erased');
   assert.equal((await db.query('SELECT id FROM profiles WHERE id = ?', [profileId])).rows.length, 0);
-  assert.equal((await db.query('SELECT status FROM deletion_requests WHERE id = ?', [deletion.id])).rows[0].status, 'completed');
+  assert.equal((await db.query('SELECT id FROM deletion_requests WHERE id = ?', [deletion.id])).rows.length, 0);
   assert.equal((await db.query('SELECT id FROM sessions WHERE user_id = ?', [userId])).rows.length, 0);
   const auditRefs = await db.query("SELECT subject_user_id FROM audit_events WHERE event_type = 'account.deletion_requested' AND target = ?", [deletion.id]);
   assert.match(auditRefs.rows[0].subject_user_id, /^deleted:/);

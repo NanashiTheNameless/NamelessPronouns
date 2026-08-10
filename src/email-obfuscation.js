@@ -2,6 +2,14 @@ import { obfuscate } from 'altcha-lib/obfuscation';
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const EXACT_EMAIL = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
 const MAX_CACHE_ENTRIES = 500;
+const OBFUSCATION_PARAMETERS = {
+  algorithm: 'PBKDF2/SHA-256',
+  cost: 5000,
+  keyLength: 32,
+  keyPrefixLength: 32,
+  counterMin: 20,
+  counterMax: 200,
+};
 const cache = new Map();
 function escapeHtml(value) {
   return String(value)
@@ -16,7 +24,7 @@ async function payloadFor(email) {
   if (!EXACT_EMAIL.test(normalized)) throw new Error('Cannot obfuscate an invalid email address.');
   if (!cache.has(normalized)) {
     if (cache.size >= MAX_CACHE_ENTRIES) cache.delete(cache.keys().next().value);
-    const pending = obfuscate(`mailto:${normalized}`, { counterMin: 50, counterMax: 200 });
+    const pending = obfuscate(`mailto:${normalized}`, OBFUSCATION_PARAMETERS);
     cache.set(normalized, pending);
     pending.catch(() => cache.delete(normalized));
   }

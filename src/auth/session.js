@@ -8,6 +8,7 @@ import { hmac } from '../util/crypto.js';
 export const SESSION_COOKIE = 'np_sid';
 export const ABSOLUTE_MS = 30 * 24 * 60 * 60 * 1000;
 export const IDLE_MS = 12 * 60 * 60 * 1000;
+export const LAST_SEEN_WRITE_MS = 5 * 60 * 1000;
 function uaHash(req) {
   return hmac(config.TOKEN_HASH_KEY, `ua:${req.headers['user-agent'] || ''}`);
 }
@@ -57,7 +58,10 @@ export async function loadSession(req, { now = Date.now() } = {}) {
     await destroyBySessionId(id, { now });
     return null;
   }
-  await db.query('UPDATE sessions SET last_seen_at = ? WHERE id = ?', [now, id]);
+  if (now - Number(session.last_seen_at) >= LAST_SEEN_WRITE_MS) {
+    await db.query('UPDATE sessions SET last_seen_at = ? WHERE id = ?', [now, id]);
+    session.last_seen_at = now;
+  }
   session.restricted = Number(session.restricted) === 1;
   return session;
 }

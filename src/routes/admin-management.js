@@ -333,7 +333,7 @@ router.post('/admin/accounts/:id/delete/now', requireStaff('administrator'), req
   const purged = await purgeDeletion(
     { id: deletionId, user_id: target.id },
     now,
-    { hardDelete: true, replacementActorUserId: req.user.id },
+    { replacementActorUserId: req.user.id },
   );
   if (!purged) return fail(res, 409, 'A legal hold covers this account. Release the hold before deleting it.');
   await audit.record({
