@@ -30,9 +30,15 @@ function dummyHash() {
   if (!dummyHashPromise) dummyHashPromise = argon2Hash('timing-equalization-placeholder', { ...PARAMS[CURRENT_VERSION] });
   return dummyHashPromise;
 }
-function challengeForView(req, endpoint) {
-  return JSON.stringify(altcha.createChallenge(req, endpoint));
-}
+export const ALTCHA_ENDPOINTS = ['signup', 'login', 'forgot_password'];
+router.get('/altcha/challenge', async (req, res) => {
+  const endpoint = String(req.query.for || '');
+  if (!ALTCHA_ENDPOINTS.includes(endpoint)) return res.status(404).json({ error: 'unknown challenge' });
+  const limit = await consume('altcha_challenge', ipPrefixHash(req) || 'unknown');
+  if (!limit.allowed) return res.status(429).json({ error: 'too many challenges' });
+  res.setHeader('Cache-Control', 'private, no-store');
+  return res.json(altcha.createChallenge(req, endpoint));
+});
 async function accountBanForUser(req, userId) {
   const { rows } = await db.query('SELECT email FROM users WHERE id = ?', [userId]);
   const ban = await matchAccountBan({ userId, email: rows[0]?.email, ip: clientIp(req) });
@@ -49,11 +55,11 @@ async function hasActiveContentSuspension(userId) {
   return rows.length > 0;
 }
 router.get('/signup', (req, res) => {
-  res.render('auth/signup', { title: 'Request an account', error: null, values: {}, altcha: challengeForView(req, 'signup') });
+  res.render('auth/signup', { title: 'Request an account', error: null, values: {} });
 });
 router.post('/signup', async (req, res) => {
   const renderError = (error, values = {}) =>
-    res.status(400).render('auth/signup', { title: 'Request an account', error, values, altcha: challengeForView(req, 'signup') });
+    res.status(400).render('auth/signup', { title: 'Request an account', error, values });
   const neutral = () => res.render('auth/check-email', { title: 'Check your email' });
   const ipHash = ipPrefixHash(req) || 'unknown';
   const limit = await consume('signup', ipHash);
@@ -162,7 +168,7 @@ router.get('/verify-email', async (req, res) => {
 });
 router.get('/forgot-password', (req, res) => {
   res.render('auth/forgot-password', {
-    title: 'Reset your password', error: null, altcha: challengeForView(req, 'forgot_password'),
+    title: 'Reset your password', error: null,
   });
 });
 router.post('/forgot-password', async (req, res) => {
@@ -174,7 +180,7 @@ router.post('/forgot-password', async (req, res) => {
   }
   if (!(await altcha.verify(req, 'forgot_password', req.body.altcha))) {
     return res.status(400).render('auth/forgot-password', {
-      title: 'Reset your password', error: 'Challenge failed. Please try again.', altcha: challengeForView(req, 'forgot_password'),
+      title: 'Reset your password', error: 'Challenge failed. Please try again.',
     });
   }
   let email;
@@ -298,10 +304,10 @@ router.post('/forgot-password/:token', async (req, res) => {
   res.render('auth/password-reset-complete', { title: 'Password reset complete' });
 });
 router.get('/login', (req, res) => {
-  res.render('auth/login', { title: 'Sign in', error: null, altcha: challengeForView(req, 'login') });
+  res.render('auth/login', { title: 'Sign in', error: null });
 });
 router.post('/login', async (req, res) => {
-  const generic = () => res.status(401).render('auth/login', { title: 'Sign in', error: 'Incorrect email or password.', altcha: challengeForView(req, 'login') });
+  const generic = () => res.status(401).render('auth/login', { title: 'Sign in', error: 'Incorrect email or password.' });
   const ipHash = ipPrefixHash(req) || 'unknown';
   const ipLimit = await consume('login_ip', ipHash);
   if (!ipLimit.allowed) return res.status(429).render('error', { title: 'Slow down', status: 429, message: 'Too many attempts. Try again later.' });

@@ -114,6 +114,48 @@ test('Pronouns.page opinions map onto the local Yes/Jokingly/Close/Okay/Nope sca
   assert.deepEqual(result.values.pronounPreferences, [{ key: 'any_pronouns', opinion: 'jokingly' }]);
 });
 
+test('word groups import in the shape the live Pronouns.page API returns', () => {
+  const result = mapPronounsPageProfile({
+    profiles: [{
+      locale: 'en',
+      access: true,
+      words: [
+        {
+          header: 'Honorifics',
+          values: [
+            { value: '[no honorific]', opinion: 'yes' },
+            { value: 'mx.', opinion: 'yes' },
+            { value: 'mr.', opinion: 'no' },
+            { value: 'sai', opinion: 'meh' },
+            { value: 'comrade', opinion: 'jokingly' },
+          ],
+        },
+        {
+          header: 'Compliments',
+          values: [{ value: 'pretty', opinion: 'yes' }, { value: "ma'am", opinion: 'no' }],
+        },
+      ],
+    }],
+  }, { locale: 'en', current });
+  assert.deepEqual(result.values.words, [
+    {
+      heading: 'Honorifics',
+      words: [
+        { value: '[no honorific]', opinion: 'yes' },
+        { value: 'mx.', opinion: 'yes' },
+        { value: 'mr.', opinion: 'nope' },
+        { value: 'sai', opinion: 'okay' },
+        { value: 'comrade', opinion: 'jokingly' },
+      ],
+    },
+    {
+      heading: 'Compliments',
+      words: [{ value: 'pretty', opinion: 'yes' }, { value: "ma'am", opinion: 'nope' }],
+    },
+  ]);
+  assert.equal(result.skippedWordGroups, 0);
+});
+
 test('every editor preset and Pronouns.page alias uses the shared forms', () => {
   assert.equal(PRONOUN_PRESETS.length, 26);
   for (const preset of PRONOUN_PRESETS) {

@@ -16,7 +16,7 @@ async function payloadFor(email) {
   if (!EXACT_EMAIL.test(normalized)) throw new Error('Cannot obfuscate an invalid email address.');
   if (!cache.has(normalized)) {
     if (cache.size >= MAX_CACHE_ENTRIES) cache.delete(cache.keys().next().value);
-    const pending = obfuscate(`mailto:${normalized}`, { counterMin: 500, counterMax: 1500 });
+    const pending = obfuscate(`mailto:${normalized}`, { counterMin: 50, counterMax: 200 });
     cache.set(normalized, pending);
     pending.catch(() => cache.delete(normalized));
   }
@@ -25,7 +25,7 @@ async function payloadFor(email) {
 export async function obfuscateEmail(email) {
   if (!email) return '';
   const payload = await payloadFor(email);
-  return `<altcha-widget class="email-obfuscation" data-obfuscated="${escapeHtml(payload)}" display="invisible" configuration='{"hideFooter":true,"hideLogo":true,"minDuration":0}'><button type="button" class="email-reveal" aria-label="Reveal email address">click to reveal</button></altcha-widget>`;
+  return `<altcha-widget class="email-obfuscation" data-obfuscated="${escapeHtml(payload)}" display="floating" configuration='{"hideFooter":true,"hideLogo":true}'><button type="button" class="email-reveal" aria-label="Reveal email address">click to reveal</button></altcha-widget>`;
 }
 export async function obfuscateEmails(text) {
   const value = String(text ?? '');

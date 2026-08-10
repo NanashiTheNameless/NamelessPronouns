@@ -159,6 +159,10 @@ test('admin account page offers deletion and switches to cancelling once schedul
   assert.match(before, /Type DELETE ACCOUNT/);
   assert.match(before, /erases the account after\s*30 days/);
   assert.doesNotMatch(before, /delete\/cancel/);
+  assert.match(before, /<details class="delete-now">/);
+  assert.match(before, /action="\/admin\/accounts\/user-1\/delete\/now"/);
+  assert.match(before, /Type DELETE IMMEDIATELY/);
+  assert.match(before, /cannot be undone/);
 
   const scheduled = await ejs.renderFile(
     fileURLToPath(new URL('../views/admin/account-detail.ejs', import.meta.url)),
@@ -195,6 +199,7 @@ test('admin account page hides decision, state and ban controls without permissi
   assert.doesNotMatch(html, /\/deny"/);
   assert.doesNotMatch(html, /\/delete"/);
   assert.doesNotMatch(html, /delete\/cancel/);
+  assert.doesNotMatch(html, /delete\/now/);
 });
 test('signup queue shows each applicant reason and the requisite decision facts', async () => {
   const html = await ejs.renderFile(fileURLToPath(new URL('../views/admin/signups.ejs', import.meta.url)), {

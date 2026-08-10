@@ -8,7 +8,7 @@
     <h1>Request an account</h1>
     <p>New accounts are reviewed before activation. You will verify your email next.</p>
     <% if (error) { %><p role="alert" class="error"><%= error %></p><% } %>
-    <form method="post" action="/signup" data-altcha='<%- altcha %>' data-common-password-check>
+    <form method="post" action="/signup" data-common-password-check>
       <p><label for="email">Email</label><br>
         <input id="email" name="email" type="email" autocomplete="email" required value="<%= values.email || '' %>"></p>
       <p><label for="password">Password (12 to 256 characters)</label><br>
@@ -22,7 +22,7 @@
         <textarea id="reason" name="reason" rows="10" minlength="20" maxlength="5000" required><%= values.reason || '' %></textarea></p>
       <label class="choice"><input type="checkbox" name="policies" required><span>I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.</span></label>
       <label class="choice"><input type="checkbox" name="age18" required><span>I confirm that I am at least 18 years old.</span></label>
-      <%- await include('../partials/altcha-field') %>
+      <%- await include('../partials/altcha-field', { altchaEndpoint: 'signup' }) %>
       <button type="submit">Request account</button>
     </form>
     <p><a href="/login">Already have an account? Sign in.</a></p>

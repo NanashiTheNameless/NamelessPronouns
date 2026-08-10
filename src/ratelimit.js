@@ -12,6 +12,7 @@ export const POLICIES = {
   invite_send_workspace: { max: 20, window: 24 * HOUR },
   export_request: { max: 5, window: 24 * HOUR },
   profile_import: { max: 10, window: HOUR },
+  altcha_challenge: { max: 120, window: HOUR },
 };
 const counters = new Map();
 function sweep(now) {

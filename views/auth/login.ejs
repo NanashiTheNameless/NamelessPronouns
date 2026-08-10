@@ -8,12 +8,12 @@
     <h1>Sign in</h1>
     <p class="lede">Enter your password, then complete your selected second factor.</p>
     <% if (error) { %><p role="alert" class="error"><%= error %></p><% } %>
-    <form method="post" action="/login" data-altcha='<%- altcha %>'>
+    <form method="post" action="/login">
       <p><label for="email">Email</label><br>
         <input id="email" name="email" type="email" autocomplete="email" required></p>
       <p><label for="password">Password</label><br>
         <input id="password" name="password" type="password" autocomplete="current-password" required></p>
-      <%- await include('../partials/altcha-field') %>
+      <%- await include('../partials/altcha-field', { altchaEndpoint: 'login' }) %>
       <button type="submit">Continue</button>
     </form>
     <div class="inline-actions"><a href="/forgot-password">Forgot password?</a><a href="/signup">Request an account</a><a href="/recover">Lost 2FA?</a></div>

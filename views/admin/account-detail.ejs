@@ -137,6 +137,19 @@
             <button type="submit">Delete account</button>
           </form>
         <% } %>
+        <details class="delete-now">
+          <summary>Delete immediately instead</summary>
+          <p class="fineprint">
+            Erases the account now, with no grace period and nothing to cancel. This cannot be undone.
+            Prefer the scheduled deletion unless the content must go at once.
+          </p>
+          <form method="post" action="/admin/accounts/<%= account.id %>/delete/now" class="stack">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label>Reason <input name="reason" maxlength="500" required></label>
+            <label>Type DELETE IMMEDIATELY <input name="confirmation" autocomplete="off" required></label>
+            <button type="submit" class="danger">Delete immediately</button>
+          </form>
+        </details>
       </section>
     <% } %>
 

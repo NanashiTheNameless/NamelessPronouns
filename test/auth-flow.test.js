@@ -55,9 +55,13 @@ async function post(path, body, cookies) {
   if (cookies) cookies.absorb(res);
   return res;
 }
-function solveAltcha(html) {
-  const m = /data-altcha='([^']*)'/.exec(html);
-  const challenge = JSON.parse(m[1]);
+const ALTCHA_FORM_ENDPOINTS = { '/signup': 'signup', '/login': 'login', '/forgot-password': 'forgot_password' };
+async function solveAltcha(html) {
+  const action = Object.keys(ALTCHA_FORM_ENDPOINTS).find((path) => html.includes(`action="${path}"`));
+  assert.ok(action, 'the page carries a form that needs a challenge');
+  const res = await get(`/altcha/challenge?for=${ALTCHA_FORM_ENDPOINTS[action]}`);
+  assert.equal(res.status, 200);
+  const challenge = await res.json();
   let number = -1;
   for (let n = 0; n <= challenge.maxnumber; n++) {
     if (createHash('sha256').update(challenge.salt + n).digest('hex') === challenge.challenge) {
@@ -104,7 +108,7 @@ test('full signup -> verify -> login -> email 2FA -> dashboard', { skip }, async
   let res = await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);
   assert.equal(res.status, 302);
   res = await get('/signup', cookies);
-  const signupAltcha = solveAltcha(await res.text());
+  const signupAltcha = await solveAltcha(await res.text());
   outbox.length = 0;
   res = await post(
     '/signup',
@@ -125,7 +129,7 @@ test('full signup -> verify -> login -> email 2FA -> dashboard', { skip }, async
   assert.match(await res.text(), /verified/i);
   await db.query('UPDATE users SET signup_status = ? WHERE email = ?', ['approved', email]);
   res = await get('/login', cookies);
-  const loginAltcha = solveAltcha(await res.text());
+  const loginAltcha = await solveAltcha(await res.text());
   outbox.length = 0;
   res = await post('/login', { email, password, altcha: loginAltcha }, cookies);
   assert.equal(res.status, 302);
@@ -156,7 +160,7 @@ test('server accepts a common password when the client deterrent is bypassed', {
     reason: 'I want a personal profile.',
     policies: 'on',
     age18: 'on',
-    altcha: solveAltcha(page),
+    altcha: await solveAltcha(page),
   }, cookies);
   assert.equal(res.status, 200);
   assert.match(await res.text(), /Check your email/i);
@@ -166,7 +170,7 @@ async function loginAs(cookies, email, password) {
   await get('/consent', cookies);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);
   let res = await get('/login', cookies);
-  const a = solveAltcha(await res.text());
+  const a = await solveAltcha(await res.text());
   outbox.length = 0;
   await post('/login', { email, password, altcha: a }, cookies);
   const codeMail = outbox.find((m) => m.to === email && /sign-in code/i.test(m.subject));
@@ -200,7 +204,7 @@ test('self-service password reset requires two distinct email proofs and revokes
   await post('/consent', { policies: 'on', age18: 'on', next: '/forgot-password' }, resetBrowser);
   let res = await get('/forgot-password', resetBrowser);
   outbox.length = 0;
-  res = await post('/forgot-password', { email, altcha: solveAltcha(await res.text()) }, resetBrowser);
+  res = await post('/forgot-password', { email, altcha: await solveAltcha(await res.text()) }, resetBrowser);
   assert.equal(res.status, 200);
   assert.match(await res.text(), /Check your email/);
   const message = outbox.find((m) => m.to === email && /reset your account password/i.test(m.subject));
@@ -345,6 +349,46 @@ test('an Administrator can delete an account, cancel it, and let the purge compl
   assert.equal(
     (await db.query('SELECT status FROM deletion_requests WHERE id = ?', [again.id])).rows[0].status,
     'completed',
+  );
+});
+test('an Administrator can delete an account immediately with no grace period', { skip }, async () => {
+  const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const adminEmail = `nuker-${suffix}@allowed-${suffix}.example`;
+  const targetEmail = `instant-${suffix}@allowed-${suffix}.example`;
+  const pw = 'admin-immediate-passphrase';
+  await insertUser({ email: adminEmail, password: pw, status: 'approved', role: 'administrator' });
+  const targetId = await insertUser({ email: targetEmail, password: pw, status: 'approved', role: 'none' });
+  const cookies = jar();
+  await loginAs(cookies, adminEmail, pw);
+  await freshen(cookies, adminEmail, pw, '/admin');
+  let page = await (await get(`/admin/accounts/${targetId}`, cookies)).text();
+  const csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  assert.match(page, new RegExp(`/admin/accounts/${targetId}/delete/now`));
+
+  let res = await post(
+    `/admin/accounts/${targetId}/delete/now`,
+    { _csrf: csrf, reason: 'Illegal content.', confirmation: 'DELETE ACCOUNT' },
+    cookies,
+  );
+  assert.equal(res.status, 400);
+  assert.match((await db.query('SELECT email FROM users WHERE id = ?', [targetId])).rows[0].email, /@allowed-/);
+
+  res = await post(
+    `/admin/accounts/${targetId}/delete/now`,
+    { _csrf: csrf, reason: 'Illegal content.', confirmation: 'DELETE IMMEDIATELY' },
+    cookies,
+  );
+  assert.equal(res.status, 302);
+  const purged = (await db.query('SELECT email, signup_status FROM users WHERE id = ?', [targetId])).rows[0];
+  assert.match(purged.email, /@deleted\.invalid$/, 'the account was erased without waiting');
+  assert.equal(purged.signup_status, 'terminated');
+  assert.equal(
+    (await db.query('SELECT status FROM deletion_requests WHERE user_id = ?', [targetId])).rows[0].status,
+    'completed',
+  );
+  assert.equal(
+    (await db.query('SELECT COUNT(*) AS c FROM sessions WHERE user_id = ?', [targetId])).rows[0].c,
+    '0',
   );
 });
 test('admin management covers roles, rules, bans, audit, reports, and emergency revocation', { skip }, async () => {
@@ -888,7 +932,7 @@ test('TOTP enrollment then TOTP-only login', { skip }, async () => {
   await get('/consent', jar2);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, jar2);
   res = await get('/login', jar2);
-  const a = solveAltcha(await res.text());
+  const a = await solveAltcha(await res.text());
   outbox.length = 0;
   res = await post('/login', { email, password: pw, altcha: a }, jar2);
   assert.equal(res.headers.get('location'), '/login/2fa');
@@ -912,14 +956,14 @@ test('TOTP enrollment then TOTP-only login', { skip }, async () => {
   const jar3 = jar();
   await get('/consent', jar3);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, jar3);
-  const a3 = solveAltcha(await (await get('/login', jar3)).text());
+  const a3 = await solveAltcha(await (await get('/login', jar3)).text());
   await post('/login', { email, password: pw, altcha: a3 }, jar3);
   const rec1 = await post('/login/2fa', { code: known }, jar3);
   assert.equal(rec1.headers.get('location'), '/dashboard', 'recovery code accepted once');
   const jar4 = jar();
   await get('/consent', jar4);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, jar4);
-  const a4 = solveAltcha(await (await get('/login', jar4)).text());
+  const a4 = await solveAltcha(await (await get('/login', jar4)).text());
   await post('/login', { email, password: pw, altcha: a4 }, jar4);
   const rec2 = await post('/login/2fa', { code: known }, jar4);
   assert.equal(rec2.status, 401, 'reused recovery code rejected');
@@ -938,7 +982,7 @@ async function enrollTotpDirectly(userId, secret) {
 async function passwordStep(cookies, email, password) {
   await get('/consent', cookies);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);
-  const a = solveAltcha(await (await get('/login', cookies)).text());
+  const a = await solveAltcha(await (await get('/login', cookies)).text());
   return post('/login', { email, password, altcha: a }, cookies);
 }
 test('a used TOTP code cannot be replayed on a second login', { skip }, async () => {
@@ -970,7 +1014,7 @@ test('an Account ban blocks email verification without disclosing the ban', { sk
   const uname = `banned${suffix}`.slice(0, 20);
   await get('/consent', cookies);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);
-  const a = solveAltcha(await (await get('/signup', cookies)).text());
+  const a = await solveAltcha(await (await get('/signup', cookies)).text());
   outbox.length = 0;
   await post('/signup', { email, password, profile_username: uname, display_name: 'Banned Tester', reason: 'I want a personal profile.', policies: 'on', age18: 'on', altcha: a }, cookies);
   const verifyMail = outbox.find((m) => m.to === email && /verify-email/.test(m.text));
@@ -1118,7 +1162,7 @@ test('password change preserves the current session and revokes other sessions',
   const oldAttempt = jar();
   await get('/consent', oldAttempt);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, oldAttempt);
-  const oldAltcha = solveAltcha(await (await get('/login', oldAttempt)).text());
+  const oldAltcha = await solveAltcha(await (await get('/login', oldAttempt)).text());
   res = await post('/login', { email, password: oldPassword, altcha: oldAltcha }, oldAttempt);
   assert.equal(res.status, 401, 'old password no longer starts a login');
   const fresh = jar();
@@ -1206,7 +1250,7 @@ test('email change requires new-address confirmation and revokes every session',
   const oldLogin = jar();
   await get('/consent', oldLogin);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, oldLogin);
-  const oldAltcha = solveAltcha(await (await get('/login', oldLogin)).text());
+  const oldAltcha = await solveAltcha(await (await get('/login', oldLogin)).text());
   assert.equal((await post('/login', { email: oldEmail, password, altcha: oldAltcha }, oldLogin)).status, 401);
   const newLogin = jar();
   await loginAs(newLogin, newEmail, password);
@@ -1493,7 +1537,7 @@ test('signup stores the username casing while enforcing case-insensitive uniquen
   const display = `MixedCase${suffix}`.slice(0, 32);
   await get('/consent', cookies);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);
-  let a = solveAltcha(await (await get('/signup', cookies)).text());
+  let a = await solveAltcha(await (await get('/signup', cookies)).text());
   let res = await post('/signup', { email, password, profile_username: display, display_name: 'Mixed Case', reason: 'I want a personal profile.', policies: 'on', age18: 'on', altcha: a }, cookies);
   assert.equal(res.status, 200);
   const claim = await db.query('SELECT username, username_display FROM public_username_claims WHERE username = ?', [display.toLowerCase()]);
@@ -1502,7 +1546,7 @@ test('signup stores the username casing while enforcing case-insensitive uniquen
   const other = jar();
   await get('/consent', other);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, other);
-  a = solveAltcha(await (await get('/signup', other)).text());
+  a = await solveAltcha(await (await get('/signup', other)).text());
   res = await post('/signup', { email: `mc2-${suffix}@allowed-${suffix}.example`, password, profile_username: display.toUpperCase(), display_name: 'Mixed Case', reason: 'I want a personal profile.', policies: 'on', age18: 'on', altcha: a }, other);
   assert.equal(res.status, 400);
   assert.match(await res.text(), /unavailable/i);
@@ -1516,11 +1560,11 @@ test('magic link is inert without the matching pending cookie', { skip }, async 
   await get('/consent', cookies);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);
   let res = await get('/signup', cookies);
-  const a1 = solveAltcha(await res.text());
+  const a1 = await solveAltcha(await res.text());
   await post('/signup', { email, password, profile_username: uname, display_name: 'Magic Tester', reason: 'I want a personal profile.', policies: 'on', age18: 'on', altcha: a1 }, cookies);
   await db.query('UPDATE users SET signup_status = ?, email_verified_at = ? WHERE email = ?', ['approved', Date.now(), email]);
   res = await get('/login', cookies);
-  const a2 = solveAltcha(await res.text());
+  const a2 = await solveAltcha(await res.text());
   outbox.length = 0;
   await post('/login', { email, password, altcha: a2 }, cookies);
   const codeMail = outbox.find((m) => m.to === email && /sign-in code/i.test(m.subject));

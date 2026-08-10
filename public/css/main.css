@@ -93,21 +93,18 @@ body {
   margin: 0;
 }
 .nav-logout button {
+  display: inline-block;
   min-height: 0;
   margin: 0;
-  padding: 0;
+  padding: 0.55rem 0.8rem;
   color: var(--text);
-  background: none;
+  background: var(--accent-soft);
   border: 0;
+  border-radius: 999px;
   font: inherit;
   font-weight: 650;
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
-  text-decoration-thickness: 0.08em;
+  text-decoration: none;
   cursor: pointer;
-}
-.nav-logout button:hover {
-  color: var(--accent);
 }
 .container {
   width: min(100%, 80rem);
@@ -437,6 +434,17 @@ button[data-remove] {
 }
 .signup-facts dd {
   margin: 0;
+}
+.delete-now {
+  margin-top: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px dashed var(--danger);
+  border-radius: 0.6rem;
+}
+.delete-now summary {
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 .deny-ban {
   margin: 0.5rem 0;

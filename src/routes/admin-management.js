@@ -7,7 +7,7 @@ import { requireFreshAuth } from '../middleware/session.js';
 import { ipPrefixHash } from '../util/net.js';
 import { newId } from '../util/ids.js';
 import { personalProfileStatements } from '../profiles.js';
-import { DELETION_GRACE_MS } from '../maintenance.js';
+import { DELETION_GRACE_MS, purgeDeletion } from '../maintenance.js';
 import * as V from '../validation.js';
 import * as mail from '../mail.js';
 import { isIP } from 'node:net';
@@ -295,6 +295,49 @@ router.post('/admin/accounts/:id/delete', requireStaff('administrator'), require
     `An Administrator scheduled this account for deletion. Profiles were unpublished and every session ended immediately. The account is erased after ${Math.round(DELETION_GRACE_MS / 86400000)} days.`,
   ).catch(() => {});
   res.redirect(`/admin/accounts/${target.id}`);
+});
+router.post('/admin/accounts/:id/delete/now', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
+  let reason;
+  try { reason = prose(req.body.reason); } catch (error) {
+    if (error instanceof V.ValidationError) return fail(res, 400, error.message);
+    throw error;
+  }
+  const target = await actionableTarget(req, res, { confirmation: 'DELETE IMMEDIATELY' });
+  if (!target) return undefined;
+  if (target.staff_role !== 'none') {
+    return fail(res, 409, 'Remove the staff role before deleting this account.');
+  }
+  const ownedShared = await db.query("SELECT id FROM workspaces WHERE owner_user_id = ? AND kind = 'shared' LIMIT 1", [target.id]);
+  if (ownedShared.rows.length) {
+    return fail(res, 409, 'Transfer every shared workspace this account owns to another Owner first.');
+  }
+  const hold = await db.query('SELECT id FROM legal_holds WHERE user_id = ? AND released_at IS NULL LIMIT 1', [target.id]);
+  if (hold.rows.length) {
+    return fail(res, 409, 'A legal hold covers this account. Release the hold before deleting it.');
+  }
+  const now = Date.now();
+  const id = newId();
+  const existing = (await db.query(
+    "SELECT id FROM deletion_requests WHERE user_id = ? AND status IN ('pending', 'held') AND active_user_key = ?",
+    [target.id, target.id],
+  )).rows[0];
+  if (!existing) {
+    await db.query(
+      `INSERT INTO deletion_requests (id, user_id, active_user_key, status, requested_at, purge_after)
+       VALUES (?, ?, ?, 'pending', ?, ?)`,
+      [id, target.id, target.id, now, now],
+    );
+  }
+  const deletionId = existing?.id || id;
+  const email = target.email;
+  const purged = await purgeDeletion({ id: deletionId, user_id: target.id }, now);
+  if (!purged) return fail(res, 409, 'A legal hold covers this account. Release the hold before deleting it.');
+  await audit.record({
+    type: 'account.deleted_immediately', actorUserId: req.user.id, subjectUserId: target.id,
+    target: deletionId, ipHash: ipPrefixHash(req), detail: { reason },
+  });
+  mail.securityNotice(email, 'An Administrator deleted this account. The record has been erased and cannot be restored.').catch(() => {});
+  res.redirect('/admin/users');
 });
 router.post('/admin/accounts/:id/delete/cancel', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
   let reason;
