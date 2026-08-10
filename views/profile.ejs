@@ -2,6 +2,7 @@
 <html lang="en">
 <head><%- await include('partials/head', { title }) %></head>
 <body>
+  <%- await include('partials/site-header') %>
   <main class="container">
     <div class="profile-heading">
       <img class="avatar avatar-large" src="<%= avatar %>" alt="" width="96" height="96">
@@ -12,7 +13,7 @@
     <% if (profile.description) { %><p><%- await obfuscateEmails(profile.description) %></p><% } %>
 
     <% if (flags.length) { %>
-      <section aria-labelledby="flags-h">
+      <section class="identity-flags-section" aria-labelledby="flags-h">
         <h2 id="flags-h">Flags</h2>
         <ul class="identity-flags">
           <% flags.forEach(function (flag) { %><li><img src="<%= flag.imageUrl %>" alt="" width="48" height="32" loading="lazy"><span><%= flag.label %></span></li><% }); %>
@@ -34,7 +35,6 @@
         <% pronouns.forEach(function (p) { %>
           <li>
             <span class="pronoun-set"><%= p.subject %>/<%= p.object %>/<%= p.possessive_determiner %>/<%= p.possessive_pronoun %>/<%= p.reflexive %></span>
-            <button type="button" class="copy" data-copy="<%= p.subject %>/<%= p.object %>">Copy</button>
           </li>
         <% }); %>
         </ul>
@@ -67,6 +67,5 @@
     <% } %>
   </main>
   <%- await include('partials/site-footer') %>
-  <script src="/static/js/copy.js"></script>
 </body>
 </html>

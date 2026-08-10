@@ -17,11 +17,18 @@ import {
   emptyLink,
   emptyPronoun,
   fetchPronounsPageProfile,
+  flagLabel,
   mapPronounsPageProfile,
+  pronounsPageFlagUrl,
   PRONOUNS_PAGE_FLAG_OPTIONS,
 } from '../pronouns-page-import.js';
 const router = express.Router();
 const MAX_ROWS = 25;
+const FLAG_OPTIONS = Object.freeze(PRONOUNS_PAGE_FLAG_OPTIONS.map((key) => Object.freeze({
+  key,
+  label: flagLabel(key),
+  imageUrl: pronounsPageFlagUrl(key),
+})));
 function optionalText(value, options) {
   if (value == null || String(value).trim() === '') return null;
   return V.displayText(String(value), options);
@@ -326,7 +333,7 @@ router.get('/profiles/:id/edit', requireApproved, async (req, res) => {
     warning: null,
     saved: req.query.saved === '1',
     importNotice: null,
-    flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS,
+    flagOptions: FLAG_OPTIONS,
     pronounPreferenceOptions: PRONOUN_PREFERENCES,
     pronounPresetOptions: PRONOUN_PRESETS,
     saveId: newToken(24),
@@ -341,7 +348,7 @@ router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, r
     return res.status(429).render('profile-edit', {
       title: `Edit ${profile.username}`, profile, values: current,
       error: 'Too many import attempts. Try again later.', warning: null, saved: false,
-      importNotice: null, flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS,
+      importNotice: null, flagOptions: FLAG_OPTIONS,
       pronounPreferenceOptions: PRONOUN_PREFERENCES, saveId: newToken(24),
       pronounPresetOptions: PRONOUN_PRESETS,
     });
@@ -357,7 +364,7 @@ router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, r
     return res.render('profile-edit', {
       title: `Edit ${profile.username}`, profile, values: result.values, error: null, warning: null,
       saved: false, importNotice: `Imported the ${result.locale} profile for review.${suffix} Save the profile to keep these changes.`, saveId: newToken(24),
-      flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS,
+      flagOptions: FLAG_OPTIONS,
       pronounPreferenceOptions: PRONOUN_PREFERENCES,
       pronounPresetOptions: PRONOUN_PRESETS,
     });
@@ -365,7 +372,7 @@ router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, r
     return res.status(400).render('profile-edit', {
       title: `Edit ${profile.username}`, profile, values: current, error: error.message, warning: null,
       saved: false, importNotice: null, saveId: newToken(24),
-      flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS,
+      flagOptions: FLAG_OPTIONS,
       pronounPreferenceOptions: PRONOUN_PREFERENCES,
       pronounPresetOptions: PRONOUN_PRESETS,
     });
@@ -380,7 +387,7 @@ router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
   } catch (error) {
     if (!(error instanceof V.ValidationError)) throw error;
     return res.status(400).render('profile-edit', {
-      title: `Edit ${profile.username}`, profile, values: formValues(req.body), error: error.message, warning: null, saved: false, importNotice: null, saveId: newToken(24), flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS, pronounPreferenceOptions: PRONOUN_PREFERENCES, pronounPresetOptions: PRONOUN_PRESETS,
+      title: `Edit ${profile.username}`, profile, values: formValues(req.body), error: error.message, warning: null, saved: false, importNotice: null, saveId: newToken(24), flagOptions: FLAG_OPTIONS, pronounPreferenceOptions: PRONOUN_PREFERENCES, pronounPresetOptions: PRONOUN_PRESETS,
     });
   }
   const rules = await loadCurrentRules();
@@ -425,7 +432,7 @@ router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
       warning: 'That edit matched a prohibited-content rule and was reverted. Do not submit it again. You may request Administrator review if the flag is incorrect.',
       saved: false,
       importNotice: null,
-      flagOptions: PRONOUNS_PAGE_FLAG_OPTIONS,
+      flagOptions: FLAG_OPTIONS,
       pronounPreferenceOptions: PRONOUN_PREFERENCES,
       pronounPresetOptions: PRONOUN_PRESETS,
       saveId: newToken(24),

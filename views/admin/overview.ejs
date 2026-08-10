@@ -6,16 +6,21 @@
   <main class="container">
     <p class="eyebrow">Staff tools</p>
     <h1>Administration</h1>
-    <% if (canReport) { %><p><a class="button secondary" href="/admin/reports">Operational reports</a></p><% } %>
-    <% if (canApprove) { %>
-      <p><a class="button secondary" href="/admin/content-flags">Review content flags</a></p>
-      <p><a class="button secondary" href="/admin/suspensions">Review content suspensions</a></p>
-      <p><a class="button secondary" href="/admin/content-rules">Manage content rules</a></p>
-      <p><a class="button secondary" href="/admin/recovery">Review recovery cases</a></p>
-      <p><a class="button secondary" href="/admin/legal-holds">Manage legal holds</a></p>
-      <p><a class="button secondary" href="/admin/bans">Manage bans</a></p>
-      <p><a class="button secondary" href="/admin/email-rules">Manage email-domain rules</a></p>
-      <p><a class="button secondary" href="/admin/audit">Browse audit log</a></p>
+    <% if (canReport || canApprove) { %>
+      <nav class="admin-tools-grid" aria-label="Administration tools">
+        <% if (canReport) { %><a class="button secondary" href="/admin/reports">Operational reports</a><% } %>
+        <% if (canApprove) { %>
+          <a class="button secondary" href="/admin/content-flags">Review content flags</a>
+          <a class="button secondary" href="/admin/users">User directory</a>
+          <a class="button secondary" href="/admin/suspensions">Review content suspensions</a>
+          <a class="button secondary" href="/admin/content-rules">Manage content rules</a>
+          <a class="button secondary" href="/admin/recovery">Review recovery cases</a>
+          <a class="button secondary" href="/admin/legal-holds">Manage legal holds</a>
+          <a class="button secondary" href="/admin/bans">Manage bans</a>
+          <a class="button secondary" href="/admin/email-rules">Manage email-domain rules</a>
+          <a class="button secondary" href="/admin/audit">Browse audit log</a>
+        <% } %>
+      </nav>
     <% } %>
 
     <section aria-labelledby="lookup-h">

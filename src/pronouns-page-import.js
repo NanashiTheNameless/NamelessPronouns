@@ -32,10 +32,13 @@ export function parsePronounsPageReference(input) {
   if (!raw) throw new Error('Enter a Pronouns.page username or profile URL.');
   let username = raw.replace(/^@/, '');
   let locale = 'en';
-  if (/^https?:\/\//i.test(raw)) {
+  const localPath = /^\/?u\/([^/?#]+)\/?$/i.exec(raw);
+  if (localPath) username = localPath[1].replace(/^@/, '');
+  const schemeLessUrl = /^(?:[a-z]{2,3}(?:-[a-z0-9]+)?\.)?pronouns\.page\//i.test(raw);
+  if (/^https?:\/\//i.test(raw) || schemeLessUrl) {
     let url;
     try {
-      url = new URL(raw);
+      url = new URL(schemeLessUrl ? `https://${raw}` : raw);
     } catch {
       throw new Error('Enter a valid Pronouns.page profile URL.');
     }

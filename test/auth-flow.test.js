@@ -285,6 +285,12 @@ test('admin management covers roles, rules, bans, audit, reports, and emergency 
   res = await post(`/admin/accounts/${targetId}/role`, { _csrf: csrf, role: 'support', confirmation: 'CHANGE STAFF ROLE' }, cookies);
   assert.equal(res.status, 302);
   assert.equal((await db.query('SELECT staff_role FROM users WHERE id = ?', [targetId])).rows[0].staff_role, 'support');
+  res = await get('/admin/users', cookies); page = await res.text();
+  assert.equal(res.status, 200);
+  assert.match(page, /User directory/);
+  assert.match(page, new RegExp(`/admin/accounts/${targetId}`));
+  assert.match(page, /support/);
+  assert.doesNotMatch(page, new RegExp(targetEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   res = await get('/admin/email-rules', cookies); page = await res.text(); csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
   const domain = `blocked-${suffix}.example`;
   res = await post('/admin/email-rules', { _csrf: csrf, domain, rule_type: 'blocklist', confirmation: 'ADD EMAIL RULE' }, cookies);

@@ -23,8 +23,11 @@ const current = {
 
 test('Pronouns.page references accept usernames and official profile URLs only', () => {
   assert.deepEqual(parsePronounsPageReference('@Alex-1'), { username: 'Alex-1', locale: 'en' });
+  assert.deepEqual(parsePronounsPageReference('u/Alex-1'), { username: 'Alex-1', locale: 'en' });
+  assert.deepEqual(parsePronounsPageReference('/u/Alex-1'), { username: 'Alex-1', locale: 'en' });
   assert.deepEqual(parsePronounsPageReference('https://pl.pronouns.page/@Alex-1'), { username: 'Alex-1', locale: 'pl' });
   assert.deepEqual(parsePronounsPageReference('https://en.pronouns.page/u/Alex-1'), { username: 'Alex-1', locale: 'en' });
+  assert.deepEqual(parsePronounsPageReference('en.pronouns.page/u/Alex-1'), { username: 'Alex-1', locale: 'en' });
   assert.throws(() => parsePronounsPageReference('https://evil.example/@Alex-1'), /Only HTTPS Pronouns\.page/);
 });
 

@@ -12,7 +12,7 @@
       <input type="hidden" name="next" value="<%= next %>">
       <label class="choice">
         <input type="checkbox" name="policies" required>
-        <span>I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.</span>
+        <span>I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span>
       </label>
       <label class="choice">
         <input type="checkbox" name="age18" required>
@@ -23,7 +23,7 @@
     <p class="fineprint">
       Cloudflare edge Analytics and the Cloudflare Web Analytics / RUM beacon may
       process this consent request and policy-page visits before you submit. No
-      other third-party tracking is used. See the <a href="/privacy">Privacy Policy</a>.
+      other third-party tracking is used. See the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
     </p>
   </main>
   <%- await include('partials/site-footer') %>

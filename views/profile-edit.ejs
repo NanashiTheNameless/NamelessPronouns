@@ -12,30 +12,18 @@
     <% if (saved) { %><p role="status">Profile saved.</p><% } %>
     <% if (importNotice) { %><p class="success" role="status"><%= importNotice %></p><% } %>
 
-    <section class="panel import-panel" aria-labelledby="import-h">
-      <h2 id="import-h">Import from Pronouns.page</h2>
-      <p>Enter a username or profile URL. You can review the imported values before saving.</p>
-      <form method="post" action="/profiles/<%= profile.id %>/import/pronouns-page" class="inline-form">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <label>Pronouns.page profile
-          <input name="pronouns_page_profile" maxlength="300" placeholder="@username or https://en.pronouns.page/@username" required>
-        </label>
-        <button type="submit" class="secondary">Import for review</button>
-      </form>
-    </section>
-
     <form method="post" action="/profiles/<%= profile.id %>/edit">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="hidden" name="_save_id" value="<%= saveId %>">
 
       <label>Display name
-        <input name="display_name" maxlength="80" required value="<%= values.displayName %>">
+        <input name="display_name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint required value="<%= values.displayName %>">
       </label>
       <label>Description
-        <input name="description" maxlength="200" value="<%= values.description %>">
+        <input name="description" maxlength="200" pattern="[\x20-\x7E]*" data-character-constraint value="<%= values.description %>">
       </label>
       <label>Identity notes
-        <input name="notes" maxlength="300" value="<%= values.notes %>">
+        <input name="notes" maxlength="300" pattern="[\x20-\x7E]*" data-character-constraint value="<%= values.notes %>">
       </label>
 
       <fieldset data-repeater>
@@ -43,13 +31,13 @@
         <div data-repeater-rows class="repeat-rows">
           <% values.names.forEach(function (name, i) { %>
             <section data-repeater-row data-row-label="Name" class="repeat-row" aria-label="Name <%= i + 1 %>">
-              <label><span data-row-heading>Name <%= i + 1 %></span><input name="name" maxlength="80" value="<%= name %>"></label>
+              <label><span data-row-heading>Name <%= i + 1 %></span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint value="<%= name %>"></label>
               <button type="button" class="secondary compact" data-remove>Remove</button>
             </section>
           <% }); %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another name</button>
-        <template><section data-repeater-row data-row-label="Name" class="repeat-row"><label><span data-row-heading>Name</span><input name="name" maxlength="80"></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Name" class="repeat-row"><label><span data-row-heading>Name</span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
       <fieldset data-repeater>
@@ -62,17 +50,17 @@
                 <label>Optional preset <select data-pronoun-preset><option value="">Choose a preset</option><% pronounPresetOptions.forEach(function (preset) { %><option value="<%= preset.key %>" data-subject="<%= preset.forms[0] %>" data-object="<%= preset.forms[1] %>" data-possessive-determiner="<%= preset.forms[2] %>" data-possessive-pronoun="<%= preset.forms[3] %>" data-reflexive="<%= preset.forms[4] %>"><%= preset.label %></option><% }); %></select></label>
                 <button type="button" class="secondary compact" data-apply-pronoun-preset>Use preset</button>
               </div>
-              <label>Subject <input name="subject" maxlength="40" value="<%= row.subject %>"></label>
-              <label>Object <input name="object" maxlength="40" value="<%= row.object %>"></label>
-              <label>Possessive determiner <input name="possessive_determiner" maxlength="40" value="<%= row.possessiveDeterminer %>"></label>
-              <label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" value="<%= row.possessivePronoun %>"></label>
-              <label>Reflexive <input name="reflexive" maxlength="40" value="<%= row.reflexive %>"></label>
+              <label>Subject <input name="subject" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.subject %>"></label>
+              <label>Object <input name="object" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.object %>"></label>
+              <label>Possessive determiner <input name="possessive_determiner" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.possessiveDeterminer %>"></label>
+              <label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.possessivePronoun %>"></label>
+              <label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.reflexive %>"></label>
               <button type="button" class="secondary compact" data-remove>Remove</button>
             </section>
           <% }); %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another pronoun set</button>
-        <template><section data-repeater-row data-row-label="Set" class="repeat-row repeat-row-group"><h2 data-row-heading>Set</h2><div class="pronoun-preset"><label>Optional preset <select data-pronoun-preset><option value="">Choose a preset</option><% pronounPresetOptions.forEach(function (preset) { %><option value="<%= preset.key %>" data-subject="<%= preset.forms[0] %>" data-object="<%= preset.forms[1] %>" data-possessive-determiner="<%= preset.forms[2] %>" data-possessive-pronoun="<%= preset.forms[3] %>" data-reflexive="<%= preset.forms[4] %>"><%= preset.label %></option><% }); %></select></label><button type="button" class="secondary compact" data-apply-pronoun-preset>Use preset</button></div><label>Subject <input name="subject" maxlength="40"></label><label>Object <input name="object" maxlength="40"></label><label>Possessive determiner <input name="possessive_determiner" maxlength="40"></label><label>Possessive pronoun <input name="possessive_pronoun" maxlength="40"></label><label>Reflexive <input name="reflexive" maxlength="40"></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Set" class="repeat-row repeat-row-group"><h2 data-row-heading>Set</h2><div class="pronoun-preset"><label>Optional preset <select data-pronoun-preset><option value="">Choose a preset</option><% pronounPresetOptions.forEach(function (preset) { %><option value="<%= preset.key %>" data-subject="<%= preset.forms[0] %>" data-object="<%= preset.forms[1] %>" data-possessive-determiner="<%= preset.forms[2] %>" data-possessive-pronoun="<%= preset.forms[3] %>" data-reflexive="<%= preset.forms[4] %>"><%= preset.label %></option><% }); %></select></label><button type="button" class="secondary compact" data-apply-pronoun-preset>Use preset</button></div><label>Subject <input name="subject" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Object <input name="object" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Possessive determiner <input name="possessive_determiner" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
       <fieldset>
@@ -90,37 +78,46 @@
           <% values.links.forEach(function (row, i) { %>
             <section data-repeater-row data-row-label="Link" class="repeat-row repeat-row-group" aria-label="Link <%= i + 1 %>">
               <h2 data-row-heading>Link <%= i + 1 %></h2>
-              <label>Label <input name="link_label" maxlength="80" value="<%= row.label %>"></label>
-              <label>HTTPS URL <input name="link_url" maxlength="2048" value="<%= row.url %>"></label>
+              <label>Label <input name="link_label" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint value="<%= row.label %>"></label>
+              <label>HTTPS URL <input name="link_url" type="url" pattern="https://.*" maxlength="2048" value="<%= row.url %>"></label>
               <button type="button" class="secondary compact" data-remove>Remove</button>
             </section>
           <% }); %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another link</button>
-        <template><section data-repeater-row data-row-label="Link" class="repeat-row repeat-row-group"><h2 data-row-heading>Link</h2><label>Label <input name="link_label" maxlength="80"></label><label>HTTPS URL <input name="link_url" maxlength="2048"></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Link" class="repeat-row repeat-row-group"><h2 data-row-heading>Link</h2><label>Label <input name="link_label" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint></label><label>HTTPS URL <input name="link_url" type="url" pattern="https://.*" maxlength="2048"></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
       <fieldset data-repeater>
         <legend>Flags</legend>
         <p class="fineprint">Choose a built-in Pronouns.page flag.</p>
         <div data-repeater-rows class="repeat-rows">
-          <% values.flags.forEach(function (flag, i) { %>
+          <% for (const [i, flag] of values.flags.entries()) { %>
             <section data-repeater-row data-row-label="Flag" class="repeat-row" aria-label="Flag <%= i + 1 %>">
-              <label><span data-row-heading>Flag <%= i + 1 %></span><input name="profile_flag" maxlength="80" list="flag-options" value="<%= flag %>"></label>
+              <%- await include('partials/flag-picker', { selected: flag, heading: 'Flag ' + (i + 1), flagOptions }) %>
               <button type="button" class="secondary compact" data-remove>Remove</button>
             </section>
-          <% }); %>
+          <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another flag</button>
-        <template><section data-repeater-row data-row-label="Flag" class="repeat-row"><label><span data-row-heading>Flag</span><input name="profile_flag" maxlength="80" list="flag-options"></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
-        <datalist id="flag-options">
-          <% flagOptions.forEach(function (flag) { %><option value="<%= flag %>"><% }); %>
-        </datalist>
+        <template><section data-repeater-row data-row-label="Flag" class="repeat-row"><%- await include('partials/flag-picker', { selected: '', heading: 'Flag', flagOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
       <label class="choice"><input type="checkbox" name="published" <%= values.published ? 'checked' : '' %>><span>Publish this profile</span></label>
       <button type="submit">Save profile</button>
     </form>
+
+    <section class="panel import-panel" aria-labelledby="import-h">
+      <h2 id="import-h">Import from Pronouns.page</h2>
+      <p>Enter a username, <code>u/username</code> path, or profile URL. You can review the imported values before saving.</p>
+      <form method="post" action="/profiles/<%= profile.id %>/import/pronouns-page" class="inline-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Pronouns.page profile
+          <input name="pronouns_page_profile" maxlength="300" placeholder="username, u/username, or en.pronouns.page/u/username" required>
+        </label>
+        <button type="submit" class="secondary">Import for review</button>
+      </form>
+    </section>
   </main>
   <%- await include('partials/site-footer') %>
   <script src="/static/js/profile-editor.js"></script>

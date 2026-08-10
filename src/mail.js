@@ -181,7 +181,7 @@ export function securityNotice(to, summary) {
   return sendEmail({
     to,
     subject: 'Security notice',
-    text: `A security-relevant change occurred on your account:\n\n${summary}\n\nTime: ${new Date().toISOString()}\n\nIf this was not you, contact support. This message never contains passwords, codes, or secrets.`,
+    text: `A security-relevant change occurred on your account:\n\n${summary}\n\nTime: ${new Date().toISOString()}\n\nIf this was not you, contact support.`,
   });
 }
 export function decisionEmail(to) {
@@ -209,7 +209,7 @@ export function contentReviewDecision(to, outcome) {
   return sendEmail({
     to,
     subject: 'Content flag review completed',
-    text: `${summaries[outcome]} Sign in to view the status. This email intentionally excludes attempted content, rule terms, and review details.`,
+    text: `${summaries[outcome]} Sign in to view the status.`,
   });
 }
 const ADMIN_ACTIONS = Object.freeze({
@@ -236,7 +236,7 @@ export function adminActionNeeded(action, idempotencyKey) {
   return sendEmail({
     to: config.ADMIN_NOTIFY_TO,
     subject: template.subject,
-    text: `${template.summary}\n\nOpen the authenticated administration area:\n${config.BASE_URL}/admin\n\nThis message intentionally excludes sensitive case details.`,
+    text: `${template.summary}\n\nOpen the authenticated administration area:\n${config.BASE_URL}/admin`,
     idempotencyKey,
   });
 }

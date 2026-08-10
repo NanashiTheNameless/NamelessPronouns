@@ -11,12 +11,42 @@ import * as mail from '../mail.js';
 import { isIP } from 'node:net';
 const router = express.Router();
 const ROLES = ['none', 'support', 'moderator', 'administrator', 'owner'];
+const USER_PAGE_SIZE = 100;
 function fail(res, status, message) {
   return res.status(status).render('error', { title: 'Administration', status, message });
 }
 function prose(value, field = 'Reason') {
   return V.proseText(value, { field, min: 3, max: 500 });
 }
+router.get('/admin/users', requireStaff('administrator'), requireFreshAuth(), async (req, res) => {
+  const requestedPage = /^\d+$/.test(String(req.query.page || '')) ? Number(req.query.page) : 1;
+  const { rows: countRows } = await db.query('SELECT COUNT(*) AS count FROM users');
+  const total = Number(countRows[0]?.count || 0);
+  const totalPages = Math.max(1, Math.ceil(total / USER_PAGE_SIZE));
+  const page = Math.min(Math.max(1, requestedPage), totalPages);
+  const { rows } = await db.query(
+    `SELECT u.id, u.email, u.signup_status, u.staff_role, u.twofa_method,
+            u.email_verified_at, u.created_at, u.updated_at,
+            (SELECT p.username_display
+               FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
+              WHERE w.owner_user_id = u.id ORDER BY p.created_at LIMIT 1) AS profile_username,
+            (SELECT p.display_name
+               FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
+              WHERE w.owner_user_id = u.id ORDER BY p.created_at LIMIT 1) AS profile_display_name,
+            (SELECT COUNT(*)
+               FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
+              WHERE w.owner_user_id = u.id) AS profile_count,
+            (SELECT COUNT(*) FROM sessions s
+              WHERE s.user_id = u.id AND s.revoked_at IS NULL AND s.expires_at > ?) AS active_sessions
+       FROM users u
+      ORDER BY u.created_at DESC, u.id
+      LIMIT ? OFFSET ?`,
+    [Date.now(), USER_PAGE_SIZE, (page - 1) * USER_PAGE_SIZE],
+  );
+  res.render('admin/users', {
+    title: 'User directory', users: rows, page, totalPages, total,
+  });
+});
 router.get('/admin/accounts/:id', requireStaff('support'), requireFreshAuth(), async (req, res) => {
   const [{ rows }, sessions, profiles] = await Promise.all([
     db.query(`SELECT id, email, signup_status, staff_role, twofa_method, email_verified_at,

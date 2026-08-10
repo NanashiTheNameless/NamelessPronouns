@@ -125,7 +125,8 @@ test('profile editor renders one row per empty category and add-another controls
       flags: [''],
     },
     error: null, warning: null, saved: false, importNotice: null,
-    csrfToken: 'csrf', saveId: 'save-id', flagOptions: ['Nonbinary'], user: null,
+    csrfToken: 'csrf', saveId: 'save-id', user: null,
+    flagOptions: [{ key: 'Nonbinary', label: 'Nonbinary', imageUrl: '/static/flags/Nonbinary.png' }],
     pronounPreferenceOptions: [
       { key: 'any_pronouns', label: 'Any pronouns' },
       { key: 'ask_me', label: 'Ask me' },
@@ -145,14 +146,29 @@ test('profile editor renders one row per empty category and add-another controls
   for (const preference of ['Any pronouns', 'Ask me', 'Varies', 'Use my name']) assert.match(html, new RegExp(preference));
   assert.match(html, /Add another link/);
   assert.match(html, /Add another flag/);
+  assert.match(html, /data-flag-picker/);
+  assert.match(html, /data-flag-option/);
+  assert.match(html, /src="\/static\/flags\/Nonbinary\.png"/);
+  assert.doesNotMatch(html, /list="flag-options"|<datalist/);
   assert.match(html, /import\/pronouns-page/);
+  assert.ok(html.indexOf('/edit">') < html.indexOf('/import/pronouns-page'), 'importer follows the profile form');
+  assert.match(html, /placeholder="username, u\/username, or en\.pronouns\.page\/u\/username"/);
+  assert.match(html, /name="display_name"[^>]+data-character-constraint/);
+  assert.match(html, /name="subject"[^>]+data-character-constraint/);
   assert.match(html, /profile-editor\.js/);
 });
 test('pronoun preset script fills fields only after explicit application', async () => {
   const script = await readFile(new URL('../public/js/profile-editor.js', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
   assert.match(script, /data-apply-pronoun-preset/);
   assert.match(script, /selectedOptions\[0\]/);
   assert.match(script, /option\.dataset\[PRONOUN_DATA_FIELDS\[index\]\]/);
+  assert.match(script, /validity\.patternMismatch/);
+  assert.match(script, /data-illegal-characters/);
+  assert.match(script, /data-flag-option/);
+  assert.match(script, /data-flag-selected-image/);
   assert.doesNotMatch(script, /PRONOUN_PRESETS/);
   assert.doesNotMatch(script, /addEventListener\('change'/);
+  assert.match(css, /\.pronoun-preset \[data-apply-pronoun-preset\]\s*\{[^}]*min-height:\s*2\.9rem[^}]*margin-top:\s*0/s);
+  assert.match(css, /button\[data-remove\]\s*\{[^}]*min-height:\s*2\.9rem/s);
 });

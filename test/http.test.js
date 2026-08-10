@@ -27,6 +27,8 @@ test('GET /consent renders with baseline security headers and RUM allowance', as
   assert.match(html, /Cloudflare/);
   assert.match(html, /name="policies"/);
   assert.equal((html.match(/type="checkbox"/g) || []).length, 2);
+  assert.match(html, /href="\/terms" target="_blank" rel="noopener noreferrer"/);
+  assert.match(html, /href="\/privacy" target="_blank" rel="noopener noreferrer"/);
   assert.doesNotMatch(html, /version 2026|name="terms"|name="privacy"/);
 });
 test('CSP uses a fresh random script nonce for every response', async () => {
@@ -129,12 +131,19 @@ test('CSP keeps profile flag images on the local origin', async () => {
 test('site text colors stay white across semantic states', async () => {
   const res = await fetch(`${base}/static/css/main.css`);
   assert.equal(res.status, 200);
+  assert.equal(res.headers.get('cache-control'), 'public, max-age=3600');
   const css = await res.text();
   for (const variable of ['text', 'muted', 'danger', 'success']) {
     assert.match(css, new RegExp(`--${variable}: #ffffff`));
   }
-  assert.doesNotMatch(css, /^\s*color:\s*var\(--(?:accent|accent-hover)\)/m);
+  assert.match(css, /\.eyebrow\s*\{[^}]*color:\s*var\(--accent\)/s);
   assert.doesNotMatch(css, /^\s*color:\s*rgba\(/m);
+  const page = await fetch(`${base}/consent`);
+  const cssText = await page.text();
+  assert.match(cssText, /\/static\/css\/main\.css/);
+  assert.match(css, /\[data-illegal-characters\]/);
+  const js = await fetch(`${base}/static/js/profile-editor.js`);
+  assert.equal(js.headers.get('cache-control'), 'public, max-age=3600');
 });
 test('generated password index is static but not year-long immutable', async () => {
   const res = await fetch(`${base}/static/password-wordlists/manifest.json`);

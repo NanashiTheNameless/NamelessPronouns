@@ -1,0 +1,21 @@
+<% const selectedFlag = flagOptions.find(function (option) { return option.key === selected; }); %>
+<div class="flag-picker" data-flag-picker>
+  <span class="flag-picker-label" data-row-heading><%= heading %></span>
+  <input type="hidden" name="profile_flag" value="<%= selectedFlag ? selectedFlag.key : '' %>">
+  <details>
+    <summary>
+      <img data-flag-selected-image <% if (selectedFlag) { %>src="<%= selectedFlag.imageUrl %>"<% } %> alt="" width="48" height="32" <%= selectedFlag ? '' : 'hidden' %>>
+      <span data-flag-selected-label><%= selectedFlag ? selectedFlag.label : 'Choose a flag' %></span>
+    </summary>
+    <div class="flag-picker-options" role="listbox" aria-label="Available flags">
+      <button type="button" class="flag-picker-option" data-flag-option data-flag-key="" data-flag-label="Choose a flag" data-flag-image="" role="option" aria-selected="<%= selectedFlag ? 'false' : 'true' %>">
+        <span class="flag-picker-empty" aria-hidden="true">None</span><span>No flag selected</span>
+      </button>
+      <% flagOptions.forEach(function (option) { %>
+        <button type="button" class="flag-picker-option" data-flag-option data-flag-key="<%= option.key %>" data-flag-label="<%= option.label %>" data-flag-image="<%= option.imageUrl %>" role="option" aria-selected="<%= selectedFlag && selectedFlag.key === option.key ? 'true' : 'false' %>">
+          <img src="<%= option.imageUrl %>" alt="" width="48" height="32" loading="lazy"><span><%= option.label %></span>
+        </button>
+      <% }); %>
+    </div>
+  </details>
+</div>

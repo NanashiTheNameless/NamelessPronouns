@@ -62,7 +62,11 @@ export function createApp() {
     immutable: true,
     maxAge: '1y',
     setHeaders(res, filePath) {
-      if (filePath.includes(`${path.sep}password-wordlists${path.sep}`)) {
+      if (
+        filePath.includes(`${path.sep}css${path.sep}`)
+        || filePath.includes(`${path.sep}js${path.sep}`)
+        || filePath.includes(`${path.sep}password-wordlists${path.sep}`)
+      ) {
         res.setHeader('Cache-Control', 'public, max-age=3600');
       }
     },
