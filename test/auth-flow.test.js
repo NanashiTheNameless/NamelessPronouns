@@ -256,8 +256,14 @@ test('admin approves a pending account (staff + CSRF + audit)', { skip }, async 
   const html = await res.text();
   assert.doesNotMatch(html, new RegExp(pendingEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(html, /<altcha-widget[^>]+data-obfuscated=/);
-  const csrf = /name="_csrf" value="([^"]+)"/.exec(html)[1];
+  assert.match(html, /\/admin\/signups/, 'the overview points at the signup request queue');
   await freshen(cookies, adminEmail, pw, '/admin');
+  const queue = await get('/admin/signups', cookies);
+  assert.equal(queue.status, 200);
+  const queueHtml = await queue.text();
+  assert.doesNotMatch(queueHtml, new RegExp(pendingEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(queueHtml, new RegExp(`/admin/accounts/${pendingId}/approve`));
+  const csrf = /name="_csrf" value="([^"]+)"/.exec(queueHtml)[1];
   res = await post(`/admin/accounts/${pendingId}/approve`, { _csrf: csrf }, cookies);
   assert.equal(res.status, 302);
   const after = await db.query('SELECT signup_status, decided_by FROM users WHERE id = ?', [pendingId]);
