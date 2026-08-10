@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Administrator tools</p>
+    <h1>Signup requests</h1>
+    <p><%= total %> pending request<%= total === 1 ? '' : 's' %>.</p>
+
+    <% if (pending.length === 0) { %>
+      <p>No pending requests.</p>
+    <% } else { %>
+      <% for (const request of pending) { %>
+        <section class="panel signup-request" aria-labelledby="request-<%= request.id %>">
+          <h2 id="request-<%= request.id %>"><%= request.requested_display_name %></h2>
+          <p class="username">@<%= request.requested_profile_username_display || request.requested_profile_username %></p>
+
+          <h3>Their reason for requesting an account</h3>
+          <% if (request.request_note) { %>
+            <blockquote class="signup-reason"><%= request.request_note %></blockquote>
+          <% } else { %>
+            <p class="fineprint">No reason was recorded with this request.</p>
+          <% } %>
+
+          <dl class="signup-facts">
+            <dt>Email</dt><dd><%- await obfuscateEmail(request.email) %></dd>
+            <dt>Email verified</dt>
+            <dd><%= request.email_verified_at ? new Date(Number(request.email_verified_at)).toISOString() : 'Not verified' %></dd>
+            <dt>Requested</dt>
+            <dd><%= request.requested_at ? new Date(Number(request.requested_at)).toISOString() : 'Unknown' %></dd>
+            <dt>Account created</dt><dd><%= new Date(Number(request.created_at)).toISOString() %></dd>
+            <dt>Second factor</dt><dd><%= request.twofa_method %></dd>
+            <dt>Username claim</dt><dd><%= request.claim_state || 'none' %></dd>
+            <dt>Terms accepted</dt><dd><%= request.terms_version || 'Not recorded' %></dd>
+            <dt>Privacy accepted</dt><dd><%= request.privacy_version || 'Not recorded' %></dd>
+            <dt>Age 18 attested</dt>
+            <dd><%= request.age_18_attested_at ? new Date(Number(request.age_18_attested_at)).toISOString() : 'Not recorded' %></dd>
+          </dl>
+
+          <% if (request.id === selfId) { %>
+            <p class="fineprint">Staff cannot decide their own request.</p>
+          <% } else { %>
+            <% if (!request.email_verified_at) { %>
+              <p class="fineprint">This applicant has not verified their email address yet.</p>
+            <% } %>
+            <%- await include('../partials/signup-decision', {
+              accountId: request.id, returnTo: '/admin/signups', hasSignupIp: request.hasSignupIp,
+            }) %>
+          <% } %>
+          <p><a href="/admin/accounts/<%= request.id %>">Open full account administration</a></p>
+        </section>
+      <% } %>
+    <% } %>
+
+    <% if (totalPages > 1) { %>
+      <nav class="pagination" aria-label="Signup request pages">
+        <% if (page > 1) { %><a href="/admin/signups?page=<%= page - 1 %>">Previous</a><% } %>
+        <span>Page <%= page %> of <%= totalPages %></span>
+        <% if (page < totalPages) { %><a href="/admin/signups?page=<%= page + 1 %>">Next</a><% } %>
+      </nav>
+    <% } %>
+
+    <section aria-labelledby="decided-h">
+      <h2 id="decided-h">Recent decisions</h2>
+      <% if (decided.length === 0) { %>
+        <p>No decisions recorded yet.</p>
+      <% } else { %>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Applicant</th><th>Decision</th><th>Decided</th><th>Decided by</th><th>Note</th><th></th></tr></thead>
+            <tbody>
+              <% for (const row of decided) { %>
+                <tr>
+                  <td><strong><%= row.requested_display_name || 'Unknown' %></strong><br><span class="fineprint">@<%= row.requested_profile_username_display || 'unknown' %></span></td>
+                  <td><span class="status-badge"><%= row.signup_status %></span></td>
+                  <td><%= new Date(Number(row.decided_at)).toISOString() %></td>
+                  <td><% if (row.decided_by_email) { %><%- await obfuscateEmail(row.decided_by_email) %><% } else { %>System<% } %></td>
+                  <td><%= row.decision_note || '—' %></td>
+                  <td><a href="/admin/accounts/<%= row.id %>">Open</a></td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+    <p><a href="/admin">Back to administration</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

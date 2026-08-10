@@ -7,6 +7,8 @@ import * as V from '../validation.js';
 import { avatarUrl } from '../avatar.js';
 import { flagLabel, pronounsPageFlagUrl } from '../pronouns-page-import.js';
 import { pronounPreferenceLabel } from '../pronoun-preferences.js';
+import { opinionLabel } from '../opinions.js';
+import { groupProfileWords, PROFILE_WORD_GROUPS_SQL, PROFILE_WORDS_SQL } from '../profile-words.js';
 const router = express.Router();
 router.use(publicPageHeaders);
 function noStore(res) {
@@ -48,23 +50,37 @@ router.get('/u/:username', async (req, res) => {
   if (req.params.username !== profile.username_display) {
     return res.redirect(301, `/u/${encodeURIComponent(profile.username_display)}`);
   }
-  const [names, pronouns, links, flags, pronounPreferences] = await Promise.all([
-    db.query('SELECT value FROM profile_names WHERE profile_id = ? ORDER BY position', [profile.id]),
-    db.query('SELECT subject, object, possessive_determiner, possessive_pronoun, reflexive FROM pronoun_sets WHERE profile_id = ? ORDER BY position', [profile.id]),
+  const [names, pronouns, links, flags, pronounPreferences, wordGroups, words] = await Promise.all([
+    db.query('SELECT value, opinion FROM profile_names WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT subject, object, possessive_determiner, possessive_pronoun, reflexive, opinion FROM pronoun_sets WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT label, url FROM profile_links WHERE profile_id = ? ORDER BY position', [profile.id]),
-    db.query('SELECT flag_key FROM profile_identity_flags WHERE profile_id = ? ORDER BY position', [profile.id]),
-    db.query('SELECT preference_key FROM profile_pronoun_preferences WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT flag_key, opinion FROM profile_identity_flags WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT preference_key, opinion FROM profile_pronoun_preferences WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query(PROFILE_WORD_GROUPS_SQL, [profile.id]),
+    db.query(PROFILE_WORDS_SQL, [profile.id]),
   ]);
   res.render('profile', {
     title: `${profile.display_name} (@${profile.username_display})`,
     username: profile.username_display,
     profile,
     avatar: avatarUrl({ id: profile.owner_id, email: profile.owner_email, avatar_source: profile.avatar_source, avatar_data_uri: profile.avatar_data_uri }),
-    names: names.rows,
-    pronouns: pronouns.rows,
+    names: names.rows.map((row) => ({ value: row.value, opinion: opinionLabel(row.opinion) })),
+    pronouns: pronouns.rows.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),
+    words: groupProfileWords(wordGroups.rows, words.rows).map((group) => ({
+      heading: group.heading,
+      words: group.words.map((word) => ({ value: word.value, opinion: opinionLabel(word.opinion) })),
+    })),
     links: links.rows,
-    flags: flags.rows.map((row) => ({ key: row.flag_key, label: flagLabel(row.flag_key), imageUrl: pronounsPageFlagUrl(row.flag_key) })),
-    pronounPreferences: pronounPreferences.rows.map((row) => pronounPreferenceLabel(row.preference_key)),
+    flags: flags.rows.map((row) => ({
+      key: row.flag_key,
+      label: flagLabel(row.flag_key),
+      imageUrl: pronounsPageFlagUrl(row.flag_key),
+      opinion: opinionLabel(row.opinion),
+    })),
+    pronounPreferences: pronounPreferences.rows.map((row) => ({
+      label: pronounPreferenceLabel(row.preference_key),
+      opinion: opinionLabel(row.opinion),
+    })),
   });
 });
 export default router;

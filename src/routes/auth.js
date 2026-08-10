@@ -12,7 +12,7 @@ import { hashPassword, verifyPassword, needsRehash, PasswordPolicyError, validat
 import { hash as argon2Hash } from '@node-rs/argon2';
 import * as V from '../validation.js';
 import { evaluateEmailDomain } from '../email-domains.js';
-import { matchAccountBan } from '../bans.js';
+import { ipPrefixTargetHash, matchAccountBan } from '../bans.js';
 import * as mail from '../mail.js';
 import { createSession, rotateSession, destroyBySessionId, clearSessionCookie, SESSION_COOKIE } from '../auth/session.js';
 import { unsignValue } from '../util/cookies.js';
@@ -102,10 +102,10 @@ router.post('/signup', async (req, res) => {
         sql: `INSERT INTO users
                 (id, email, password_hash, password_hash_version, signup_status,
                  requested_profile_username, requested_profile_username_display,
-                 requested_display_name, request_note, requested_at,
+                 requested_display_name, request_note, requested_at, signup_ip_prefix_hash,
                  staff_role, twofa_method, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', 'email', ?, ?)`,
-        params: [userId, email, hash, version, signupStatus, uname, unameDisplay, displayName, reason, now, now, now],
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', 'email', ?, ?)`,
+        params: [userId, email, hash, version, signupStatus, uname, unameDisplay, displayName, reason, now, ipPrefixTargetHash(clientIp(req)), now, now],
       },
       {
         sql: `INSERT INTO public_username_claims (username, username_display, state, pending_user_id, requested_display_name, created_at)
@@ -130,9 +130,6 @@ router.post('/signup', async (req, res) => {
   await audit.record({ type: 'signup.created', subjectUserId: userId, ipHash, detail: { bootstrap: isBootstrap } });
   const link = `${config.BASE_URL}/verify-email?token=${verifyToken}`;
   await mail.verificationEmail(email, link, `verify:${userId}:${keyedHash(verifyToken).slice(0, 16)}`);
-  if (!isBootstrap) {
-    mail.adminActionNeeded('pending_signup', `admin:signup:${userId}`).catch(() => {});
-  }
   return neutral();
 });
 router.get('/verify-email', async (req, res) => {
@@ -146,7 +143,7 @@ router.get('/verify-email', async (req, res) => {
   );
   const record = rows[0];
   if (!record) return invalid();
-  const owner = await db.query('SELECT email FROM users WHERE id = ?', [record.user_id]);
+  const owner = await db.query('SELECT email, signup_status, email_verified_at FROM users WHERE id = ?', [record.user_id]);
   const ban = await matchAccountBan({ userId: record.user_id, email: owner.rows[0]?.email, ip: clientIp(req) });
   if (ban) {
     await audit.record({ type: 'ban.verification_blocked', subjectUserId: record.user_id, target: ban.id });
@@ -157,6 +154,10 @@ router.get('/verify-email', async (req, res) => {
     { sql: 'UPDATE users SET email_verified_at = ?, updated_at = ? WHERE id = ? AND email_verified_at IS NULL', params: [now, now, record.user_id] },
   ]);
   await audit.record({ type: 'email.verified', subjectUserId: record.user_id });
+  const firstVerification = owner.rows[0]?.email_verified_at == null;
+  if (firstVerification && owner.rows[0]?.signup_status === 'pending') {
+    mail.adminActionNeeded('pending_signup', `admin:signup:${record.user_id}`).catch(() => {});
+  }
   res.render('auth/verified', { title: 'Email verified' });
 });
 router.get('/forgot-password', (req, res) => {

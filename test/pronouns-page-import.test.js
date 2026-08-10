@@ -14,9 +14,10 @@ const current = {
   description: '',
   notes: 'Keep this',
   published: true,
-  names: [''],
+  names: [],
   pronouns: [],
   pronounPreferences: [],
+  words: [],
   links: [],
   flags: [],
 };
@@ -44,6 +45,11 @@ test('Pronouns.page profiles map into reviewable local fields', () => {
         { value: 'ask-me', opinion: 'yes' }, { value: ':Alex', opinion: 'yes' }, { value: 'xe', opinion: 'yes' },
         { value: '\u00e6/\u00e6r', opinion: 'yes' },
       ],
+      words: [
+        { header: 'I am a', values: [{ value: 'person', opinion: 'yes' }, { value: 'lad', opinion: 'no' }] },
+        { header: 'Nameless group', values: [] },
+        { header: '', values: [{ value: 'orphan', opinion: 'yes' }] },
+      ],
       links: ['https://example.com/profile'],
       flags: ['Nonbinary', "Fa'afafine", 'Future Flag'],
       customFlags: [{ value: 'image-id', name: 'Custom' }],
@@ -52,22 +58,63 @@ test('Pronouns.page profiles map into reviewable local fields', () => {
   assert.equal(result.values.displayName, 'Local Name');
   assert.equal(result.values.notes, 'Keep this');
   assert.equal(result.values.published, true);
-  assert.deepEqual(result.values.names, ['Alex']);
+  assert.deepEqual(result.values.names, [
+    { value: 'Alex', opinion: 'yes' },
+    { value: 'Not Alex', opinion: 'nope' },
+  ]);
   assert.deepEqual(result.values.pronouns[0], {
     subject: 'they', object: 'them', possessiveDeterminer: 'their', possessivePronoun: 'theirs', reflexive: 'themselves',
+    opinion: 'yes',
   });
   assert.deepEqual(result.values.pronouns[1], {
-    subject: 'xe', object: 'xem', possessiveDeterminer: 'xyr', possessivePronoun: 'xyrs', reflexive: 'xemself',
+    subject: 'he', object: 'him', possessiveDeterminer: 'his', possessivePronoun: 'his', reflexive: 'himself',
+    opinion: 'nope',
   });
   assert.deepEqual(result.values.pronouns[2], {
-    subject: 'ae', object: 'aer', possessiveDeterminer: 'aer', possessivePronoun: 'aers', reflexive: 'aerself',
+    subject: 'xe', object: 'xem', possessiveDeterminer: 'xyr', possessivePronoun: 'xyrs', reflexive: 'xemself',
+    opinion: 'yes',
   });
+  assert.deepEqual(result.values.pronouns[3], {
+    subject: 'ae', object: 'aer', possessiveDeterminer: 'aer', possessivePronoun: 'aers', reflexive: 'aerself',
+    opinion: 'yes',
+  });
+  assert.deepEqual(result.values.words, [{
+    heading: 'I am a',
+    words: [{ value: 'person', opinion: 'yes' }, { value: 'lad', opinion: 'nope' }],
+  }]);
+  assert.equal(result.skippedWordGroups, 2);
   assert.deepEqual(result.values.links, [{ label: 'example com', url: 'https://example.com/profile' }]);
-  assert.deepEqual(result.values.flags, ['Nonbinary', "Fa'afafine"]);
+  assert.deepEqual(result.values.flags, [
+    { key: 'Nonbinary', opinion: 'yes' },
+    { key: "Fa'afafine", opinion: 'yes' },
+  ]);
   assert.equal(result.skippedPronouns, 1);
-  assert.deepEqual(result.values.pronounPreferences, ['any_pronouns', 'ask_me', 'use_name']);
+  assert.deepEqual(result.values.pronounPreferences, [
+    { key: 'any_pronouns', opinion: 'yes' },
+    { key: 'ask_me', opinion: 'yes' },
+    { key: 'use_name', opinion: 'yes' },
+  ]);
   assert.equal(result.skippedCustomFlags, 1);
   assert.equal(result.skippedFlags, 1);
+});
+
+test('Pronouns.page opinions map onto the local Yes/Jokingly/Close/Okay/Nope scale', () => {
+  const result = mapPronounsPageProfile({
+    profiles: [{
+      locale: 'en',
+      access: true,
+      names: [
+        { value: 'A', opinion: 'yes' }, { value: 'B', opinion: 'jokingly' },
+        { value: 'C', opinion: 'close' }, { value: 'D', opinion: 'meh' },
+        { value: 'E', opinion: 'no' }, { value: 'F', opinion: 'something-else' }, 'G',
+      ],
+      pronouns: [{ value: 'any', opinion: 'jokingly' }],
+    }],
+  }, { locale: 'en', current });
+  assert.deepEqual(result.values.names.map((row) => row.opinion), [
+    'yes', 'jokingly', 'close', 'okay', 'nope', 'yes', 'yes',
+  ]);
+  assert.deepEqual(result.values.pronounPreferences, [{ key: 'any_pronouns', opinion: 'jokingly' }]);
 });
 
 test('every editor preset and Pronouns.page alias uses the shared forms', () => {

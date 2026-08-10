@@ -1,4 +1,5 @@
 import { pronounPresetForms } from './pronoun-presets.js';
+import { DEFAULT_OPINION, importedOpinion } from './opinions.js';
 const MAX_ITEMS = 25;
 export const PRONOUNS_PAGE_FLAG_OPTIONS = [
   '-Drag', '-de-Gay', '-en-Genderdoe', '-pl-Dukaizmy', '-pl-Gay', '-pl-Rodzaj neutralny', '-pl-Rodzaj nijaki',
@@ -98,6 +99,24 @@ export function pronounsPageFlagUrl(key) {
   return `/static/flags/${encodeURIComponent(key).replaceAll("'", '%27')}.png`;
 }
 
+function entryValue(entry) {
+  return typeof entry === 'string' ? entry : entry?.value;
+}
+
+function entryOpinion(entry) {
+  return typeof entry === 'string' ? importedOpinion(null) : importedOpinion(entry?.opinion);
+}
+
+function wordGroup(group) {
+  const heading = boundedText(group?.header ?? group?.heading, 80);
+  const words = (Array.isArray(group?.values) ? group.values : [])
+    .slice(0, MAX_ITEMS)
+    .map((entry) => ({ value: boundedText(entryValue(entry), 80), opinion: entryOpinion(entry) }))
+    .filter((word) => word.value);
+  if (!heading || !words.length) return null;
+  return { heading, words };
+}
+
 export function mapPronounsPageProfile(payload, { locale = 'en', current }) {
   const profiles = Array.isArray(payload?.profiles)
     ? payload.profiles
@@ -106,15 +125,22 @@ export function mapPronounsPageProfile(payload, { locale = 'en', current }) {
     || profiles.find((entry) => entry?.locale === 'en')
     || profiles[0];
   if (!profile || profile.access === false) throw new Error('That Pronouns.page profile is unavailable or private.');
-  const importedPronouns = (Array.isArray(profile.pronouns) ? profile.pronouns : [])
-    .filter((entry) => typeof entry === 'string' || entry?.opinion !== 'no')
-    .slice(0, MAX_ITEMS);
-  const pronounPreferences = [...new Set(importedPronouns
-    .map((entry) => specialPronounPreference(typeof entry === 'string' ? entry : entry?.value))
-    .filter(Boolean))];
+  const importedPronouns = (Array.isArray(profile.pronouns) ? profile.pronouns : []).slice(0, MAX_ITEMS);
+  const seenPreferences = new Set();
+  const pronounPreferences = [];
+  for (const entry of importedPronouns) {
+    const key = specialPronounPreference(entryValue(entry));
+    if (!key || seenPreferences.has(key)) continue;
+    seenPreferences.add(key);
+    pronounPreferences.push({ key, opinion: entryOpinion(entry) });
+  }
   const pronounResults = importedPronouns
-    .filter((entry) => !specialPronounPreference(typeof entry === 'string' ? entry : entry?.value))
-    .map((entry) => pronounSet(typeof entry === 'string' ? entry : entry?.value));
+    .filter((entry) => !specialPronounPreference(entryValue(entry)))
+    .map((entry) => {
+      const forms = pronounSet(entryValue(entry));
+      return forms ? { ...forms, opinion: entryOpinion(entry) } : null;
+    });
+  const pronouns = pronounResults.filter(Boolean);
   const links = (Array.isArray(profile.links) ? profile.links : [])
     .slice(0, MAX_ITEMS)
     .map(linkRow)
@@ -123,25 +149,30 @@ export function mapPronounsPageProfile(payload, { locale = 'en', current }) {
     .slice(0, MAX_ITEMS)
     .map((key) => boundedText(key, 80))
     .filter((key) => /^[A-Za-z0-9 _'-]{1,80}$/.test(key));
-  const flags = importedFlagKeys.filter((key) => PRONOUNS_PAGE_FLAG_KEYS.has(key));
+  const flags = importedFlagKeys
+    .filter((key) => PRONOUNS_PAGE_FLAG_KEYS.has(key))
+    .map((key) => ({ key, opinion: importedOpinion(null) }));
   const names = (Array.isArray(profile.names) ? profile.names : [])
-    .filter((entry) => typeof entry === 'string' || entry?.opinion !== 'no')
     .slice(0, MAX_ITEMS)
-    .map((entry) => boundedText(typeof entry === 'string' ? entry : entry?.value, 80))
-    .filter(Boolean);
+    .map((entry) => ({ value: boundedText(entryValue(entry), 80), opinion: entryOpinion(entry) }))
+    .filter((entry) => entry.value);
+  const importedWords = (Array.isArray(profile.words) ? profile.words : []).slice(0, MAX_ITEMS);
+  const words = importedWords.map(wordGroup).filter(Boolean);
   return {
     values: {
       ...current,
       description: boundedText(profile.description, 200),
-      names: names.length ? names : [''],
-      pronouns: pronounResults.filter(Boolean).length ? pronounResults.filter(Boolean) : [emptyPronoun()],
+      names: names.length ? names : [emptyName()],
+      pronouns: pronouns.length ? pronouns : [emptyPronoun()],
       pronounPreferences,
+      words: words.length ? words : [emptyWordGroup()],
       links: links.length ? links : [emptyLink()],
-      flags: flags.length ? flags : [''],
+      flags: flags.length ? flags : [emptyFlag()],
     },
     skippedPronouns: pronounResults.filter((entry) => !entry).length,
     skippedCustomFlags: Array.isArray(profile.customFlags) ? profile.customFlags.length : 0,
     skippedFlags: importedFlagKeys.length - flags.length,
+    skippedWordGroups: importedWords.length - words.length,
     locale: profile.locale || locale,
   };
 }
@@ -169,9 +200,25 @@ export async function fetchPronounsPageProfile(reference, fetchImpl = fetch) {
 }
 
 export function emptyPronoun() {
-  return { subject: '', object: '', possessiveDeterminer: '', possessivePronoun: '', reflexive: '' };
+  return { subject: '', object: '', possessiveDeterminer: '', possessivePronoun: '', reflexive: '', opinion: DEFAULT_OPINION };
 }
 
 export function emptyLink() {
   return { label: '', url: '' };
+}
+
+export function emptyName() {
+  return { value: '', opinion: DEFAULT_OPINION };
+}
+
+export function emptyFlag() {
+  return { key: '', opinion: DEFAULT_OPINION };
+}
+
+export function emptyWord() {
+  return { value: '', opinion: DEFAULT_OPINION };
+}
+
+export function emptyWordGroup() {
+  return { heading: '', words: [emptyWord()] };
 }

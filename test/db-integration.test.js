@@ -79,3 +79,51 @@ test('bans: exact email, domain, and CIDR matching by scope', { skip }, async ()
   assert.equal(await bans.matchViewingBan({ ip: '198.51.101.1' }), null, 'ip outside CIDR allowed');
   assert.equal(await bans.matchAccountBan({ ip: '198.51.100.77' }), null, 'viewing ban does not affect account scope');
 });
+test('denied signups are purged after a week unless banned or held', { skip }, async () => {
+  const { purgeDeniedSignups, DENIED_RETENTION_MS } = await import('../src/maintenance.js');
+  const bans = await import('../src/bans.js');
+  const db = (await import('../src/db/index.js')).default;
+  const { newId } = await import('../src/util/ids.js');
+  const now = Date.now();
+  const stale = now - DENIED_RETENTION_MS - 1000;
+  const suffix = `${now}${Math.floor(Math.random() * 1000)}`;
+  const make = async (label, decidedAt) => {
+    const id = newId();
+    const email = `denied-${label}-${suffix}@denied-${suffix}.example`;
+    await db.query(
+      `INSERT INTO users (id, email, password_hash, signup_status, decided_at, created_at, updated_at)
+       VALUES (?, ?, 'x', 'denied', ?, ?, ?)`,
+      [id, email, decidedAt, now, now],
+    );
+    return { id, email };
+  };
+  const expired = await make('expired', stale);
+  const fresh = await make('fresh', now - 1000);
+  const banned = await make('banned', stale);
+  await bans.createBan({ type: 'email', value: banned.email, scope: 'account' });
+  const summary = await purgeDeniedSignups(now);
+  assert.ok(summary.denied_signups_purged >= 1, 'the week-old request was purged');
+  assert.ok(summary.denied_signups_retained >= 1, 'the banned request was retained');
+  const survivors = await db.query(
+    'SELECT id FROM users WHERE id IN (?, ?, ?)',
+    [expired.id, fresh.id, banned.id],
+  );
+  const ids = survivors.rows.map((row) => row.id);
+  assert.ok(!ids.includes(expired.id), 'the expired denial is gone, freeing the email to re-request');
+  assert.ok(ids.includes(fresh.id), 'a recent denial is kept until the week is up');
+  assert.ok(ids.includes(banned.id), 'a banned applicant is kept so the ban keeps its subject');
+  await db.query('DELETE FROM users WHERE id IN (?, ?)', [fresh.id, banned.id]);
+});
+test('bans: a keyed signup IP-range hash blocks the whole range without storing the address', { skip }, async () => {
+  const bans = await import('../src/bans.js');
+  const db = (await import('../src/db/index.js')).default;
+  const stored = bans.ipPrefixTargetHash('203.0.113.42');
+  assert.ok(stored, 'a signup records a bannable IP-range hash');
+  assert.equal(stored, bans.ipPrefixTargetHash('203.0.113.9'), 'the hash covers the whole /24');
+  await bans.createBan({ type: 'ip', valueHash: stored, scope: 'account' });
+  assert.ok(await bans.matchAccountBan({ ip: '203.0.113.7' }), 'another address in the range is banned');
+  assert.equal(await bans.matchAccountBan({ ip: '203.0.114.7' }), null, 'a neighbouring range is unaffected');
+  const { rows } = await db.query('SELECT target_value, target_ciphertext FROM bans WHERE target_hash = ?', [stored]);
+  assert.equal(rows[0].target_value, stored, 'only the keyed hash is stored');
+  assert.equal(rows[0].target_ciphertext, null, 'there is no recoverable address to encrypt');
+});

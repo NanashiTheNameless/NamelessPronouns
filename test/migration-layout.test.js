@@ -7,7 +7,7 @@ import { splitStatements } from '../src/db/migrate.js';
 const migrationsDir = fileURLToPath(new URL('../db/migrations/', import.meta.url));
 test('the init schema stays consolidated and later migrations are additive', async () => {
   const files = (await readdir(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
-  assert.deepEqual(files, ['0001_init.sql', '0002_profile_features.sql']);
+  assert.deepEqual(files, ['0001_init.sql', '0002_profile_features.sql', '0003_profile_words_and_signup_decisions.sql']);
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\bALTER\s+TABLE\b/i);
   assert.doesNotMatch(sql, /CHECK \(\(user_id IS NOT NULL AND profile_id IS NULL\)/);
@@ -35,6 +35,23 @@ test('profile features migration adds identity flags and pronoun preferences', a
   for (const key of ['any_pronouns', 'ask_me', 'varies', 'use_name', 'no_pronouns', 'mirror_pronouns', 'use_initials', 'alternate_sets']) {
     assert.match(sql, new RegExp(`'${key}'`));
   }
+});
+test('words migration adds grouped words and opinions to every listed option', async () => {
+  const sql = await readFile(new URL('../db/migrations/0003_profile_words_and_signup_decisions.sql', import.meta.url), 'utf8');
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS profile_word_groups/);
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS profile_words/);
+  assert.match(sql, /FOREIGN KEY \(group_id\) REFERENCES profile_word_groups \(id\) ON DELETE CASCADE/);
+  for (const table of ['profile_names', 'pronoun_sets', 'profile_pronoun_preferences', 'profile_identity_flags']) {
+    assert.match(sql, new RegExp(`ALTER TABLE ${table} ADD COLUMN opinion TEXT NOT NULL DEFAULT 'yes'`));
+  }
+  const checks = sql.match(/CHECK \(opinion IN \('yes', 'jokingly', 'close', 'okay', 'nope'\)\)/g) || [];
+  assert.equal(checks.length, 5, 'every opinion column constrains the same five values');
+});
+test('the same migration records signup decision reasons and a bannable signup IP hash', async () => {
+  const sql = await readFile(new URL('../db/migrations/0003_profile_words_and_signup_decisions.sql', import.meta.url), 'utf8');
+  assert.match(sql, /ALTER TABLE users ADD COLUMN decision_reason_public TEXT/);
+  assert.match(sql, /ALTER TABLE users ADD COLUMN signup_ip_prefix_hash TEXT/);
+  assert.match(sql, /CREATE INDEX IF NOT EXISTS idx_users_signup_ip_prefix/);
 });
 test('users table supports every staff role and the TOTP replay counter', async () => {
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');

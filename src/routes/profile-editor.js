@@ -13,9 +13,14 @@ import { filterExemptMatches } from '../content-exemptions.js';
 import { consume } from '../ratelimit.js';
 import { PRONOUN_PREFERENCES } from '../pronoun-preferences.js';
 import { PRONOUN_PRESETS } from '../pronoun-presets.js';
+import { DEFAULT_OPINION, isOpinion, normalizeOpinion, OPINIONS } from '../opinions.js';
+import { groupProfileWords, PROFILE_WORD_GROUPS_SQL, PROFILE_WORDS_SQL } from '../profile-words.js';
 import {
+  emptyFlag,
   emptyLink,
+  emptyName,
   emptyPronoun,
+  emptyWordGroup,
   fetchPronounsPageProfile,
   flagLabel,
   mapPronounsPageProfile,
@@ -24,18 +29,35 @@ import {
 } from '../pronouns-page-import.js';
 const router = express.Router();
 const MAX_ROWS = 25;
+const PRONOUN_FORM_FIELDS = ['subject', 'object', 'possessiveDeterminer', 'possessivePronoun', 'reflexive'];
 const FLAG_OPTIONS = Object.freeze(PRONOUNS_PAGE_FLAG_OPTIONS.map((key) => Object.freeze({
   key,
   label: flagLabel(key),
   imageUrl: pronounsPageFlagUrl(key),
 })));
-function optionalText(value, options) {
-  if (value == null || String(value).trim() === '') return null;
-  return V.displayText(String(value), options);
+function editorView(profile, values, overrides = {}) {
+  return {
+    title: `Edit ${profile.username}`,
+    profile,
+    values,
+    error: null,
+    warning: null,
+    saved: false,
+    importNotice: null,
+    flagOptions: FLAG_OPTIONS,
+    pronounPreferenceOptions: PRONOUN_PREFERENCES,
+    pronounPresetOptions: PRONOUN_PRESETS,
+    opinionOptions: OPINIONS,
+    saveId: newToken(24),
+    ...overrides,
+  };
 }
 function optionalProse(value, options) {
   if (value == null || String(value).trim() === '') return null;
   return V.proseText(String(value), options);
+}
+function lineText(value, options) {
+  return V.proseText(String(value).replace(/[\r\n]+/g, ' '), options);
 }
 function pronounText(value, field) {
   const normalized = String(value).trim();
@@ -53,6 +75,27 @@ function arrayField(body, name, legacyPrefix) {
   const count = indexes.length ? Math.min(Math.max(...indexes) + 1, MAX_ROWS) : 1;
   return Array.from({ length: count }, (_, index) => body[`${legacyPrefix}_${index}`] ?? '');
 }
+function opinionField(body, name, index) {
+  return normalizeOpinion(String(arrayField(body, name, name)[index] ?? ''));
+}
+function selectedOpinion(value) {
+  const raw = String(value ?? '');
+  const opinion = raw === 'on' ? DEFAULT_OPINION : raw;
+  return isOpinion(opinion) ? opinion : null;
+}
+function wordGroupValues(body) {
+  return arrayField(body, 'word_group_heading', 'word_group_heading').map((heading, index) => {
+    const values = arrayField(body, `word_value_${index}`, `word_value_${index}`);
+    const opinions = arrayField(body, `word_opinion_${index}`, `word_opinion_${index}`);
+    return {
+      heading: String(heading ?? ''),
+      words: values.map((value, i) => ({
+        value: String(value ?? ''),
+        opinion: normalizeOpinion(String(opinions[i] ?? '')),
+      })),
+    };
+  });
+}
 function formValues(body = {}) {
   const names = arrayField(body, 'name', 'name');
   const subjects = arrayField(body, 'subject', 'subject');
@@ -67,22 +110,33 @@ function formValues(body = {}) {
     description: String(body.description ?? ''),
     notes: String(body.notes ?? ''),
     published: body.published === 'on',
-    names: names.map(String),
+    names: names.map((value, i) => ({
+      value: String(value ?? ''),
+      opinion: opinionField(body, 'name_opinion', i),
+    })),
     pronouns: subjects.map((value, i) => ({
       subject: String(value ?? ''),
       object: String(objects[i] ?? ''),
       possessiveDeterminer: String(determiners[i] ?? ''),
       possessivePronoun: String(possessives[i] ?? ''),
       reflexive: String(reflexives[i] ?? ''),
+      opinion: opinionField(body, 'pronoun_opinion', i),
     })),
     links: linkLabels.map((value, i) => ({
       label: String(value ?? ''),
       url: String(linkUrls[i] ?? ''),
     })),
-    flags: arrayField(body, 'profile_flag', 'profile_flag').map(String),
+    flags: arrayField(body, 'profile_flag', 'profile_flag').map((key, i) => ({
+      key: String(key ?? ''),
+      opinion: opinionField(body, 'profile_flag_opinion', i),
+    })),
+    words: wordGroupValues(body),
     pronounPreferences: PRONOUN_PREFERENCES
-      .filter((preference) => body[`pronoun_pref_${preference.key}`] === 'on')
-      .map((preference) => preference.key),
+      .map((preference) => ({
+        key: preference.key,
+        opinion: selectedOpinion(body[`pronoun_pref_${preference.key}`]),
+      }))
+      .filter((preference) => preference.opinion !== null),
   };
 }
 export function validateProfileForm(body) {
@@ -92,16 +146,22 @@ export function validateProfileForm(body) {
     description: optionalProse(raw.description, { field: 'Description', max: 200 }),
     notes: optionalProse(raw.notes, { field: 'Notes', max: 300 }),
     published: raw.published,
-    names: raw.names.map((value) => optionalText(value, { field: 'Name', max: 80 })).filter(Boolean),
+    names: raw.names
+      .filter((row) => row.value.trim() !== '')
+      .map((row) => ({
+        value: V.displayText(row.value, { field: 'Name', max: 80 }),
+        opinion: row.opinion,
+      })),
     pronouns: [],
+    words: [],
     links: [],
     flags: [],
     pronounPreferences: raw.pronounPreferences,
   };
   for (const row of raw.pronouns) {
-    const present = Object.values(row).some((value) => value.trim() !== '');
-    if (!present) continue;
-    if (Object.values(row).some((value) => value.trim() === '')) {
+    const forms = PRONOUN_FORM_FIELDS.map((field) => row[field]);
+    if (forms.every((value) => value.trim() === '')) continue;
+    if (forms.some((value) => value.trim() === '')) {
       throw new V.ValidationError('Every field in a pronoun set is required.');
     }
     values.pronouns.push({
@@ -110,6 +170,21 @@ export function validateProfileForm(body) {
       possessiveDeterminer: pronounText(row.possessiveDeterminer, 'Possessive determiner'),
       possessivePronoun: pronounText(row.possessivePronoun, 'Possessive pronoun'),
       reflexive: pronounText(row.reflexive, 'Reflexive pronoun'),
+      opinion: row.opinion,
+    });
+  }
+  for (const group of raw.words) {
+    const heading = group.heading.trim();
+    const words = group.words.filter((word) => word.value.trim() !== '');
+    if (!heading && words.length === 0) continue;
+    if (!heading) throw new V.ValidationError('Every word group needs a heading.');
+    if (words.length === 0) throw new V.ValidationError('Every word group needs at least one word.');
+    values.words.push({
+      heading: lineText(heading, { field: 'Word group heading', max: 80 }),
+      words: words.map((word) => ({
+        value: lineText(word.value, { field: 'Word', max: 80 }),
+        opinion: word.opinion,
+      })),
     });
   }
   for (const row of raw.links) {
@@ -122,11 +197,11 @@ export function validateProfileForm(body) {
       url: V.httpsUrl(row.url, { field: 'Link URL' }),
     });
   }
-  for (const rawFlag of raw.flags) {
-    const flag = rawFlag.trim();
+  for (const row of raw.flags) {
+    const flag = row.key.trim();
     if (!flag) continue;
     if (!PRONOUNS_PAGE_FLAG_OPTIONS.includes(flag)) throw new V.ValidationError('Choose a flag from the available Pronouns.page flags.');
-    values.flags.push(flag);
+    values.flags.push({ key: flag, opinion: row.opinion });
   }
   return values;
 }
@@ -140,30 +215,44 @@ async function editableProfile(profileId, userId) {
   );
   return rows[0] || null;
 }
+async function profileWords(profileId) {
+  const [groups, words] = await Promise.all([
+    db.query(PROFILE_WORD_GROUPS_SQL, [profileId]),
+    db.query(PROFILE_WORDS_SQL, [profileId]),
+  ]);
+  return groupProfileWords(groups.rows, words.rows);
+}
 async function editorState(profile) {
-  const [names, pronouns, links, flags, pronounPreferences] = await Promise.all([
-    db.query('SELECT value FROM profile_names WHERE profile_id = ? ORDER BY position', [profile.id]),
-    db.query('SELECT subject, object, possessive_determiner, possessive_pronoun, reflexive FROM pronoun_sets WHERE profile_id = ? ORDER BY position', [profile.id]),
+  const [names, pronouns, links, flags, pronounPreferences, words] = await Promise.all([
+    db.query('SELECT value, opinion FROM profile_names WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT subject, object, possessive_determiner, possessive_pronoun, reflexive, opinion FROM pronoun_sets WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT label, url FROM profile_links WHERE profile_id = ? ORDER BY position', [profile.id]),
-    db.query('SELECT flag_key FROM profile_identity_flags WHERE profile_id = ? ORDER BY position', [profile.id]),
-    db.query('SELECT preference_key FROM profile_pronoun_preferences WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT flag_key, opinion FROM profile_identity_flags WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT preference_key, opinion FROM profile_pronoun_preferences WHERE profile_id = ? ORDER BY position', [profile.id]),
+    profileWords(profile.id),
   ]);
   return {
     displayName: profile.display_name,
     description: profile.description || '',
     notes: profile.notes || '',
     published: Number(profile.published) === 1,
-    names: names.rows.length ? names.rows.map((row) => row.value) : [''],
+    names: names.rows.length
+      ? names.rows.map((row) => ({ value: row.value, opinion: row.opinion }))
+      : [emptyName()],
     pronouns: pronouns.rows.length ? pronouns.rows.map((row) => ({
       subject: row.subject,
       object: row.object,
       possessiveDeterminer: row.possessive_determiner,
       possessivePronoun: row.possessive_pronoun,
       reflexive: row.reflexive,
+      opinion: row.opinion,
     })) : [emptyPronoun()],
+    words: words.length ? words : [emptyWordGroup()],
     links: links.rows.length ? links.rows.map((row) => ({ label: row.label, url: row.url })) : [emptyLink()],
-    flags: flags.rows.length ? flags.rows.map((row) => row.flag_key) : [''],
-    pronounPreferences: pronounPreferences.rows.map((row) => row.preference_key),
+    flags: flags.rows.length
+      ? flags.rows.map((row) => ({ key: row.flag_key, opinion: row.opinion }))
+      : [emptyFlag()],
+    pronounPreferences: pronounPreferences.rows.map((row) => ({ key: row.preference_key, opinion: row.opinion })),
   };
 }
 function screeningInput(values) {
@@ -172,7 +261,9 @@ function screeningInput(values) {
       display_name: values.displayName,
       description: values.description || '',
       notes: values.notes || '',
-      names: values.names,
+      names: values.names.map((row) => row.value),
+      word_group_headings: values.words.map((group) => group.heading),
+      words: values.words.flatMap((group) => group.words.map((word) => word.value)),
       pronoun_subject: values.pronouns.map((row) => row.subject),
       pronoun_object: values.pronouns.map((row) => row.object),
       pronoun_possessive_determiner: values.pronouns.map((row) => row.possessiveDeterminer),
@@ -277,6 +368,7 @@ function suspensionStatements({ userId, saveHash, suspensionId, now }) {
 }
 function acceptedSaveStatements(profileId, userId, values, now) {
   const revisionId = newId();
+  const wordGroupIds = values.words.map(() => newId());
   const snapshot = JSON.stringify(values);
   return [
     { sql: 'DELETE FROM profile_names WHERE profile_id = ?', params: [profileId] },
@@ -284,28 +376,46 @@ function acceptedSaveStatements(profileId, userId, values, now) {
     { sql: 'DELETE FROM profile_links WHERE profile_id = ?', params: [profileId] },
     { sql: 'DELETE FROM profile_identity_flags WHERE profile_id = ?', params: [profileId] },
     { sql: 'DELETE FROM profile_pronoun_preferences WHERE profile_id = ?', params: [profileId] },
-    ...values.names.map((value, position) => ({
-      sql: 'INSERT INTO profile_names (id, profile_id, value, position) VALUES (?, ?, ?, ?)',
-      params: [newId(), profileId, value, position],
+    {
+      sql: 'DELETE FROM profile_words WHERE group_id IN (SELECT id FROM profile_word_groups WHERE profile_id = ?)',
+      params: [profileId],
+    },
+    { sql: 'DELETE FROM profile_word_groups WHERE profile_id = ?', params: [profileId] },
+    ...values.names.map((row, position) => ({
+      sql: 'INSERT INTO profile_names (id, profile_id, value, opinion, position) VALUES (?, ?, ?, ?, ?)',
+      params: [newId(), profileId, row.value, row.opinion, position],
     })),
     ...values.pronouns.map((row, position) => ({
       sql: `INSERT INTO pronoun_sets
               (id, profile_id, subject, object, possessive_determiner,
-               possessive_pronoun, reflexive, position)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      params: [newId(), profileId, row.subject, row.object, row.possessiveDeterminer, row.possessivePronoun, row.reflexive, position],
+               possessive_pronoun, reflexive, opinion, position)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      params: [newId(), profileId, row.subject, row.object, row.possessiveDeterminer, row.possessivePronoun, row.reflexive, row.opinion, position],
     })),
+    ...values.words.flatMap((group, position) => {
+      const groupId = wordGroupIds[position];
+      return [
+        {
+          sql: 'INSERT INTO profile_word_groups (id, profile_id, heading, position) VALUES (?, ?, ?, ?)',
+          params: [groupId, profileId, group.heading, position],
+        },
+        ...group.words.map((word, wordPosition) => ({
+          sql: 'INSERT INTO profile_words (id, group_id, value, opinion, position) VALUES (?, ?, ?, ?, ?)',
+          params: [newId(), groupId, word.value, word.opinion, wordPosition],
+        })),
+      ];
+    }),
     ...values.links.map((row, position) => ({
       sql: 'INSERT INTO profile_links (id, profile_id, label, url, position) VALUES (?, ?, ?, ?, ?)',
       params: [newId(), profileId, row.label, row.url, position],
     })),
-    ...values.flags.map((flag, position) => ({
-      sql: 'INSERT INTO profile_identity_flags (id, profile_id, flag_key, position) VALUES (?, ?, ?, ?)',
-      params: [newId(), profileId, flag, position],
+    ...values.flags.map((row, position) => ({
+      sql: 'INSERT INTO profile_identity_flags (id, profile_id, flag_key, opinion, position) VALUES (?, ?, ?, ?, ?)',
+      params: [newId(), profileId, row.key, row.opinion, position],
     })),
     ...values.pronounPreferences.map((preference, position) => ({
-      sql: 'INSERT INTO profile_pronoun_preferences (profile_id, preference_key, position) VALUES (?, ?, ?)',
-      params: [profileId, preference, position],
+      sql: 'INSERT INTO profile_pronoun_preferences (profile_id, preference_key, opinion, position) VALUES (?, ?, ?, ?)',
+      params: [profileId, preference.key, preference.opinion, position],
     })),
     {
       sql: `INSERT INTO profile_revisions
@@ -325,19 +435,9 @@ function acceptedSaveStatements(profileId, userId, values, now) {
 router.get('/profiles/:id/edit', requireApproved, async (req, res) => {
   const profile = await editableProfile(req.params.id, req.user.id);
   if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
-  res.render('profile-edit', {
-    title: `Edit ${profile.username}`,
-    profile,
-    values: await editorState(profile),
-    error: null,
-    warning: null,
+  res.render('profile-edit', editorView(profile, await editorState(profile), {
     saved: req.query.saved === '1',
-    importNotice: null,
-    flagOptions: FLAG_OPTIONS,
-    pronounPreferenceOptions: PRONOUN_PREFERENCES,
-    pronounPresetOptions: PRONOUN_PRESETS,
-    saveId: newToken(24),
-  });
+  }));
 });
 router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, res) => {
   const profile = await editableProfile(req.params.id, req.user.id);
@@ -345,13 +445,9 @@ router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, r
   const current = await editorState(profile);
   const limit = await consume('profile_import', req.user.id);
   if (!limit.allowed) {
-    return res.status(429).render('profile-edit', {
-      title: `Edit ${profile.username}`, profile, values: current,
-      error: 'Too many import attempts. Try again later.', warning: null, saved: false,
-      importNotice: null, flagOptions: FLAG_OPTIONS,
-      pronounPreferenceOptions: PRONOUN_PREFERENCES, saveId: newToken(24),
-      pronounPresetOptions: PRONOUN_PRESETS,
-    });
+    return res.status(429).render('profile-edit', editorView(profile, current, {
+      error: 'Too many import attempts. Try again later.',
+    }));
   }
   try {
     const imported = await fetchPronounsPageProfile(req.body.pronouns_page_profile);
@@ -360,22 +456,13 @@ router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, r
     if (result.skippedPronouns) omissions.push(`${result.skippedPronouns} pronoun set${result.skippedPronouns === 1 ? '' : 's'} that could not be expanded safely`);
     if (result.skippedCustomFlags) omissions.push(`${result.skippedCustomFlags} custom flag${result.skippedCustomFlags === 1 ? '' : 's'} whose artwork cannot be transferred`);
     if (result.skippedFlags) omissions.push(`${result.skippedFlags} unavailable built-in flag${result.skippedFlags === 1 ? '' : 's'}`);
+    if (result.skippedWordGroups) omissions.push(`${result.skippedWordGroups} empty or unnamed word group${result.skippedWordGroups === 1 ? '' : 's'}`);
     const suffix = omissions.length ? ` Skipped ${omissions.join(' and ')}.` : '';
-    return res.render('profile-edit', {
-      title: `Edit ${profile.username}`, profile, values: result.values, error: null, warning: null,
-      saved: false, importNotice: `Imported the ${result.locale} profile for review.${suffix} Save the profile to keep these changes.`, saveId: newToken(24),
-      flagOptions: FLAG_OPTIONS,
-      pronounPreferenceOptions: PRONOUN_PREFERENCES,
-      pronounPresetOptions: PRONOUN_PRESETS,
-    });
+    return res.render('profile-edit', editorView(profile, result.values, {
+      importNotice: `Imported the ${result.locale} profile for review.${suffix} Save the profile to keep these changes.`,
+    }));
   } catch (error) {
-    return res.status(400).render('profile-edit', {
-      title: `Edit ${profile.username}`, profile, values: current, error: error.message, warning: null,
-      saved: false, importNotice: null, saveId: newToken(24),
-      flagOptions: FLAG_OPTIONS,
-      pronounPreferenceOptions: PRONOUN_PREFERENCES,
-      pronounPresetOptions: PRONOUN_PRESETS,
-    });
+    return res.status(400).render('profile-edit', editorView(profile, current, { error: error.message }));
   }
 });
 router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
@@ -386,9 +473,7 @@ router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
     values = validateProfileForm(req.body);
   } catch (error) {
     if (!(error instanceof V.ValidationError)) throw error;
-    return res.status(400).render('profile-edit', {
-      title: `Edit ${profile.username}`, profile, values: formValues(req.body), error: error.message, warning: null, saved: false, importNotice: null, saveId: newToken(24), flagOptions: FLAG_OPTIONS, pronounPreferenceOptions: PRONOUN_PREFERENCES, pronounPresetOptions: PRONOUN_PRESETS,
-    });
+    return res.status(400).render('profile-edit', editorView(profile, formValues(req.body), { error: error.message }));
   }
   const rules = await loadCurrentRules();
   const screened = screenContent(screeningInput(values), rules);
@@ -424,19 +509,9 @@ router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
       mail.securityNotice(req.user.email, 'Normal account access was temporarily restricted pending content review.').catch(() => {});
       mail.adminActionNeeded('content_suspension', `admin:suspension:${suspensionId}`).catch(() => {});
     }
-    return res.status(422).render('profile-edit', {
-      title: `Edit ${profile.username}`,
-      profile,
-      values: await editorState(profile),
-      error: null,
+    return res.status(422).render('profile-edit', editorView(profile, await editorState(profile), {
       warning: 'That edit matched a prohibited-content rule and was reverted. Do not submit it again. You may request Administrator review if the flag is incorrect.',
-      saved: false,
-      importNotice: null,
-      flagOptions: FLAG_OPTIONS,
-      pronounPreferenceOptions: PRONOUN_PREFERENCES,
-      pronounPresetOptions: PRONOUN_PRESETS,
-      saveId: newToken(24),
-    });
+    }));
   }
   await db.batch([
     ...flags,

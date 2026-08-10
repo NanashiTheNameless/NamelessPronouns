@@ -1,17 +1,27 @@
 import express from 'express';
 import db from '../db/index.js';
 import audit from '../audit.js';
-import { createBan } from '../bans.js';
+import { createBan, targetHash } from '../bans.js';
 import { requireStaff, roleAtLeast } from '../middleware/staff.js';
 import { requireFreshAuth } from '../middleware/session.js';
 import { ipPrefixHash } from '../util/net.js';
 import { newId } from '../util/ids.js';
+import { personalProfileStatements } from '../profiles.js';
 import * as V from '../validation.js';
 import * as mail from '../mail.js';
 import { isIP } from 'node:net';
 const router = express.Router();
 const ROLES = ['none', 'support', 'moderator', 'administrator', 'owner'];
+const SIGNUP_STATUSES = ['pending', 'approved', 'denied', 'terminated'];
+const BAN_SCOPES = ['account', 'viewing', 'both'];
+const STATE_NOTICES = {
+  pending: 'An Administrator returned your account to the pending queue. Access stays limited until a decision is recorded.',
+  approved: 'An Administrator approved your account. Sign in to finish setting it up.',
+  denied: 'An Administrator denied your account request.',
+  terminated: 'An Administrator terminated your account. Every active session was ended.',
+};
 const USER_PAGE_SIZE = 100;
+const SIGNUP_PAGE_SIZE = 25;
 function fail(res, status, message) {
   return res.status(status).render('error', { title: 'Administration', status, message });
 }
@@ -47,24 +57,202 @@ router.get('/admin/users', requireStaff('administrator'), requireFreshAuth(), as
     title: 'User directory', users: rows, page, totalPages, total,
   });
 });
+router.get('/admin/signups', requireStaff('administrator'), requireFreshAuth(), async (req, res) => {
+  const requestedPage = /^\d+$/.test(String(req.query.page || '')) ? Number(req.query.page) : 1;
+  const { rows: countRows } = await db.query("SELECT COUNT(*) AS count FROM users WHERE signup_status = 'pending'");
+  const total = Number(countRows[0]?.count || 0);
+  const totalPages = Math.max(1, Math.ceil(total / SIGNUP_PAGE_SIZE));
+  const page = Math.min(Math.max(1, requestedPage), totalPages);
+  const [pending, decided] = await Promise.all([
+    db.query(
+      `SELECT u.id, u.email, u.email_verified_at, u.requested_profile_username,
+              u.requested_profile_username_display, u.requested_display_name,
+              u.request_note, u.requested_at, u.created_at, u.twofa_method,
+              u.signup_ip_prefix_hash,
+              (SELECT pa.terms_version FROM policy_acceptances pa
+                WHERE pa.user_id = u.id ORDER BY pa.accepted_at DESC LIMIT 1) AS terms_version,
+              (SELECT pa.privacy_version FROM policy_acceptances pa
+                WHERE pa.user_id = u.id ORDER BY pa.accepted_at DESC LIMIT 1) AS privacy_version,
+              (SELECT pa.age_18_attested_at FROM policy_acceptances pa
+                WHERE pa.user_id = u.id ORDER BY pa.accepted_at DESC LIMIT 1) AS age_18_attested_at,
+              (SELECT pc.state FROM public_username_claims pc
+                WHERE pc.pending_user_id = u.id LIMIT 1) AS claim_state
+         FROM users u
+        WHERE u.signup_status = 'pending'
+        ORDER BY u.requested_at ASC, u.id
+        LIMIT ? OFFSET ?`,
+      [SIGNUP_PAGE_SIZE, (page - 1) * SIGNUP_PAGE_SIZE],
+    ),
+    db.query(
+      `SELECT u.id, u.email, u.signup_status, u.requested_profile_username_display,
+              u.requested_display_name, u.decided_at, u.decision_note,
+              d.email AS decided_by_email
+         FROM users u LEFT JOIN users d ON d.id = u.decided_by
+        WHERE u.signup_status IN ('approved', 'denied') AND u.decided_at IS NOT NULL
+        ORDER BY u.decided_at DESC
+        LIMIT 25`,
+    ),
+  ]);
+  res.render('admin/signups', {
+    title: 'Signup requests',
+    pending: pending.rows.map(({ signup_ip_prefix_hash: ipHash, ...row }) => ({
+      ...row,
+      hasSignupIp: Boolean(ipHash),
+    })),
+    decided: decided.rows,
+    page,
+    totalPages,
+    total,
+    selfId: req.user.id,
+  });
+});
+function protectedTarget(actor, target) {
+  return roleAtLeast(target.staff_role, 'administrator') && actor.staff_role !== 'owner';
+}
+async function actionableTarget(req, res, { confirmation }) {
+  if (req.params.id === req.user.id) {
+    fail(res, 403, 'Staff cannot action their own account.');
+    return null;
+  }
+  if (req.body.confirmation !== confirmation) {
+    fail(res, 400, `Type ${confirmation} exactly to continue.`);
+    return null;
+  }
+  const { rows } = await db.query(
+    `SELECT id, email, signup_status, staff_role, requested_profile_username,
+            requested_profile_username_display, requested_display_name
+       FROM users WHERE id = ?`,
+    [req.params.id],
+  );
+  const target = rows[0];
+  if (!target) {
+    fail(res, 404, 'Page not found.');
+    return null;
+  }
+  if (protectedTarget(req.user, target)) {
+    fail(res, 403, 'Only an Owner may action Administrator or Owner staff.');
+    return null;
+  }
+  return target;
+}
 router.get('/admin/accounts/:id', requireStaff('support'), requireFreshAuth(), async (req, res) => {
-  const [{ rows }, sessions, profiles] = await Promise.all([
+  const now = Date.now();
+  const [{ rows }, sessions, profiles, bans] = await Promise.all([
     db.query(`SELECT id, email, signup_status, staff_role, twofa_method, email_verified_at,
-                    requested_at, decided_at, created_at, updated_at
+                    requested_profile_username_display, requested_display_name, request_note,
+                    requested_at, decided_at, decision_note, decision_reason_public,
+                    signup_ip_prefix_hash, created_at, updated_at
                FROM users WHERE id = ?`, [req.params.id]),
-    db.query(`SELECT COUNT(*) AS count FROM sessions WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?`, [req.params.id, Date.now()]),
+    db.query(`SELECT COUNT(*) AS count FROM sessions WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?`, [req.params.id, now]),
     db.query(`SELECT p.id, p.username_display, p.published FROM profiles p
                JOIN workspaces w ON w.id = p.workspace_id
               WHERE w.owner_user_id = ? ORDER BY p.created_at`, [req.params.id]),
+    db.query(`SELECT id, scope, reason, created_at, expires_at FROM bans
+               WHERE target_type = 'user' AND target_hash = ? AND lifted_at IS NULL
+                 AND (expires_at IS NULL OR expires_at > ?)
+               ORDER BY created_at DESC`, [targetHash('user', req.params.id), now]),
   ]);
-  const account = rows[0];
-  if (!account) return fail(res, 404, 'Page not found.');
+  const row = rows[0];
+  if (!row) return fail(res, 404, 'Page not found.');
+  const { signup_ip_prefix_hash: signupIpHash, ...account } = row;
+  const canAction = roleAtLeast(req.user.staff_role, 'administrator')
+    && account.id !== req.user.id
+    && !protectedTarget(req.user, account);
   res.render('admin/account-detail', {
     title: 'Account administration', account, profiles: profiles.rows,
     activeSessions: Number(sessions.rows[0]?.count || 0), roles: ROLES,
+    signupStatuses: SIGNUP_STATUSES, banScopes: BAN_SCOPES, activeBans: bans.rows,
     canManageRole: req.user.staff_role === 'owner' && account.id !== req.user.id,
     canEmergency: roleAtLeast(req.user.staff_role, 'administrator') && account.id !== req.user.id,
+    canAction,
+    canDecideSignup: canAction && account.signup_status === 'pending',
+    hasSignupIp: Boolean(signupIpHash),
   });
+});
+router.post('/admin/accounts/:id/state', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
+  const state = String(req.body.signup_status || '');
+  if (!SIGNUP_STATUSES.includes(state)) return fail(res, 400, 'Choose a valid account state.');
+  let reason;
+  try { reason = prose(req.body.reason, 'Decision note'); } catch (error) {
+    if (error instanceof V.ValidationError) return fail(res, 400, error.message);
+    throw error;
+  }
+  const target = await actionableTarget(req, res, { confirmation: 'CHANGE ACCOUNT STATE' });
+  if (!target) return undefined;
+  if (target.signup_status === state) return fail(res, 409, 'That account is already in that state.');
+  const now = Date.now();
+  const statements = [{
+    sql: `UPDATE users SET signup_status = ?, decided_at = ?, decided_by = ?,
+                 decision_note = ?, updated_at = ?
+           WHERE id = ? AND signup_status = ?`,
+    params: [state, now, req.user.id, reason, now, target.id, target.signup_status],
+  }];
+  if (state === 'approved' && target.requested_profile_username) {
+    const existing = await db.query(
+      `SELECT COUNT(*) AS count FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
+        WHERE w.owner_user_id = ?`,
+      [target.id],
+    );
+    if (Number(existing.rows[0]?.count || 0) === 0) {
+      statements.push(...personalProfileStatements({
+        userId: target.id,
+        username: target.requested_profile_username,
+        usernameDisplay: target.requested_profile_username_display || target.requested_profile_username,
+        displayName: target.requested_display_name || target.requested_profile_username,
+        now,
+      }).statements);
+    }
+  }
+  if (state === 'denied') {
+    statements.push({
+      sql: "DELETE FROM public_username_claims WHERE pending_user_id = ? AND state = 'pending'",
+      params: [target.id],
+    });
+  }
+  if (state === 'terminated') {
+    statements.push(
+      { sql: "UPDATE users SET staff_role = 'none' WHERE id = ?", params: [target.id] },
+      { sql: 'UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL', params: [now, target.id] },
+      { sql: 'DELETE FROM login_challenges WHERE user_id = ?', params: [target.id] },
+      { sql: 'DELETE FROM reauth_challenges WHERE user_id = ?', params: [target.id] },
+      {
+        sql: `UPDATE profiles SET published = 0, updated_at = ?
+               WHERE workspace_id IN (SELECT id FROM workspaces WHERE owner_user_id = ?)`,
+        params: [now, target.id],
+      },
+    );
+  }
+  await db.batch(statements);
+  await audit.record({
+    type: 'account.state_changed', actorUserId: req.user.id, subjectUserId: target.id,
+    ipHash: ipPrefixHash(req), detail: { from: target.signup_status, to: state, reason },
+  });
+  mail.securityNotice(target.email, STATE_NOTICES[state]).catch(() => {});
+  res.redirect(`/admin/accounts/${target.id}`);
+});
+router.post('/admin/accounts/:id/ban', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
+  const scope = String(req.body.scope || '');
+  if (!BAN_SCOPES.includes(scope)) return fail(res, 400, 'Choose a valid ban scope.');
+  let reason;
+  try { reason = prose(req.body.reason); } catch (error) {
+    if (error instanceof V.ValidationError) return fail(res, 400, error.message);
+    throw error;
+  }
+  let expiresAt = null;
+  if (req.body.duration_days) {
+    const days = Number(req.body.duration_days);
+    if (!Number.isInteger(days) || days < 1 || days > 3650) return fail(res, 400, 'Duration must be 1 to 3650 days.');
+    expiresAt = Date.now() + days * 86400000;
+  }
+  const target = await actionableTarget(req, res, { confirmation: 'BAN ACCOUNT' });
+  if (!target) return undefined;
+  await createBan({ type: 'user', value: target.id, scope, reason, createdBy: req.user.id, expiresAt });
+  await audit.record({
+    type: 'ban.created', actorUserId: req.user.id, subjectUserId: target.id,
+    ipHash: ipPrefixHash(req), detail: { scope, expiresAt },
+  });
+  mail.securityNotice(target.email, `An Administrator applied a ${scope} ban to your account.`).catch(() => {});
+  res.redirect(`/admin/accounts/${target.id}`);
 });
 router.post('/admin/accounts/:id/role', requireStaff('owner'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
   const role = String(req.body.role || '');

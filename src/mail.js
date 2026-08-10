@@ -184,11 +184,24 @@ export function securityNotice(to, summary) {
     text: `A security-relevant change occurred on your account:\n\n${summary}\n\nTime: ${new Date().toISOString()}\n\nIf this was not you, contact support.`,
   });
 }
-export function decisionEmail(to) {
+const DECISION_HEADLINES = Object.freeze({
+  approved: 'An Administrator approved your account request.',
+  denied: 'An Administrator denied your account request.',
+});
+const DECISION_NEXT_STEPS = Object.freeze({
+  approved: 'Sign in to finish setting up your account.',
+  denied: 'The denied request is removed after 7 days, after which you may request an account again.',
+});
+export function decisionEmail(to, { outcome, reason } = {}) {
+  const headline = DECISION_HEADLINES[outcome] || 'There is an update on your account request.';
+  const explanation = reason
+    ? `\n\nReason given by the reviewing Administrator:\n\n${reason}`
+    : '\n\nNo reason was recorded with this decision.';
+  const next = DECISION_NEXT_STEPS[outcome] ? `\n\n${DECISION_NEXT_STEPS[outcome]}` : '\n\nSign in for details.';
   return sendEmail({
     to,
-    subject: 'Update on your account request',
-    text: 'There is an update on your account request. Sign in for details.',
+    subject: `Account request ${outcome === 'approved' || outcome === 'denied' ? outcome : 'update'}`,
+    text: `${headline}${explanation}${next}`,
   });
 }
 export function contentWarning(to, categories) {

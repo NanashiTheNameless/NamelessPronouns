@@ -47,14 +47,25 @@ export async function collectUserData(userId, { generatedAt = new Date().toISOSt
     )
   )`;
   const profileNames = await db.query(
-    `SELECT id, profile_id, value, position FROM profile_names
+    `SELECT id, profile_id, value, opinion, position FROM profile_names
       WHERE ${profileScope} ORDER BY profile_id, position`,
     [userId, userId],
   );
   const pronounSets = await db.query(
     `SELECT id, profile_id, subject, object, possessive_determiner,
-            possessive_pronoun, reflexive, position
+            possessive_pronoun, reflexive, opinion, position
        FROM pronoun_sets WHERE ${profileScope} ORDER BY profile_id, position`,
+    [userId, userId],
+  );
+  const profileWordGroups = await db.query(
+    `SELECT id, profile_id, heading, position FROM profile_word_groups
+      WHERE ${profileScope} ORDER BY profile_id, position`,
+    [userId, userId],
+  );
+  const profileWords = await db.query(
+    `SELECT id, group_id, value, opinion, position FROM profile_words
+      WHERE group_id IN (SELECT id FROM profile_word_groups WHERE ${profileScope})
+      ORDER BY group_id, position`,
     [userId, userId],
   );
   const profileLinks = await db.query(
@@ -63,12 +74,12 @@ export async function collectUserData(userId, { generatedAt = new Date().toISOSt
     [userId, userId],
   );
   const profileIdentityFlags = await db.query(
-    `SELECT id, profile_id, flag_key, position FROM profile_identity_flags
+    `SELECT id, profile_id, flag_key, opinion, position FROM profile_identity_flags
       WHERE ${profileScope} ORDER BY profile_id, position`,
     [userId, userId],
   );
   const profilePronounPreferences = await db.query(
-    `SELECT profile_id, preference_key, position FROM profile_pronoun_preferences
+    `SELECT profile_id, preference_key, opinion, position FROM profile_pronoun_preferences
       WHERE ${profileScope} ORDER BY profile_id, position`,
     [userId, userId],
   );
@@ -101,6 +112,8 @@ export async function collectUserData(userId, { generatedAt = new Date().toISOSt
     profiles: profiles.rows,
     profile_names: profileNames.rows,
     pronoun_sets: pronounSets.rows,
+    profile_word_groups: profileWordGroups.rows,
+    profile_words: profileWords.rows,
     profile_links: profileLinks.rows,
     profile_identity_flags: profileIdentityFlags.rows,
     profile_pronoun_preferences: profilePronounPreferences.rows,

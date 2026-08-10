@@ -1,13 +1,140 @@
-<!DOCTYPE html><html lang="en"><head><%- await include('../partials/head', { title }) %></head><body>
-<%- await include('../partials/site-header') %><main class="container"><p class="eyebrow">Administrator tools</p>
-<h1>Account</h1><dl><dt>Email</dt><dd><%- await obfuscateEmail(account.email) %></dd><dt>Status</dt><dd><%= account.signup_status %></dd>
-<dt>Staff role</dt><dd><%= account.staff_role %></dd><dt>Second factor</dt><dd><%= account.twofa_method %></dd>
-<dt>Active sessions</dt><dd><%= activeSessions %></dd><dt>Created</dt><dd><%= new Date(Number(account.created_at)).toISOString() %></dd></dl>
-<h2>Profiles</h2><% if (!profiles.length) { %><p>No profiles.</p><% } else { %><ul><% profiles.forEach(function(p) { %><li>@<%= p.username_display %> — <%= p.published ? 'published' : 'unpublished' %></li><% }) %></ul><% } %>
-<% if (canManageRole) { %><section><h2>Staff role</h2><form method="post" action="/admin/accounts/<%= account.id %>/role" class="stack">
-<input type="hidden" name="_csrf" value="<%= csrfToken %>"><label>Role <select name="role"><% roles.forEach(function(role) { %><option value="<%= role %>" <%= account.staff_role === role ? 'selected' : '' %>><%= role %></option><% }) %></select></label>
-<label>Type CHANGE STAFF ROLE <input name="confirmation" autocomplete="off"></label><button type="submit">Change staff role</button></form></section><% } %>
-<% if (canEmergency) { %><section><h2>Emergency session revocation</h2><p>Revokes every session and pending login or reauthentication challenge.</p>
-<form method="post" action="/admin/accounts/<%= account.id %>/revoke-sessions" class="stack"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
-<label>Type REVOKE ALL SESSIONS <input name="confirmation" autocomplete="off"></label><button type="submit">Revoke all sessions</button></form></section><% } %>
-<p><a href="/admin">Back to administration</a></p></main><%- await include('../partials/site-footer') %></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Administrator tools</p>
+    <h1>Account</h1>
+    <dl>
+      <dt>Email</dt><dd><%- await obfuscateEmail(account.email) %></dd>
+      <dt>State</dt><dd><span class="status-badge"><%= account.signup_status %></span></dd>
+      <dt>Staff role</dt><dd><%= account.staff_role %></dd>
+      <dt>Second factor</dt><dd><%= account.twofa_method %></dd>
+      <dt>Email verified</dt><dd><%= account.email_verified_at ? new Date(Number(account.email_verified_at)).toISOString() : 'Not verified' %></dd>
+      <dt>Active sessions</dt><dd><%= activeSessions %></dd>
+      <dt>Created</dt><dd><%= new Date(Number(account.created_at)).toISOString() %></dd>
+      <dt>Last decided</dt><dd><%= account.decided_at ? new Date(Number(account.decided_at)).toISOString() : 'Never' %></dd>
+      <% if (account.decision_reason_public) { %><dt>Reason shown to the applicant</dt><dd><%= account.decision_reason_public %></dd><% } %>
+      <% if (account.decision_note) { %><dt>Internal note</dt><dd><%= account.decision_note %></dd><% } %>
+    </dl>
+
+    <% if (account.signup_status === 'pending') { %>
+      <section class="panel signup-request" aria-labelledby="request-h">
+        <h2 id="request-h">Signup request</h2>
+        <p><strong><%= account.requested_display_name %></strong> <span class="username">@<%= account.requested_profile_username_display %></span></p>
+        <p class="fineprint">Requested <%= account.requested_at ? new Date(Number(account.requested_at)).toISOString() : 'unknown' %><%= account.email_verified_at ? '' : ' — email not verified yet' %>.</p>
+        <h3>Their reason for requesting an account</h3>
+        <% if (account.request_note) { %>
+          <blockquote class="signup-reason"><%= account.request_note %></blockquote>
+        <% } else { %>
+          <p class="fineprint">No reason was recorded with this request.</p>
+        <% } %>
+        <% if (canDecideSignup) { %>
+          <%- await include('../partials/signup-decision', {
+            accountId: account.id, returnTo: 'account', hasSignupIp,
+          }) %>
+        <% } else { %>
+          <p class="fineprint">You cannot decide this request.</p>
+        <% } %>
+      </section>
+    <% } %>
+
+    <h2>Profiles</h2>
+    <% if (!profiles.length) { %>
+      <p>No profiles.<% if (account.requested_profile_username_display) { %> Requested <strong>@<%= account.requested_profile_username_display %></strong>.<% } %></p>
+    <% } else { %>
+      <ul><% profiles.forEach(function (p) { %><li>@<%= p.username_display %> — <%= Number(p.published) === 1 ? 'published' : 'unpublished' %></li><% }) %></ul>
+    <% } %>
+
+    <h2>Active bans</h2>
+    <% if (!activeBans.length) { %>
+      <p>No active bans.</p>
+    <% } else { %>
+      <ul>
+        <% activeBans.forEach(function (ban) { %>
+          <li>
+            <%= ban.scope %> ban since <%= new Date(Number(ban.created_at)).toISOString() %><%= ban.expires_at ? ', expires ' + new Date(Number(ban.expires_at)).toISOString() : ', no expiry' %>.
+            <% if (ban.reason) { %><br><span class="fineprint"><%= ban.reason %></span><% } %>
+            <% if (canAction) { %>
+              <form method="post" action="/admin/bans/<%= ban.id %>/lift" class="stack">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <label>Reason <input name="reason" maxlength="500" required></label>
+                <label>Type LIFT BAN <input name="confirmation" autocomplete="off" required></label>
+                <button type="submit" class="secondary">Lift ban</button>
+              </form>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+
+    <% if (canAction) { %>
+      <section class="panel">
+        <h2>Account state</h2>
+        <p>Approving a pending account with a reserved username also creates its personal profile. Terminating ends every session and unpublishes every profile.</p>
+        <form method="post" action="/admin/accounts/<%= account.id %>/state" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>State
+            <select name="signup_status">
+              <% signupStatuses.forEach(function (state) { %>
+                <option value="<%= state %>" <%= account.signup_status === state ? 'selected' : '' %>><%= state %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label>Decision note <input name="reason" maxlength="500" required></label>
+          <label>Type CHANGE ACCOUNT STATE <input name="confirmation" autocomplete="off" required></label>
+          <button type="submit">Change account state</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Ban this account</h2>
+        <form method="post" action="/admin/accounts/<%= account.id %>/ban" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>Scope
+            <select name="scope">
+              <% banScopes.forEach(function (scope) { %><option value="<%= scope %>"><%= scope %></option><% }) %>
+            </select>
+          </label>
+          <label>Duration in days (blank for permanent) <input name="duration_days" type="number" min="1" max="3650"></label>
+          <label>Reason <input name="reason" maxlength="500" required></label>
+          <label>Type BAN ACCOUNT <input name="confirmation" autocomplete="off" required></label>
+          <button type="submit">Ban account</button>
+        </form>
+      </section>
+    <% } %>
+
+    <% if (canManageRole) { %>
+      <section class="panel">
+        <h2>Staff role</h2>
+        <form method="post" action="/admin/accounts/<%= account.id %>/role" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>Role
+            <select name="role">
+              <% roles.forEach(function (role) { %><option value="<%= role %>" <%= account.staff_role === role ? 'selected' : '' %>><%= role %></option><% }) %>
+            </select>
+          </label>
+          <label>Type CHANGE STAFF ROLE <input name="confirmation" autocomplete="off" required></label>
+          <button type="submit">Change staff role</button>
+        </form>
+      </section>
+    <% } %>
+
+    <% if (canEmergency) { %>
+      <section class="panel">
+        <h2>Emergency session revocation</h2>
+        <p>Revokes every session and pending login or reauthentication challenge.</p>
+        <form method="post" action="/admin/accounts/<%= account.id %>/revoke-sessions" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>Type REVOKE ALL SESSIONS <input name="confirmation" autocomplete="off" required></label>
+          <button type="submit">Revoke all sessions</button>
+        </form>
+      </section>
+    <% } %>
+
+    <p><a href="/admin/audit?subject=<%= account.id %>">Audit history</a> · <a href="/admin/users">User directory</a> · <a href="/admin">Back to administration</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

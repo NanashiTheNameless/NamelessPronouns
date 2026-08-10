@@ -7,6 +7,7 @@ import { readFile } from 'node:fs/promises';
 import { validateProfileForm, autoSuspensionEligible } from '../src/routes/profile-editor.js';
 import { ValidationError } from '../src/validation.js';
 import { PRONOUN_PRESETS } from '../src/pronoun-presets.js';
+import { OPINIONS } from '../src/opinions.js';
 function validBody(overrides = {}) {
   return {
     display_name: 'Alex Example',
@@ -28,10 +29,11 @@ test('profile editor: validates and structures an accepted form', () => {
   const values = validateProfileForm(validBody());
   assert.equal(values.displayName, 'Alex Example');
   assert.equal(values.published, true);
-  assert.deepEqual(values.names, ['Alex']);
+  assert.deepEqual(values.names, [{ value: 'Alex', opinion: 'yes' }]);
   assert.equal(values.pronouns[0].possessivePronoun, 'theirs');
   assert.equal(values.links[0].url, 'https://example.com/profile');
   assert.deepEqual(values.flags, []);
+  assert.deepEqual(values.words, []);
   assert.deepEqual(values.pronounPreferences, []);
 });
 test('profile editor: accepts dynamic repeated rows and identity flags', () => {
@@ -47,10 +49,80 @@ test('profile editor: accepts dynamic repeated rows and identity flags', () => {
     link_url: ['https://example.com', 'https://social.example.com'],
     profile_flag: ['Nonbinary', 'Progress Pride'],
   });
-  assert.deepEqual(values.names, ['Alex', 'Lex']);
+  assert.deepEqual(values.names.map((row) => row.value), ['Alex', 'Lex']);
   assert.equal(values.pronouns.length, 2);
   assert.equal(values.links.length, 2);
-  assert.deepEqual(values.flags, ['Nonbinary', 'Progress Pride']);
+  assert.deepEqual(values.flags, [
+    { key: 'Nonbinary', opinion: 'yes' },
+    { key: 'Progress Pride', opinion: 'yes' },
+  ]);
+});
+test('profile editor: every listed option carries an opinion', () => {
+  const values = validateProfileForm({
+    ...validBody(),
+    name: ['Alex', 'Lex'],
+    name_opinion: ['yes', 'close'],
+    subject: ['they', 'xe'],
+    object: ['them', 'xem'],
+    possessive_determiner: ['their', 'xyr'],
+    possessive_pronoun: ['theirs', 'xyrs'],
+    reflexive: ['themself', 'xemself'],
+    pronoun_opinion: ['yes', 'jokingly'],
+    profile_flag: ['Nonbinary', 'Queer'],
+    profile_flag_opinion: ['okay', 'nope'],
+    pronoun_pref_any_pronouns: 'jokingly',
+    word_group_heading: ['I am a'],
+    word_value_0: ['person', 'nerd'],
+    word_opinion_0: ['yes', 'nope'],
+  });
+  assert.deepEqual(values.names, [
+    { value: 'Alex', opinion: 'yes' },
+    { value: 'Lex', opinion: 'close' },
+  ]);
+  assert.deepEqual(values.pronouns.map((row) => row.opinion), ['yes', 'jokingly']);
+  assert.deepEqual(values.flags, [
+    { key: 'Nonbinary', opinion: 'okay' },
+    { key: 'Queer', opinion: 'nope' },
+  ]);
+  assert.deepEqual(values.pronounPreferences, [{ key: 'any_pronouns', opinion: 'jokingly' }]);
+  assert.deepEqual(values.words, [{
+    heading: 'I am a',
+    words: [{ value: 'person', opinion: 'yes' }, { value: 'nerd', opinion: 'nope' }],
+  }]);
+});
+test('profile editor: unknown opinions fall back to Yes', () => {
+  const values = validateProfileForm(validBody({ name_opinion: 'maybe', pronoun_opinion: '' }));
+  assert.equal(values.names[0].opinion, 'yes');
+  assert.equal(values.pronouns[0].opinion, 'yes');
+});
+test('profile editor: word groups keep their own words and headings', () => {
+  const values = validateProfileForm({
+    ...validBody(),
+    word_group_heading: ['I am a...', 'Call me'],
+    word_value_0: ['person', ''],
+    word_opinion_0: ['okay', 'yes'],
+    word_value_1: 'captain',
+    word_opinion_1: 'jokingly',
+  });
+  assert.deepEqual(values.words, [
+    { heading: 'I am a...', words: [{ value: 'person', opinion: 'okay' }] },
+    { heading: 'Call me', words: [{ value: 'captain', opinion: 'jokingly' }] },
+  ]);
+});
+test('profile editor: word groups drop empty rows and demand complete groups', () => {
+  assert.deepEqual(validateProfileForm({ ...validBody(), word_group_heading: [''], word_value_0: [''] }).words, []);
+  assert.throws(
+    () => validateProfileForm({ ...validBody(), word_group_heading: [''], word_value_0: ['person'] }),
+    /needs a heading/,
+  );
+  assert.throws(
+    () => validateProfileForm({ ...validBody(), word_group_heading: ['I am a'], word_value_0: [''] }),
+    /at least one word/,
+  );
+  assert.throws(
+    () => validateProfileForm({ ...validBody(), word_group_heading: ['fancy \u{1D4EF}'], word_value_0: ['person'] }),
+    ValidationError,
+  );
 });
 test('profile editor: short display fields reject punctuation and non-ASCII', () => {
   assert.throws(() => validateProfileForm(validBody({ display_name: 'bad<script>' })), ValidationError);
@@ -85,17 +157,25 @@ test('profile editor: custom pronouns remain independent of presets', () => {
   }));
   assert.deepEqual(values.pronouns[0], {
     subject: 'star', object: 'star', possessiveDeterminer: "star's", possessivePronoun: "star's", reflexive: 'starself',
+    opinion: 'yes',
   });
 });
-test('profile editor: pronoun preferences are independent on/off toggles', () => {
+test('profile editor: pronoun preferences are independent opinion choices', () => {
   const values = validateProfileForm(validBody({
     pronoun_pref_any_pronouns: 'on',
-    pronoun_pref_ask_me: 'on',
-    pronoun_pref_varies: 'on',
-    pronoun_pref_use_name: 'on',
-    pronoun_pref_unknown: 'on',
+    pronoun_pref_ask_me: 'close',
+    pronoun_pref_varies: 'nope',
+    pronoun_pref_use_name: 'okay',
+    pronoun_pref_no_pronouns: '',
+    pronoun_pref_mirror_pronouns: 'not-an-opinion',
+    pronoun_pref_unknown: 'yes',
   }));
-  assert.deepEqual(values.pronounPreferences, ['any_pronouns', 'ask_me', 'varies', 'use_name']);
+  assert.deepEqual(values.pronounPreferences, [
+    { key: 'any_pronouns', opinion: 'yes' },
+    { key: 'ask_me', opinion: 'close' },
+    { key: 'varies', opinion: 'nope' },
+    { key: 'use_name', opinion: 'okay' },
+  ]);
 });
 test('profile editor: requires link labels and allowed HTTPS URLs', () => {
   assert.throws(() => validateProfileForm(validBody({ link_label_0: '' })), /both a label and URL/);
@@ -103,7 +183,7 @@ test('profile editor: requires link labels and allowed HTTPS URLs', () => {
 });
 test('profile editor: flags must use an available Pronouns.page key', () => {
   assert.throws(() => validateProfileForm(validBody({ profile_flag: 'Not a real flag' })), /Choose a flag/);
-  assert.deepEqual(validateProfileForm(validBody({ profile_flag: 'Queer' })).flags, ['Queer']);
+  assert.deepEqual(validateProfileForm(validBody({ profile_flag: 'Queer' })).flags, [{ key: 'Queer', opinion: 'yes' }]);
 });
 test('automatic suspension permanently excludes Administrator and Owner matches', () => {
   assert.equal(autoSuspensionEligible('none'), true);
@@ -118,11 +198,12 @@ test('profile editor renders one row per empty category and add-another controls
     profile: { id: 'profile-1', username: 'example' },
     values: {
       displayName: 'Example', description: '', notes: '', published: false,
-      names: [''],
-      pronouns: [{ subject: '', object: '', possessiveDeterminer: '', possessivePronoun: '', reflexive: '' }],
+      names: [{ value: '', opinion: 'yes' }],
+      pronouns: [{ subject: '', object: '', possessiveDeterminer: '', possessivePronoun: '', reflexive: '', opinion: 'yes' }],
       pronounPreferences: [],
+      words: [{ heading: '', words: [{ value: '', opinion: 'yes' }] }],
       links: [{ label: '', url: '' }],
-      flags: [''],
+      flags: [{ key: '', opinion: 'yes' }],
     },
     error: null, warning: null, saved: false, importNotice: null,
     csrfToken: 'csrf', saveId: 'save-id', user: null,
@@ -134,6 +215,7 @@ test('profile editor renders one row per empty category and add-another controls
       { key: 'use_name', label: 'Use my name' },
     ],
     pronounPresetOptions: PRONOUN_PRESETS,
+    opinionOptions: OPINIONS,
   }, { async: true });
   assert.equal((html.match(/<input name="name"/g) || []).length, 2, 'one active name and one inert template');
   assert.match(html, /Add another name/);
@@ -146,6 +228,20 @@ test('profile editor renders one row per empty category and add-another controls
   for (const preference of ['Any pronouns', 'Ask me', 'Varies', 'Use my name']) assert.match(html, new RegExp(preference));
   assert.match(html, /Add another link/);
   assert.match(html, /Add another flag/);
+  assert.match(html, /Add another word group/);
+  assert.match(html, /Add another word/);
+  assert.match(html, /name="word_group_heading"/);
+  assert.match(html, /name="word_value_0"/);
+  assert.match(html, /name="word_opinion_0"/);
+  assert.match(html, /name="name_opinion"/);
+  assert.match(html, /name="pronoun_opinion"/);
+  assert.match(html, /name="profile_flag_opinion"/);
+  assert.match(html, /name="pronoun_pref_ask_me"/);
+  assert.doesNotMatch(html, /type="checkbox" name="pronoun_pref_/);
+  for (const opinion of ['Yes', 'Jokingly', 'Only if we&#39;re close', 'Okay', 'Nope']) {
+    assert.match(html, new RegExp(`>${opinion}</option>`));
+  }
+  assert.match(html, /<option value="" selected>Not listed<\/option>/);
   assert.match(html, /data-flag-picker/);
   assert.match(html, /data-flag-option/);
   assert.match(html, /src="\/static\/flags\/Nonbinary\.png"/);

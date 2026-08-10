@@ -1,0 +1,57 @@
+<div class="signup-decisions">
+  <form method="post" action="/admin/accounts/<%= accountId %>/approve" class="stack panel">
+    <h3>Approve</h3>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="return_to" value="<%= returnTo %>">
+    <label>Reason shown to the applicant (optional)
+      <input name="reason_public" maxlength="500" data-decision-public>
+    </label>
+    <label>Internal note, staff only (optional)
+      <input name="decision_note" maxlength="500">
+    </label>
+    <button type="submit">Approve request</button>
+  </form>
+
+  <form method="post" action="/admin/accounts/<%= accountId %>/deny" class="stack panel">
+    <h3>Deny</h3>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="return_to" value="<%= returnTo %>">
+    <label>Reason shown to the applicant (optional)
+      <input name="reason_public" maxlength="500" data-decision-public>
+    </label>
+    <label>Internal note, staff only (optional)
+      <input name="decision_note" maxlength="500">
+    </label>
+    <p class="fineprint">Denying only refuses this request. The applicant may request an account again once the denial is cleared after 7 days.</p>
+    <details class="deny-ban">
+      <summary>Separately, ban this applicant</summary>
+      <fieldset>
+        <legend>Ban targets</legend>
+        <p class="fineprint">Only for applicants who should not be able to return. Leave this closed to deny without any ban.</p>
+        <div class="choice-grid">
+          <label class="choice"><input type="checkbox" name="ban_target" value="email"><span>This email address</span></label>
+          <label class="choice"><input type="checkbox" name="ban_target" value="domain"><span>The whole email domain</span></label>
+          <label class="choice"><input type="checkbox" name="ban_target" value="user"><span>This account ID</span></label>
+          <label class="choice">
+            <input type="checkbox" name="ban_target" value="ip_prefix" <%= hasSignupIp ? '' : 'disabled' %>>
+            <span>The signup IP range<% if (!hasSignupIp) { %> (not recorded for this request)<% } %></span>
+          </label>
+        </div>
+        <label>Ban scope
+          <select name="ban_scope">
+            <option value="account">account — blocks signing up and signing in</option>
+            <option value="viewing">viewing — blocks reading public profiles</option>
+            <option value="both">both</option>
+          </select>
+        </label>
+        <label>Ban duration in days, blank for permanent
+          <input name="ban_duration_days" type="number" min="1" max="3650">
+        </label>
+        <label>Type BAN APPLICANT, required only if you ticked a target above
+          <input name="ban_confirmation" autocomplete="off">
+        </label>
+      </fieldset>
+    </details>
+    <button type="submit" class="secondary">Deny request</button>
+  </form>
+</div>

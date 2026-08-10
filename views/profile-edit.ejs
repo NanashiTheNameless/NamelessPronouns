@@ -29,21 +29,22 @@
       <fieldset data-repeater>
         <legend>Names</legend>
         <div data-repeater-rows class="repeat-rows">
-          <% values.names.forEach(function (name, i) { %>
+          <% for (const [i, name] of values.names.entries()) { %>
             <section data-repeater-row data-row-label="Name" class="repeat-row" aria-label="Name <%= i + 1 %>">
-              <label><span data-row-heading>Name <%= i + 1 %></span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint value="<%= name %>"></label>
+              <label><span data-row-heading>Name <%= i + 1 %></span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint value="<%= name.value %>"></label>
+              <%- await include('partials/opinion-select', { name: 'name_opinion', selected: name.opinion, opinionOptions }) %>
               <button type="button" class="secondary compact" data-remove>Remove</button>
             </section>
-          <% }); %>
+          <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another name</button>
-        <template><section data-repeater-row data-row-label="Name" class="repeat-row"><label><span data-row-heading>Name</span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Name" class="repeat-row"><label><span data-row-heading>Name</span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint></label><%- await include('partials/opinion-select', { name: 'name_opinion', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
       <fieldset data-repeater>
         <legend>Pronoun sets</legend>
         <div data-repeater-rows class="repeat-rows">
-          <% values.pronouns.forEach(function (row, i) { %>
+          <% for (const [i, row] of values.pronouns.entries()) { %>
             <section data-repeater-row data-row-label="Set" class="repeat-row repeat-row-group" aria-label="Pronoun set <%= i + 1 %>">
               <h2 data-row-heading>Set <%= i + 1 %></h2>
               <div class="pronoun-preset">
@@ -55,21 +56,57 @@
               <label>Possessive determiner <input name="possessive_determiner" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.possessiveDeterminer %>"></label>
               <label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.possessivePronoun %>"></label>
               <label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.reflexive %>"></label>
+              <%- await include('partials/opinion-select', { name: 'pronoun_opinion', selected: row.opinion, opinionOptions }) %>
               <button type="button" class="secondary compact" data-remove>Remove</button>
             </section>
-          <% }); %>
+          <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another pronoun set</button>
-        <template><section data-repeater-row data-row-label="Set" class="repeat-row repeat-row-group"><h2 data-row-heading>Set</h2><div class="pronoun-preset"><label>Optional preset <select data-pronoun-preset><option value="">Choose a preset</option><% pronounPresetOptions.forEach(function (preset) { %><option value="<%= preset.key %>" data-subject="<%= preset.forms[0] %>" data-object="<%= preset.forms[1] %>" data-possessive-determiner="<%= preset.forms[2] %>" data-possessive-pronoun="<%= preset.forms[3] %>" data-reflexive="<%= preset.forms[4] %>"><%= preset.label %></option><% }); %></select></label><button type="button" class="secondary compact" data-apply-pronoun-preset>Use preset</button></div><label>Subject <input name="subject" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Object <input name="object" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Possessive determiner <input name="possessive_determiner" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Set" class="repeat-row repeat-row-group"><h2 data-row-heading>Set</h2><div class="pronoun-preset"><label>Optional preset <select data-pronoun-preset><option value="">Choose a preset</option><% pronounPresetOptions.forEach(function (preset) { %><option value="<%= preset.key %>" data-subject="<%= preset.forms[0] %>" data-object="<%= preset.forms[1] %>" data-possessive-determiner="<%= preset.forms[2] %>" data-possessive-pronoun="<%= preset.forms[3] %>" data-reflexive="<%= preset.forms[4] %>"><%= preset.label %></option><% }); %></select></label><button type="button" class="secondary compact" data-apply-pronoun-preset>Use preset</button></div><label>Subject <input name="subject" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Object <input name="object" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Possessive determiner <input name="possessive_determiner" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><%- await include('partials/opinion-select', { name: 'pronoun_opinion', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
       <fieldset>
         <legend>Pronoun preferences</legend>
+        <p class="fineprint">Leave a preference on "Not listed" to keep it off your profile.</p>
         <div class="choice-grid">
-          <% pronounPreferenceOptions.forEach(function (preference) { %>
-            <label class="choice"><input type="checkbox" name="pronoun_pref_<%= preference.key %>" <%= (values.pronounPreferences || []).includes(preference.key) ? 'checked' : '' %>><span><%= preference.label %></span></label>
-          <% }); %>
+          <% for (const preference of pronounPreferenceOptions) { %>
+            <% const chosen = (values.pronounPreferences || []).find(function (entry) { return entry.key === preference.key; }); %>
+            <div class="choice choice-opinion">
+              <span><%= preference.label %></span>
+              <%- await include('partials/opinion-select', { name: 'pronoun_pref_' + preference.key, selected: chosen ? chosen.opinion : '', opinionOptions, optional: true, legend: 'How you feel about it' }) %>
+            </div>
+          <% } %>
         </div>
+      </fieldset>
+
+      <fieldset data-repeater data-word-groups>
+        <legend>Words</legend>
+        <p class="fineprint">Group words the way Pronouns.page does: give each group a heading, then list the words that belong under it.</p>
+        <div data-repeater-rows class="repeat-rows">
+          <% for (const [gi, group] of values.words.entries()) { %>
+            <section data-repeater-row data-word-group data-row-label="Word group" class="repeat-row repeat-row-group" aria-label="Word group <%= gi + 1 %>">
+              <h2 data-row-heading>Word group <%= gi + 1 %></h2>
+              <label>Heading <input name="word_group_heading" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint value="<%= group.heading %>"></label>
+              <fieldset data-repeater class="word-rows">
+                <legend>Words in this group</legend>
+                <div data-repeater-rows class="repeat-rows">
+                  <% for (const [wi, word] of group.words.entries()) { %>
+                    <section data-repeater-row data-row-label="Word" class="repeat-row" aria-label="Word <%= wi + 1 %>">
+                      <label><span data-row-heading>Word <%= wi + 1 %></span><input name="word_value_<%= gi %>" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint value="<%= word.value %>"></label>
+                      <%- await include('partials/opinion-select', { name: 'word_opinion_' + gi, selected: word.opinion, opinionOptions }) %>
+                      <button type="button" class="secondary compact" data-remove>Remove</button>
+                    </section>
+                  <% } %>
+                </div>
+                <button type="button" class="secondary add-row" data-add>Add another word</button>
+                <template><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_<%= gi %>" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint></label><%- await include('partials/opinion-select', { name: 'word_opinion_' + gi, selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+              </fieldset>
+              <button type="button" class="secondary compact" data-remove>Remove this group</button>
+            </section>
+          <% } %>
+        </div>
+        <button type="button" class="secondary add-row" data-add>Add another word group</button>
+        <template><section data-repeater-row data-word-group data-row-label="Word group" class="repeat-row repeat-row-group"><h2 data-row-heading>Word group</h2><label>Heading <input name="word_group_heading" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint></label><fieldset data-repeater class="word-rows"><legend>Words in this group</legend><div data-repeater-rows class="repeat-rows"><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_0" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint></label><%- await include('partials/opinion-select', { name: 'word_opinion_0', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></div><button type="button" class="secondary add-row" data-add>Add another word</button><template><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_0" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint></label><%- await include('partials/opinion-select', { name: 'word_opinion_0', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template></fieldset><button type="button" class="secondary compact" data-remove>Remove this group</button></section></template>
       </fieldset>
 
       <fieldset data-repeater>
@@ -94,13 +131,14 @@
         <div data-repeater-rows class="repeat-rows">
           <% for (const [i, flag] of values.flags.entries()) { %>
             <section data-repeater-row data-row-label="Flag" class="repeat-row" aria-label="Flag <%= i + 1 %>">
-              <%- await include('partials/flag-picker', { selected: flag, heading: 'Flag ' + (i + 1), flagOptions }) %>
+              <%- await include('partials/flag-picker', { selected: flag.key, heading: 'Flag ' + (i + 1), flagOptions }) %>
+              <%- await include('partials/opinion-select', { name: 'profile_flag_opinion', selected: flag.opinion, opinionOptions }) %>
               <button type="button" class="secondary compact" data-remove>Remove</button>
             </section>
           <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another flag</button>
-        <template><section data-repeater-row data-row-label="Flag" class="repeat-row"><%- await include('partials/flag-picker', { selected: '', heading: 'Flag', flagOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Flag" class="repeat-row"><%- await include('partials/flag-picker', { selected: '', heading: 'Flag', flagOptions }) %><%- await include('partials/opinion-select', { name: 'profile_flag_opinion', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
       <label class="choice"><input type="checkbox" name="published" <%= values.published ? 'checked' : '' %>><span>Publish this profile</span></label>

@@ -16,7 +16,7 @@
       <section class="identity-flags-section" aria-labelledby="flags-h">
         <h2 id="flags-h">Flags</h2>
         <ul class="identity-flags">
-          <% flags.forEach(function (flag) { %><li><img src="<%= flag.imageUrl %>" alt="" width="48" height="32" loading="lazy"><span><%= flag.label %></span></li><% }); %>
+          <% flags.forEach(function (flag) { %><li><img src="<%= flag.imageUrl %>" alt="" width="48" height="32" loading="lazy"><span><%= flag.label %></span><span class="opinion"><%= flag.opinion %></span></li><% }); %>
         </ul>
       </section>
     <% } %>
@@ -24,17 +24,18 @@
     <% if (names.length) { %>
       <section aria-labelledby="names-h">
         <h2 id="names-h">Names</h2>
-        <ul><% names.forEach(function (n) { %><li><%= n.value %></li><% }); %></ul>
+        <ul class="opinion-list"><% names.forEach(function (n) { %><li><span><%= n.value %></span><span class="opinion"><%= n.opinion %></span></li><% }); %></ul>
       </section>
     <% } %>
 
     <% if (pronouns.length) { %>
       <section aria-labelledby="pronouns-h">
         <h2 id="pronouns-h">Pronouns</h2>
-        <ul>
+        <ul class="opinion-list">
         <% pronouns.forEach(function (p) { %>
           <li>
             <span class="pronoun-set"><%= p.subject %>/<%= p.object %>/<%= p.possessive_determiner %>/<%= p.possessive_pronoun %>/<%= p.reflexive %></span>
+            <span class="opinion"><%= p.opinion %></span>
           </li>
         <% }); %>
         </ul>
@@ -44,7 +45,19 @@
     <% if (pronounPreferences.length) { %>
       <section aria-labelledby="pronoun-preferences-h">
         <h2 id="pronoun-preferences-h">Pronoun preferences</h2>
-        <ul><% pronounPreferences.forEach(function (preference) { %><li><%= preference %></li><% }); %></ul>
+        <ul class="opinion-list"><% pronounPreferences.forEach(function (preference) { %><li><span><%= preference.label %></span><span class="opinion"><%= preference.opinion %></span></li><% }); %></ul>
+      </section>
+    <% } %>
+
+    <% if (words.length) { %>
+      <section class="word-groups" aria-labelledby="words-h">
+        <h2 id="words-h">Words</h2>
+        <% words.forEach(function (group, gi) { %>
+          <section class="word-group" aria-labelledby="word-group-<%= gi %>">
+            <h3 id="word-group-<%= gi %>"><%= group.heading %></h3>
+            <ul class="opinion-list"><% group.words.forEach(function (word) { %><li><span><%= word.value %></span><span class="opinion"><%= word.opinion %></span></li><% }); %></ul>
+          </section>
+        <% }); %>
       </section>
     <% } %>
 

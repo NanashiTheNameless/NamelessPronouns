@@ -20,20 +20,32 @@
   }
   async function sourceFor(password) {
     const [manifest, buffer] = await loadIndex();
+    if (manifest.version !== 3) throw new Error('Password wordlist index version is unsupported.');
     const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password)));
-    const h1 = uint64(digest, 0);
-    const h2 = uint64(digest, 8) | 1n;
+    const first = uint64(digest, 0);
+    const second = uint64(digest, 8);
+    const third = uint64(digest, 16);
     const bytes = new Uint8Array(buffer);
     for (const list of manifest.lists) {
       const modulus = BigInt(list.bitCount);
+      let bit = first % modulus;
+      let step = (second % (modulus - 1n)) + 1n;
+      const stepDelta = (third % (modulus - 1n)) + 1n;
       let present = true;
       for (let i = 0; i < manifest.hashCount; i += 1) {
-        const bit = Number((h1 + BigInt(i) * h2) % modulus);
-        if (!(bytes[list.offset + (bit >> 3)] & (1 << (bit & 7)))) { present = false; break; }
+        const at = Number(bit);
+        if (!(bytes[list.offset + (at >> 3)] & (1 << (at & 7)))) { present = false; break; }
+        bit = (bit + step) % modulus;
+        step = (step + stepDelta) % modulus;
       }
-      if (present) return list.name;
+      if (present) return list;
     }
     return null;
+  }
+  function falseMatchOdds(list) {
+    const rate = Number(list.falsePositiveRate);
+    if (!Number.isFinite(rate) || rate <= 0) return '';
+    return ` This check can misfire: about 1 in ${Math.round(1 / rate).toLocaleString('en-US')} unrelated passwords are reported by mistake.`;
   }
   for (const form of forms) {
     const input = form.querySelector('input[name="password"]');
@@ -47,7 +59,7 @@
       try {
         const source = await sourceFor(input.value);
         if (source) {
-          const text = `That password was found in a common password wordlist ${source}. Choose another password.`;
+          const text = `That password was found in a common password wordlist ${source.name}. Choose another password.${falseMatchOdds(source)}`;
           message.textContent = text;
           input.setAttribute('aria-invalid', 'true');
           input.focus();

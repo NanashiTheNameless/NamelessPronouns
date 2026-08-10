@@ -10,6 +10,7 @@
       <nav class="admin-tools-grid" aria-label="Administration tools">
         <% if (canReport) { %><a class="button secondary" href="/admin/reports">Operational reports</a><% } %>
         <% if (canApprove) { %>
+          <a class="button secondary" href="/admin/signups">Review signup requests</a>
           <a class="button secondary" href="/admin/content-flags">Review content flags</a>
           <a class="button secondary" href="/admin/users">User directory</a>
           <a class="button secondary" href="/admin/suspensions">Review content suspensions</a>
@@ -44,19 +45,12 @@
         <% for (const u of pending) { %>
           <li>
             <strong><%= u.requested_display_name %></strong> (@<%= u.requested_profile_username %>) | <%- await obfuscateEmail(u.email) %>
-            <% if (canApprove) { %>
-              <form method="post" action="/admin/accounts/<%= u.id %>/approve" style="display:inline">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <button type="submit">Approve</button>
-              </form>
-              <form method="post" action="/admin/accounts/<%= u.id %>/deny" style="display:inline">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <button type="submit">Deny</button>
-              </form>
-            <% } %>
+            | <%= u.email_verified_at ? 'email verified' : 'email unverified' %>
+            <% if (canApprove) { %><a href="/admin/signups">Review request</a><% } %>
           </li>
         <% } %>
         </ul>
+        <% if (canApprove) { %><p><a href="/admin/signups">Open the signup request queue</a> to read each applicant's reason before deciding.</p><% } %>
       <% } %>
     </section>
   </main>

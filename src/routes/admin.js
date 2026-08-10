@@ -11,7 +11,7 @@ import config from '../config.js';
 import * as V from '../validation.js';
 import { newId } from '../util/ids.js';
 import { normalizedExemptionHash } from '../content-exemptions.js';
-import { targetHash } from '../bans.js';
+import { createBan, targetHash } from '../bans.js';
 import { roleAtLeast } from '../middleware/staff.js';
 const router = express.Router();
 router.get('/admin', requireStaff('support'), async (req, res) => {
@@ -408,8 +408,77 @@ router.post(
     res.redirect('/admin/content-flags');
   },
 );
+const DECISION_RETURN_PATHS = ['/admin', '/admin/signups'];
+const DENY_BAN_TARGETS = ['email', 'domain', 'user', 'ip_prefix'];
+function decisionReturn(body, targetId) {
+  const requested = String(body.return_to || '');
+  if (requested === 'account') return `/admin/accounts/${targetId}`;
+  return DECISION_RETURN_PATHS.includes(requested) ? requested : '/admin';
+}
+function optionalReason(value, field) {
+  if (value == null || String(value).trim() === '') return null;
+  return V.proseText(String(value), { field, min: 3, max: 500 });
+}
+function decisionReasons(body) {
+  return {
+    publicReason: optionalReason(body.reason_public, 'Reason shown to the applicant'),
+    note: optionalReason(body.decision_note, 'Internal note'),
+  };
+}
+export function requestedBans(body) {
+  const selected = Array.isArray(body.ban_target) ? body.ban_target : [body.ban_target];
+  const targets = selected.map(String).filter((target) => DENY_BAN_TARGETS.includes(target));
+  if (!targets.length) return { targets: [], scope: 'account', expiresAt: null };
+  if (body.ban_confirmation !== 'BAN APPLICANT') {
+    throw new V.ValidationError('Type BAN APPLICANT exactly to ban an applicant while denying their request.');
+  }
+  const scope = ['account', 'viewing', 'both'].includes(String(body.ban_scope)) ? String(body.ban_scope) : 'account';
+  let expiresAt = null;
+  if (body.ban_duration_days != null && String(body.ban_duration_days).trim() !== '') {
+    const days = Number(body.ban_duration_days);
+    if (!Number.isInteger(days) || days < 1 || days > 3650) {
+      throw new V.ValidationError('Ban duration must be 1 to 3650 days.');
+    }
+    expiresAt = Date.now() + days * 86400000;
+  }
+  return { targets: [...new Set(targets)], scope, expiresAt };
+}
+function emailDomainOf(email) {
+  const at = String(email).lastIndexOf('@');
+  return at >= 0 ? String(email).slice(at + 1).toLowerCase() : '';
+}
+async function applyDenyBans(req, target, bans, reason) {
+  const applied = [];
+  for (const kind of bans.targets) {
+    const common = { scope: bans.scope, reason, createdBy: req.user.id, expiresAt: bans.expiresAt };
+    if (kind === 'email') await createBan({ type: 'email', value: target.email, ...common });
+    if (kind === 'domain') {
+      const domain = emailDomainOf(target.email);
+      if (!domain) continue;
+      await createBan({ type: 'domain', value: domain, ...common });
+    }
+    if (kind === 'user') await createBan({ type: 'user', value: target.id, ...common });
+    if (kind === 'ip_prefix') {
+      if (!target.signup_ip_prefix_hash) continue;
+      await createBan({ type: 'ip', valueHash: target.signup_ip_prefix_hash, ...common });
+    }
+    applied.push(kind);
+  }
+  if (applied.length) {
+    await audit.record({
+      type: 'account.denied_with_bans', actorUserId: req.user.id, subjectUserId: target.id,
+      ipHash: ipPrefixHash(req), detail: { targets: applied, scope: bans.scope, expiresAt: bans.expiresAt },
+    });
+  }
+  return applied;
+}
 router.post('/admin/accounts/:id/approve', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
   const now = Date.now();
+  let reasons;
+  try { reasons = decisionReasons(req.body); } catch (error) {
+    if (!(error instanceof V.ValidationError)) throw error;
+    return res.status(400).render('error', { title: 'Administration', status: 400, message: error.message });
+  }
   const { rows } = await db.query(
     'SELECT id, email, signup_status, requested_profile_username, requested_profile_username_display, requested_display_name FROM users WHERE id = ?',
     [req.params.id],
@@ -423,8 +492,10 @@ router.post('/admin/accounts/:id/approve', requireStaff('administrator'), requir
   }
   const statements = [
     {
-      sql: 'UPDATE users SET signup_status = ?, decided_at = ?, decided_by = ?, updated_at = ? WHERE id = ? AND signup_status = ?',
-      params: ['approved', now, req.user.id, now, target.id, 'pending'],
+      sql: `UPDATE users SET signup_status = ?, decided_at = ?, decided_by = ?,
+                   decision_note = ?, decision_reason_public = ?, updated_at = ?
+             WHERE id = ? AND signup_status = ?`,
+      params: ['approved', now, req.user.id, reasons.note, reasons.publicReason, now, target.id, 'pending'],
     },
   ];
   if (target.requested_profile_username) {
@@ -439,13 +510,25 @@ router.post('/admin/accounts/:id/approve', requireStaff('administrator'), requir
     );
   }
   await db.batch(statements);
-  await audit.record({ type: 'account.approved', actorUserId: req.user.id, subjectUserId: target.id, ipHash: ipPrefixHash(req) });
-  mail.decisionEmail(target.email).catch(() => {});
-  res.redirect('/admin');
+  await audit.record({ type: 'account.approved', actorUserId: req.user.id, subjectUserId: target.id, ipHash: ipPrefixHash(req), detail: { note: reasons.note } });
+  mail.decisionEmail(target.email, { outcome: 'approved', reason: reasons.publicReason }).catch(() => {});
+  res.redirect(decisionReturn(req.body, target.id));
 });
 router.post('/admin/accounts/:id/deny', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
   const now = Date.now();
-  const { rows } = await db.query('SELECT id, email, signup_status FROM users WHERE id = ?', [req.params.id]);
+  let reasons;
+  let bans;
+  try {
+    reasons = decisionReasons(req.body);
+    bans = requestedBans(req.body);
+  } catch (error) {
+    if (!(error instanceof V.ValidationError)) throw error;
+    return res.status(400).render('error', { title: 'Administration', status: 400, message: error.message });
+  }
+  const { rows } = await db.query(
+    'SELECT id, email, signup_status, signup_ip_prefix_hash FROM users WHERE id = ?',
+    [req.params.id],
+  );
   const target = rows[0];
   if (!target || target.signup_status !== 'pending') {
     return res.status(409).render('error', { title: 'Unavailable', status: 409, message: 'That request is not pending.' });
@@ -455,10 +538,19 @@ router.post('/admin/accounts/:id/deny', requireStaff('administrator'), requireFr
   }
   await db.batch([
     { sql: 'DELETE FROM public_username_claims WHERE pending_user_id = ? AND state = ?', params: [target.id, 'pending'] },
-    { sql: 'UPDATE users SET signup_status = ?, decided_at = ?, decided_by = ?, updated_at = ? WHERE id = ? AND signup_status = ?', params: ['denied', now, req.user.id, now, target.id, 'pending'] },
+    {
+      sql: `UPDATE users SET signup_status = ?, decided_at = ?, decided_by = ?,
+                   decision_note = ?, decision_reason_public = ?, updated_at = ?
+             WHERE id = ? AND signup_status = ?`,
+      params: ['denied', now, req.user.id, reasons.note, reasons.publicReason, now, target.id, 'pending'],
+    },
   ]);
-  await audit.record({ type: 'account.denied', actorUserId: req.user.id, subjectUserId: target.id, ipHash: ipPrefixHash(req) });
-  mail.decisionEmail(target.email).catch(() => {});
-  res.redirect('/admin');
+  await audit.record({ type: 'account.denied', actorUserId: req.user.id, subjectUserId: target.id, ipHash: ipPrefixHash(req), detail: { note: reasons.note } });
+  const applied = await applyDenyBans(req, target, bans, reasons.note || reasons.publicReason || 'Signup request denied.');
+  if (applied.includes('email') || applied.includes('domain') || applied.includes('user')) {
+    mail.securityNotice(target.email, `An Administrator applied a ${bans.scope} ban while denying the account request.`).catch(() => {});
+  }
+  mail.decisionEmail(target.email, { outcome: 'denied', reason: reasons.publicReason }).catch(() => {});
+  res.redirect(decisionReturn(req.body, target.id));
 });
 export default router;

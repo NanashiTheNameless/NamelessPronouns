@@ -1,0 +1,10 @@
+<label class="opinion-field"><span><%= typeof legend === 'undefined' ? 'Opinion' : legend %></span>
+  <select name="<%= name %>">
+    <% if (typeof optional !== 'undefined' && optional) { %>
+      <option value="" <%= selected ? '' : 'selected' %>>Not listed</option>
+    <% } %>
+    <% opinionOptions.forEach(function (opinion) { %>
+      <option value="<%= opinion.key %>" <%= selected === opinion.key ? 'selected' : '' %>><%= opinion.label %></option>
+    <% }); %>
+  </select>
+</label>

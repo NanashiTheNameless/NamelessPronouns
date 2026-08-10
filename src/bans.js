@@ -1,7 +1,7 @@
 import db from './db/index.js';
 import config from './config.js';
 import { hmac, encrypt } from './util/crypto.js';
-import { ipInCidr } from './util/net.js';
+import { ipInCidr, ipPrefix } from './util/net.js';
 import { newId } from './util/ids.js';
 import audit from './audit.js';
 const TARGET_TYPES = ['user', 'email', 'domain', 'ip', 'cidr'];
@@ -19,24 +19,32 @@ function emailDomain(email) {
   return at >= 0 ? email.slice(at + 1).toLowerCase() : '';
 }
 const activeClause = '(lifted_at IS NULL AND (expires_at IS NULL OR expires_at > ?))';
-export async function createBan({ type, value, scope, reason = null, createdBy = null, expiresAt = null }) {
+export function ipPrefixTargetHash(ip) {
+  const prefix = ipPrefix(ip);
+  return prefix ? targetHash('ip', prefix) : null;
+}
+export async function createBan({
+  type, value, valueHash = null, scope, reason = null, createdBy = null, expiresAt = null,
+}) {
   if (!TARGET_TYPES.includes(type)) throw new Error(`Invalid ban target type: ${type}`);
   if (!['account', 'viewing', 'both'].includes(scope)) throw new Error(`Invalid ban scope: ${scope}`);
+  if (valueHash && !SENSITIVE.has(type)) throw new Error(`Hashed bans are not supported for ${type} targets.`);
   const now = Date.now();
   const id = newId();
-  const normalized = normalize(type, value);
-  const hash = targetHash(type, value);
+  const normalized = valueHash ? valueHash : normalize(type, value);
+  const hash = valueHash || targetHash(type, value);
   let ciphertext = null;
   let nonce = null;
   let plaintext = SENSITIVE.has(type) ? hash : normalized;
   let cidrNetwork = null;
   let cidrPrefix = null;
-  if (SENSITIVE.has(type) && config.BAN_ENCRYPTION_KEY) {
+  if (SENSITIVE.has(type) && !valueHash && config.BAN_ENCRYPTION_KEY) {
     const enc = encrypt(config.BAN_ENCRYPTION_KEY, normalized);
     ciphertext = enc.ciphertext;
     nonce = enc.nonce;
   }
   if (type === 'cidr') {
+    if (valueHash) throw new Error('CIDR bans require a plaintext network.');
     const [net, prefix] = normalized.split('/');
     cidrNetwork = net;
     cidrPrefix = Number(prefix);
@@ -59,7 +67,11 @@ async function matchExact({ scopes, userId, email, ip, now }) {
     hashes.push(targetHash('email', email));
     hashes.push(targetHash('domain', emailDomain(email)));
   }
-  if (ip) hashes.push(targetHash('ip', ip));
+  if (ip) {
+    hashes.push(targetHash('ip', ip));
+    const prefixHash = ipPrefixTargetHash(ip);
+    if (prefixHash) hashes.push(prefixHash);
+  }
   if (hashes.length === 0) return null;
   const placeholders = hashes.map(() => '?').join(', ');
   const scopePlaceholders = scopes.map(() => '?').join(', ');
@@ -91,6 +103,22 @@ async function matchScope(scopes, ctx) {
   const exact = await matchExact({ scopes, ...ctx, now });
   if (exact) return exact;
   return matchCidr({ scopes, ip: ctx.ip, now });
+}
+export async function hasActiveBanForAccount({ userId, email, ipPrefixHash, now = Date.now() }) {
+  const hashes = [];
+  if (userId) hashes.push(targetHash('user', userId));
+  if (email) {
+    hashes.push(targetHash('email', email));
+    hashes.push(targetHash('domain', emailDomain(email)));
+  }
+  if (ipPrefixHash) hashes.push(ipPrefixHash);
+  if (!hashes.length) return false;
+  const placeholders = hashes.map(() => '?').join(', ');
+  const { rows } = await db.query(
+    `SELECT id FROM bans WHERE target_hash IN (${placeholders}) AND ${activeClause} LIMIT 1`,
+    [...hashes, now],
+  );
+  return rows.length > 0;
 }
 export function matchAccountBan(ctx) {
   return matchScope(['account', 'both'], ctx);

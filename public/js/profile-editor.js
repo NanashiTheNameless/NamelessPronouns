@@ -13,66 +13,113 @@ function updateCharacterConstraints(root = document) {
   root.querySelectorAll('[data-character-constraint]').forEach(updateCharacterConstraint);
 }
 
+function ownRepeater(node) {
+  return node.closest('[data-repeater]');
+}
+
+function ownElement(repeater, row, selector) {
+  for (const element of row.querySelectorAll(selector)) {
+    if (ownRepeater(element) === repeater) return element;
+  }
+  return null;
+}
+
+function renumberWordGroups() {
+  document.querySelectorAll('[data-word-group]').forEach((group, index) => {
+    group.querySelectorAll('input[name^="word_value_"]').forEach((input) => {
+      input.name = `word_value_${index}`;
+    });
+    group.querySelectorAll('select[name^="word_opinion_"]').forEach((select) => {
+      select.name = `word_opinion_${index}`;
+    });
+  });
+}
+
+function rowsContainer(repeater) {
+  return [...repeater.querySelectorAll('[data-repeater-rows]')]
+    .find((rows) => ownRepeater(rows) === repeater);
+}
+
 function updateRepeater(repeater) {
-  const rows = [...repeater.querySelectorAll('[data-repeater-row]')];
+  const container = rowsContainer(repeater);
+  const rows = container ? [...container.children] : [];
   rows.forEach((row, index) => {
-    const heading = row.querySelector('[data-row-heading]');
+    const heading = ownElement(repeater, row, '[data-row-heading]');
     if (heading) heading.textContent = `${row.dataset.rowLabel} ${index + 1}`;
-    const remove = row.querySelector('[data-remove]');
+    const remove = ownElement(repeater, row, '[data-remove]');
     if (remove) remove.hidden = rows.length === 1;
   });
-  const add = repeater.querySelector('[data-add]');
+  const add = ownElement(repeater, repeater, '[data-add]');
   if (add) add.disabled = rows.length >= MAX_ROWS;
 }
 
-document.querySelectorAll('[data-repeater]').forEach((repeater) => {
-  const rows = repeater.querySelector('[data-repeater-rows]');
-  const template = repeater.querySelector('template');
-  repeater.addEventListener('click', (event) => {
-    const add = event.target.closest('[data-add]');
-    const remove = event.target.closest('[data-remove]');
-    const applyPreset = event.target.closest('[data-apply-pronoun-preset]');
-    const flagOption = event.target.closest('[data-flag-option]');
-    if (add && rows.children.length < MAX_ROWS) {
+function updateRepeaters(root = document) {
+  root.querySelectorAll('[data-repeater]').forEach(updateRepeater);
+}
+
+function ownTemplate(repeater) {
+  return ownElement(repeater, repeater, 'template');
+}
+
+document.addEventListener('click', (event) => {
+  const add = event.target.closest('[data-add]');
+  const remove = event.target.closest('[data-remove]');
+  const applyPreset = event.target.closest('[data-apply-pronoun-preset]');
+  const flagOption = event.target.closest('[data-flag-option]');
+  if (add) {
+    const repeater = ownRepeater(add);
+    const rows = rowsContainer(repeater);
+    const template = ownTemplate(repeater);
+    if (repeater && rows && template && rows.children.length < MAX_ROWS) {
       rows.append(template.content.cloneNode(true));
+      const row = rows.lastElementChild;
+      renumberWordGroups();
       updateRepeater(repeater);
-      rows.lastElementChild.querySelector('input:not([type="hidden"]), summary, button')?.focus();
+      row.querySelectorAll('[data-repeater]').forEach(updateRepeater);
+      updateCharacterConstraints(row);
+      row.querySelector('input:not([type="hidden"]), select, summary, button')?.focus();
     }
-    if (remove && rows.children.length > 1) {
+  }
+  if (remove) {
+    const repeater = ownRepeater(remove);
+    const rows = rowsContainer(repeater);
+    if (repeater && rows && rows.children.length > 1) {
       remove.closest('[data-repeater-row]').remove();
+      renumberWordGroups();
       updateRepeater(repeater);
     }
-    if (applyPreset) {
-      const row = applyPreset.closest('[data-repeater-row]');
-      const option = row.querySelector('[data-pronoun-preset]').selectedOptions[0];
-      if (option?.value) {
-        PRONOUN_FIELDS.forEach((name, index) => {
-          const field = row.querySelector(`[name="${name}"]`);
-          field.value = option.dataset[PRONOUN_DATA_FIELDS[index]];
-          updateCharacterConstraint(field);
-        });
-        row.querySelector('[name="subject"]').focus();
-      }
-    }
-    if (flagOption) {
-      const picker = flagOption.closest('[data-flag-picker]');
-      const image = picker.querySelector('[data-flag-selected-image]');
-      picker.querySelector('[name="profile_flag"]').value = flagOption.dataset.flagKey;
-      picker.querySelector('[data-flag-selected-label]').textContent = flagOption.dataset.flagLabel;
-      if (flagOption.dataset.flagImage) image.src = flagOption.dataset.flagImage;
-      else image.removeAttribute('src');
-      image.hidden = !flagOption.dataset.flagImage;
-      picker.querySelectorAll('[data-flag-option]').forEach((option) => {
-        option.setAttribute('aria-selected', String(option === flagOption));
+  }
+  if (applyPreset) {
+    const row = applyPreset.closest('[data-repeater-row]');
+    const option = row.querySelector('[data-pronoun-preset]').selectedOptions[0];
+    if (option?.value) {
+      PRONOUN_FIELDS.forEach((name, index) => {
+        const field = row.querySelector(`[name="${name}"]`);
+        field.value = option.dataset[PRONOUN_DATA_FIELDS[index]];
+        updateCharacterConstraint(field);
       });
-      picker.querySelector('details').open = false;
-      picker.querySelector('summary').focus();
+      row.querySelector('[name="subject"]').focus();
     }
-  });
-  updateRepeater(repeater);
+  }
+  if (flagOption) {
+    const picker = flagOption.closest('[data-flag-picker]');
+    const image = picker.querySelector('[data-flag-selected-image]');
+    picker.querySelector('[name="profile_flag"]').value = flagOption.dataset.flagKey;
+    picker.querySelector('[data-flag-selected-label]').textContent = flagOption.dataset.flagLabel;
+    if (flagOption.dataset.flagImage) image.src = flagOption.dataset.flagImage;
+    else image.removeAttribute('src');
+    image.hidden = !flagOption.dataset.flagImage;
+    picker.querySelectorAll('[data-flag-option]').forEach((option) => {
+      option.setAttribute('aria-selected', String(option === flagOption));
+    });
+    picker.querySelector('details').open = false;
+    picker.querySelector('summary').focus();
+  }
 });
 
 document.addEventListener('input', (event) => {
   if (event.target.matches('[data-character-constraint]')) updateCharacterConstraint(event.target);
 });
+renumberWordGroups();
+updateRepeaters();
 updateCharacterConstraints();
