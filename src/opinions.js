@@ -1,8 +1,8 @@
 export const OPINIONS = Object.freeze([
   Object.freeze({ key: 'yes', label: 'Yes' }),
-  Object.freeze({ key: 'jokingly', label: 'Jokingly' }),
-  Object.freeze({ key: 'close', label: "Only if we're close" }),
   Object.freeze({ key: 'okay', label: 'Okay' }),
+  Object.freeze({ key: 'close', label: "Only if we're close" }),
+  Object.freeze({ key: 'jokingly', label: 'Jokingly' }),
   Object.freeze({ key: 'nope', label: 'Nope' }),
 ]);
 export const DEFAULT_OPINION = 'yes';

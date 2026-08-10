@@ -24,7 +24,9 @@ test('canonical Terms and Privacy documents load completely', async () => {
   assert.match(termsText, /judge-signed judicial warrants/i);
   assert.match(termsText, /reusable.*14 days.*seven days/i);
   assert.match(termsText, /restricted SVG/i);
-  assert.match(termsText, /shared workspaces.*not currently offered/i);
+  assert.match(termsText, /collaborative profile management is not offered/i);
+  assert.doesNotMatch(termsText, /shared workspace/i);
+  assert.doesNotMatch(privacyText, /shared workspace/i);
   assert.match(privacyText, /Cloudflare Web Analytics and RUM/i);
   assert.match(privacyText, /generated in memory on demand/i);
   assert.match(privacyText, /does not currently receive or store Resend webhook events/i);

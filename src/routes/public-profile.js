@@ -8,6 +8,7 @@ import { avatarUrl } from '../avatar.js';
 import { flagLabel, pronounsPageFlagUrl } from '../pronouns-page-import.js';
 import { pronounPreferenceLabel } from '../pronoun-preferences.js';
 import { opinionLabel } from '../opinions.js';
+import { staffRoleLabel } from '../middleware/staff.js';
 import { groupProfileWords, PROFILE_WORD_GROUPS_SQL, PROFILE_WORDS_SQL } from '../profile-words.js';
 const router = express.Router();
 router.use(publicPageHeaders);
@@ -37,7 +38,7 @@ router.get('/u/:username', async (req, res) => {
   }
   const { rows } = await db.query(
     `SELECT p.id, p.username_display, p.display_name, p.description, p.notes, p.theme,
-            u.id AS owner_id, u.email AS owner_email, u.avatar_source, u.avatar_data_uri
+            u.id AS owner_id, u.email AS owner_email, u.avatar_source, u.avatar_data_uri, u.staff_role
        FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
        JOIN users u ON u.id = w.owner_user_id
       WHERE p.username = ? AND p.published = 1`,
@@ -63,6 +64,7 @@ router.get('/u/:username', async (req, res) => {
     title: `${profile.display_name} (@${profile.username_display})`,
     username: profile.username_display,
     profile,
+    staffBadge: staffRoleLabel(profile.staff_role),
     avatar: avatarUrl({ id: profile.owner_id, email: profile.owner_email, avatar_source: profile.avatar_source, avatar_data_uri: profile.avatar_data_uri }),
     names: names.rows.map((row) => ({ value: row.value, opinion: opinionLabel(row.opinion) })),
     pronouns: pronouns.rows.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),

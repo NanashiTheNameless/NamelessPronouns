@@ -253,10 +253,6 @@ router.post('/admin/accounts/:id/delete', requireStaff('administrator'), require
   if (target.staff_role !== 'none') {
     return fail(res, 409, 'Remove the staff role before deleting this account.');
   }
-  const ownedShared = await db.query("SELECT id FROM workspaces WHERE owner_user_id = ? AND kind = 'shared' LIMIT 1", [target.id]);
-  if (ownedShared.rows.length) {
-    return fail(res, 409, 'Transfer every shared workspace this account owns to another Owner first.');
-  }
   const now = Date.now();
   const id = newId();
   const hold = await db.query('SELECT id FROM legal_holds WHERE user_id = ? AND released_at IS NULL LIMIT 1', [target.id]);
@@ -306,10 +302,6 @@ router.post('/admin/accounts/:id/delete/now', requireStaff('administrator'), req
   if (!target) return undefined;
   if (target.staff_role !== 'none') {
     return fail(res, 409, 'Remove the staff role before deleting this account.');
-  }
-  const ownedShared = await db.query("SELECT id FROM workspaces WHERE owner_user_id = ? AND kind = 'shared' LIMIT 1", [target.id]);
-  if (ownedShared.rows.length) {
-    return fail(res, 409, 'Transfer every shared workspace this account owns to another Owner first.');
   }
   const hold = await db.query('SELECT id FROM legal_holds WHERE user_id = ? AND released_at IS NULL LIMIT 1', [target.id]);
   if (hold.rows.length) {

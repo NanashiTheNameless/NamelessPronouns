@@ -12,6 +12,7 @@ test('the init schema stays consolidated and later migrations are additive', asy
     '0002_profile_features.sql',
     '0003_profile_words_and_signup_decisions.sql',
     '0004_drop_altcha_challenges.sql',
+    '0005_drop_workspace_invites.sql',
   ]);
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\bALTER\s+TABLE\b/i);
@@ -83,6 +84,14 @@ test('ALTCHA replay records are no longer persisted', async () => {
   assert.match(sql, /DROP TABLE IF EXISTS altcha_challenges/);
   const source = await readFile(new URL('../src/altcha.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /altcha_challenges/, 'verification touches no table');
+});
+test('shared-workspace invites are gone from the schema and the application', async () => {
+  const sql = await readFile(new URL('../db/migrations/0005_drop_workspace_invites.sql', import.meta.url), 'utf8');
+  assert.match(sql, /DROP TABLE IF EXISTS workspace_invites/);
+  for (const file of ['../src/maintenance.js', '../src/ratelimit.js']) {
+    const source = await readFile(new URL(file, import.meta.url), 'utf8');
+    assert.doesNotMatch(source, /workspace_invites|invite_accept_ip|invite_send_workspace/);
+  }
 });
 test('production Compose applies pending migrations before startup', async () => {
   const compose = await readFile(new URL('../docker-compose.yml', import.meta.url), 'utf8');

@@ -53,9 +53,8 @@ denial-by-default, and not guaranteed. Do not rely on it to regain access.
 
 Every public profile uses `/u/<username>` from one global username namespace.
 Each approved account currently receives a personal profile. The application
-uses a personal workspace record internally to own that profile. Shared
-workspaces, invitations, and collaborative profile management are not currently
-offered.
+uses a personal workspace record internally to own that profile. Collaborative
+profile management is not offered.
 
 Published profiles are visible to visitors who complete the policy and age
 gate. Other people may copy, screenshot, index, archive, or redistribute public

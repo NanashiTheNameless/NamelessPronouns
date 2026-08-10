@@ -14,9 +14,8 @@ const CLEANUPS = [
 async function authoredRecordCount(userId) {
   const { rows } = await db.query(
     `SELECT (SELECT COUNT(*) FROM legal_holds WHERE created_by = ?)
-          + (SELECT COUNT(*) FROM content_rule_exemptions WHERE created_by = ?)
-          + (SELECT COUNT(*) FROM workspaces WHERE owner_user_id = ? AND kind = 'shared') AS authored`,
-    [userId, userId, userId],
+          + (SELECT COUNT(*) FROM content_rule_exemptions WHERE created_by = ?) AS authored`,
+    [userId, userId],
   );
   return Number(rows[0]?.authored ?? 0);
 }
@@ -68,7 +67,6 @@ export async function purgeDeniedSignups(now = Date.now()) {
       { sql: 'DELETE FROM reauth_challenges WHERE user_id = ?', params: [user.id] },
       { sql: 'DELETE FROM sessions WHERE user_id = ?', params: [user.id] },
       { sql: 'DELETE FROM policy_acceptances WHERE user_id = ?', params: [user.id] },
-      { sql: 'DELETE FROM workspace_invites WHERE invited_by = ?', params: [user.id] },
       { sql: 'DELETE FROM workspace_members WHERE user_id = ?', params: [user.id] },
       { sql: "DELETE FROM workspaces WHERE owner_user_id = ? AND kind = 'personal'", params: [user.id] },
       { sql: "DELETE FROM users WHERE id = ? AND signup_status = 'denied'", params: [user.id] },
@@ -107,7 +105,6 @@ export async function purgeDeletion(deletion, now = Date.now(), { replacementAct
     { sql: 'DELETE FROM sessions WHERE user_id = ?', params: [deletion.user_id] },
     { sql: 'DELETE FROM policy_acceptances WHERE user_id = ?', params: [deletion.user_id] },
     { sql: 'DELETE FROM bans WHERE target_type = ? AND target_hash = ?', params: ['user', targetHash('user', deletion.user_id)] },
-    { sql: 'DELETE FROM workspace_invites WHERE invited_by = ?', params: [deletion.user_id] },
     { sql: 'DELETE FROM workspace_members WHERE user_id = ?', params: [deletion.user_id] },
     { sql: `DELETE FROM public_username_claims WHERE pending_user_id = ? OR profile_id IN
               (SELECT p.id FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
@@ -127,7 +124,6 @@ export async function purgeDeletion(deletion, now = Date.now(), { replacementAct
     statements.push(
       { sql: 'UPDATE legal_holds SET created_by = ? WHERE created_by = ?', params: [actor, deletion.user_id] },
       { sql: 'UPDATE content_rule_exemptions SET created_by = ? WHERE created_by = ?', params: [actor, deletion.user_id] },
-      { sql: "UPDATE workspaces SET owner_user_id = ?, updated_at = ? WHERE owner_user_id = ? AND kind = 'shared'", params: [actor, now, deletion.user_id] },
     );
   }
   statements.push({ sql: 'DELETE FROM users WHERE id = ?', params: [deletion.user_id] });

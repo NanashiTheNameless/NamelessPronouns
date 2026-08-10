@@ -22,8 +22,7 @@ We collect:
 - Profile usernames, display names, names, pronouns, descriptions, identity
   notes, themes, HTTPS links, avatar-source selection, and any uploaded avatar
   `data:` URI. Personal workspace ownership and membership records are used
-  internally to associate an account with its profile. Shared workspaces and
-  invitations are not currently offered.
+  internally to associate an account with its profile.
 - Support requests, reports, appeals, recovery cases, moderation records, bans,
   and staff audit events.
 - Rights complaints and counter-notices, legal requests and disclosures,

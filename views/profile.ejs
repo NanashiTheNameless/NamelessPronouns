@@ -7,7 +7,7 @@
     <div class="profile-heading">
       <img class="avatar avatar-large" src="<%= avatar %>" alt="" width="96" height="96">
       <div><h1><%= profile.display_name %></h1>
-    <p class="username">@<%= username %></p>
+    <p class="username">@<%= username %><% if (locals.staffBadge) { %> <span class="status-badge staff-badge"><%= locals.staffBadge %></span><% } %></p>
       </div>
     </div>
     <% if (profile.description) { %><p><%- await obfuscateEmails(profile.description) %></p><% } %>

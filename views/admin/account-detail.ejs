@@ -127,8 +127,7 @@
         <% } else { %>
           <p>
             Ends every session and unpublishes every profile straight away, then erases the account after
-            <%= deletionGraceDays %> days. It stays cancellable for that whole window. Demote staff and hand over
-            any shared workspace first.
+            <%= deletionGraceDays %> days. It stays cancellable for that whole window. Demote staff first.
           </p>
           <form method="post" action="/admin/accounts/<%= account.id %>/delete" class="stack">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">

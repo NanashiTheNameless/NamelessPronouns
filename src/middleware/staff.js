@@ -1,6 +1,15 @@
 const ORDER = ['none', 'support', 'moderator', 'administrator', 'owner'];
+const LABELS = Object.freeze({
+  support: 'Support',
+  moderator: 'Moderator',
+  administrator: 'Administrator',
+  owner: 'Owner',
+});
 export function roleAtLeast(role, min) {
   return ORDER.indexOf(role) >= ORDER.indexOf(min);
+}
+export function staffRoleLabel(role) {
+  return LABELS[role] || null;
 }
 export function requireStaff(minRole) {
   return (req, res, next) => {

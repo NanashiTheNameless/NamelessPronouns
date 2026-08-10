@@ -67,10 +67,6 @@ router.post('/account/deletion', requireApproved, requireFreshAuth({ returnTo: '
   if (req.user.staff_role !== 'none') {
     return res.status(409).render('error', { title: 'Deletion unavailable', status: 409, message: 'Remove the staff role through an authorized Owner before deleting this account.' });
   }
-  const ownedShared = await db.query("SELECT id FROM workspaces WHERE owner_user_id = ? AND kind = 'shared' LIMIT 1", [req.user.id]);
-  if (ownedShared.rows.length) {
-    return res.status(409).render('error', { title: 'Deletion unavailable', status: 409, message: 'Transfer every shared workspace to another Owner first.' });
-  }
   const now = Date.now();
   const id = newId();
   const hold = await db.query('SELECT id FROM legal_holds WHERE user_id = ? AND released_at IS NULL LIMIT 1', [req.user.id]);

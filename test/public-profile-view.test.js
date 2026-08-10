@@ -38,4 +38,19 @@ test('public profiles show enabled pronoun preferences and local flags', async (
   assert.match(css, /\.identity-flags\s*\{[^}]*justify-content:\s*center/s);
   assert.match(css, /\.identity-flags li\s*\{[^}]*text-align:\s*center/s);
   assert.match(css, /\.opinion\s*\{[^}]*border-radius:\s*999px/s);
+  assert.doesNotMatch(html, /staff-badge/, 'a non-staff profile shows no rank badge');
+});
+
+test('a public profile shows the account staff rank as a badge', async () => {
+  const render = (staffBadge) => ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
+    title: 'Example',
+    profile: { display_name: 'Example', description: '', notes: '' },
+    username: 'example',
+    avatar: '/static/avatar.svg',
+    staffBadge,
+    names: [], pronouns: [], words: [], links: [], flags: [], pronounPreferences: [],
+    obfuscateEmails: async (value) => value,
+  }, { async: true });
+  assert.match(await render('Administrator'), /<span class="status-badge staff-badge">Administrator<\/span>/);
+  assert.doesNotMatch(await render(null), /staff-badge/);
 });
