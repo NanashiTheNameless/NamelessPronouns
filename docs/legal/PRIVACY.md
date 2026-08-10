@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Effective date: August 9, 2026
+Effective date: August 10, 2026
 
 Operator: NamelessNanashi
 
@@ -171,8 +171,11 @@ when doing so is lawful and does not materially risk identifying a person.
   hash and timestamps. An unused record expires 14 days after creation; first
   use changes its expiry to seven days after that use. Expired records are
   removed by scheduled maintenance.
-- Account deletion requests: 30-day grace period, then eligible live data is
-  purged or pseudonymized and a minimal completion record remains.
+- Account deletion requests: 30-day grace period, then the account record,
+  including its email address, is deleted from the live database along with the
+  deletion request itself. Security and staff audit events are retained under
+  the entry below with the account identifier replaced by a pseudonym that
+  cannot be resolved back to the account.
 - Security and staff audit events, ban records, recovery cases, content flags,
   reviews, exemptions, and suspension records are retained while needed for
   security, abuse prevention, accountability, support, or legal claims. The
@@ -221,8 +224,12 @@ immediately.
 
 Deleting an account immediately unpublishes its personal profile and starts
 a 30-day grace period. A user may cancel during that period after fresh login
-and 2FA. After 30 days, eligible account and content data is purged or
-pseudonymized in the live database unless a legal hold applies.
+and 2FA. The email address is kept unchanged during the grace period so the
+account remains reachable and the deletion remains cancellable. After 30 days,
+unless a legal hold applies, the account record and its email address are
+deleted from the live database rather than replaced with a placeholder, and
+account and content data is purged with it. Retained security and staff audit
+events carry a pseudonym in place of the account identifier.
 
 An account export is generated on demand as a ZIP containing user-friendly
 UTF-8 plain-text files and machine-readable JSON files for eligible account,

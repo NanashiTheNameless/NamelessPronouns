@@ -2,8 +2,8 @@ import { randomBytes } from 'node:crypto';
 import config from './config.js';
 import { signJson, unsignJson, cookieOptions } from './util/cookies.js';
 export const POLICY_COOKIE = 'np_policy';
-export const TERMS_VERSION = '2026-08-09.1';
-export const PRIVACY_VERSION = '2026-08-09.1';
+export const TERMS_VERSION = '2026-08-10.1';
+export const PRIVACY_VERSION = '2026-08-10.1';
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 export function buildAcceptance({ now = Date.now() } = {}) {
   return {

@@ -1,6 +1,6 @@
 # Terms of Service
 
-Effective date: August 9, 2026
+Effective date: August 10, 2026
 
 Operator: NamelessNanashi
 
@@ -169,10 +169,13 @@ end of the initial 14-day period. Anyone possessing a still-valid link can
 download the export, but must first complete the current Terms, Privacy, and
 18-or-older gate. Protect and delete the link when finished.
 
-Deletion
-immediately unpublishes eligible content and has a 30-day cancellation period
-before eligible live data is purged. Some security, moderation, ban, backup,
-dispute, and legal records may remain under the Privacy Policy.
+Deletion immediately unpublishes eligible content and has a 30-day cancellation
+period. Your email address is kept unchanged during that period so the account
+stays reachable and the deletion stays cancellable. After it ends, the account
+record and its email address are deleted from the live database along with
+eligible live data, rather than replaced with a placeholder address. Some
+security, moderation, ban, backup, dispute, and legal records may remain under
+the Privacy Policy, with the account identifier replaced by a pseudonym.
 
 ## 9. Government and legal requests
 
