@@ -52,12 +52,9 @@ test('profile editor: accepts dynamic repeated rows and identity flags', () => {
   assert.deepEqual(values.names.map((row) => row.value), ['Alex', 'Lex']);
   assert.equal(values.pronouns.length, 2);
   assert.equal(values.links.length, 2);
-  assert.deepEqual(values.flags, [
-    { key: 'Nonbinary', opinion: 'yes' },
-    { key: 'Progress Pride', opinion: 'yes' },
-  ]);
+  assert.deepEqual(values.flags, ['Nonbinary', 'Progress Pride']);
 });
-test('profile editor: every listed option carries an opinion', () => {
+test('profile editor: names, pronouns, preferences and words carry an opinion', () => {
   const values = validateProfileForm({
     ...validBody(),
     name: ['Alex', 'Lex'],
@@ -69,7 +66,6 @@ test('profile editor: every listed option carries an opinion', () => {
     reflexive: ['themself', 'xemself'],
     pronoun_opinion: ['yes', 'jokingly'],
     profile_flag: ['Nonbinary', 'Queer'],
-    profile_flag_opinion: ['okay', 'nope'],
     pronoun_pref_any_pronouns: 'jokingly',
     word_group_heading: ['I am a'],
     word_value_0: ['person', 'nerd'],
@@ -80,10 +76,7 @@ test('profile editor: every listed option carries an opinion', () => {
     { value: 'Lex', opinion: 'close' },
   ]);
   assert.deepEqual(values.pronouns.map((row) => row.opinion), ['yes', 'jokingly']);
-  assert.deepEqual(values.flags, [
-    { key: 'Nonbinary', opinion: 'okay' },
-    { key: 'Queer', opinion: 'nope' },
-  ]);
+  assert.deepEqual(values.flags, ['Nonbinary', 'Queer']);
   assert.deepEqual(values.pronounPreferences, [{ key: 'any_pronouns', opinion: 'jokingly' }]);
   assert.deepEqual(values.words, [{
     heading: 'I am a',
@@ -183,7 +176,7 @@ test('profile editor: requires link labels and allowed HTTPS URLs', () => {
 });
 test('profile editor: flags must use an available Pronouns.page key', () => {
   assert.throws(() => validateProfileForm(validBody({ profile_flag: 'Not a real flag' })), /Choose a flag/);
-  assert.deepEqual(validateProfileForm(validBody({ profile_flag: 'Queer' })).flags, [{ key: 'Queer', opinion: 'yes' }]);
+  assert.deepEqual(validateProfileForm(validBody({ profile_flag: 'Queer' })).flags, ['Queer']);
 });
 test('automatic suspension permanently excludes Administrator and Owner matches', () => {
   assert.equal(autoSuspensionEligible('none'), true);
@@ -203,7 +196,7 @@ test('profile editor renders one row per empty category and add-another controls
       pronounPreferences: [],
       words: [{ heading: '', words: [{ value: '', opinion: 'yes' }] }],
       links: [{ label: '', url: '' }],
-      flags: [{ key: '', opinion: 'yes' }],
+      flags: [''],
     },
     error: null, warning: null, saved: false, importNotice: null,
     csrfToken: 'csrf', saveId: 'save-id', user: null,
@@ -235,7 +228,6 @@ test('profile editor renders one row per empty category and add-another controls
   assert.match(html, /name="word_opinion_0"/);
   assert.match(html, /name="name_opinion"/);
   assert.match(html, /name="pronoun_opinion"/);
-  assert.match(html, /name="profile_flag_opinion"/);
   assert.match(html, /name="pronoun_pref_ask_me"/);
   assert.doesNotMatch(html, /type="checkbox" name="pronoun_pref_/);
   for (const opinion of ['Yes', 'Jokingly', 'Only if we&#39;re close', 'Okay', 'Nope']) {

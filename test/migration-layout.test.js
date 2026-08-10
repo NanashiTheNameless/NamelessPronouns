@@ -41,11 +41,12 @@ test('words migration adds grouped words and opinions to every listed option', a
   assert.match(sql, /CREATE TABLE IF NOT EXISTS profile_word_groups/);
   assert.match(sql, /CREATE TABLE IF NOT EXISTS profile_words/);
   assert.match(sql, /FOREIGN KEY \(group_id\) REFERENCES profile_word_groups \(id\) ON DELETE CASCADE/);
-  for (const table of ['profile_names', 'pronoun_sets', 'profile_pronoun_preferences', 'profile_identity_flags']) {
+  for (const table of ['profile_names', 'pronoun_sets', 'profile_pronoun_preferences']) {
     assert.match(sql, new RegExp(`ALTER TABLE ${table} ADD COLUMN opinion TEXT NOT NULL DEFAULT 'yes'`));
   }
   const checks = sql.match(/CHECK \(opinion IN \('yes', 'jokingly', 'close', 'okay', 'nope'\)\)/g) || [];
-  assert.equal(checks.length, 5, 'every opinion column constrains the same five values');
+  assert.equal(checks.length, 4, 'every opinion column constrains the same five values');
+  assert.doesNotMatch(sql, /ALTER TABLE profile_identity_flags/, 'pride flags carry no opinion');
 });
 test('the same migration records signup decision reasons and a bannable signup IP hash', async () => {
   const sql = await readFile(new URL('../db/migrations/0003_profile_words_and_signup_decisions.sql', import.meta.url), 'utf8');

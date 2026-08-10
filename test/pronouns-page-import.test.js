@@ -84,10 +84,7 @@ test('Pronouns.page profiles map into reviewable local fields', () => {
   }]);
   assert.equal(result.skippedWordGroups, 2);
   assert.deepEqual(result.values.links, [{ label: 'example com', url: 'https://example.com/profile' }]);
-  assert.deepEqual(result.values.flags, [
-    { key: 'Nonbinary', opinion: 'yes' },
-    { key: "Fa'afafine", opinion: 'yes' },
-  ]);
+  assert.deepEqual(result.values.flags, ['Nonbinary', "Fa'afafine"]);
   assert.equal(result.skippedPronouns, 1);
   assert.deepEqual(result.values.pronounPreferences, [
     { key: 'any_pronouns', opinion: 'yes' },

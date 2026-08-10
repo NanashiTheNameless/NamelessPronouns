@@ -3,10 +3,18 @@
     <a class="brand" href="/">NamelessPronouns</a>
     <div class="nav-links">
       <% if (typeof user !== 'undefined' && user) { %>
-        <a href="/dashboard">Dashboard</a>
-        <a href="/settings">Settings</a>
-        <% if (['support', 'moderator', 'administrator', 'owner'].includes(user.staff_role)) { %>
-          <a href="/admin">Admin</a>
+        <% if (typeof deletionRequest === 'undefined' || !deletionRequest) { %>
+          <a href="/dashboard">Dashboard</a>
+          <a href="/settings">Settings</a>
+          <% if (['support', 'moderator', 'administrator', 'owner'].includes(user.staff_role)) { %>
+            <a href="/admin">Admin</a>
+          <% } %>
+        <% } %>
+        <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+          <form class="nav-logout" method="post" action="/logout">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit">Sign out</button>
+          </form>
         <% } %>
       <% } else { %>
         <a href="/login">Sign in</a>

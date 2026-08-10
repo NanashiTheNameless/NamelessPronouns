@@ -19,6 +19,7 @@ import { matchAccountBan } from '../bans.js';
 import { evaluateEmailDomain } from '../email-domains.js';
 import * as V from '../validation.js';
 import { avatarUrl, validateAvatarDataUri, MAX_AVATAR_DATA_URI_BYTES } from '../avatar.js';
+import { DELETION_GRACE_MS } from '../maintenance.js';
 const router = express.Router();
 router.get('/account', requireApproved, (req, res) => res.redirect('/settings'));
 router.get('/settings', requireApproved, (req, res) => {
@@ -79,7 +80,7 @@ router.post('/account/deletion', requireApproved, requireFreshAuth({ returnTo: '
         sql: `INSERT INTO deletion_requests
                 (id, user_id, active_user_key, status, requested_at, purge_after)
               VALUES (?, ?, ?, ?, ?, ?)`,
-        params: [id, req.user.id, req.user.id, hold.rows.length ? 'held' : 'pending', now, now + 30 * 24 * 60 * 60 * 1000],
+        params: [id, req.user.id, req.user.id, hold.rows.length ? 'held' : 'pending', now, now + DELETION_GRACE_MS],
       },
       {
         sql: `INSERT INTO deletion_profile_states (deletion_id, profile_id, was_published)

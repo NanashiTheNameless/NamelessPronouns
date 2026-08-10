@@ -131,14 +131,13 @@
         <div data-repeater-rows class="repeat-rows">
           <% for (const [i, flag] of values.flags.entries()) { %>
             <section data-repeater-row data-row-label="Flag" class="repeat-row" aria-label="Flag <%= i + 1 %>">
-              <%- await include('partials/flag-picker', { selected: flag.key, heading: 'Flag ' + (i + 1), flagOptions }) %>
-              <%- await include('partials/opinion-select', { name: 'profile_flag_opinion', selected: flag.opinion, opinionOptions }) %>
+              <%- await include('partials/flag-picker', { selected: flag, heading: 'Flag ' + (i + 1), flagOptions }) %>
               <button type="button" class="secondary compact" data-remove>Remove</button>
             </section>
           <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another flag</button>
-        <template><section data-repeater-row data-row-label="Flag" class="repeat-row"><%- await include('partials/flag-picker', { selected: '', heading: 'Flag', flagOptions }) %><%- await include('partials/opinion-select', { name: 'profile_flag_opinion', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Flag" class="repeat-row"><%- await include('partials/flag-picker', { selected: '', heading: 'Flag', flagOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
       <label class="choice"><input type="checkbox" name="published" <%= values.published ? 'checked' : '' %>><span>Publish this profile</span></label>

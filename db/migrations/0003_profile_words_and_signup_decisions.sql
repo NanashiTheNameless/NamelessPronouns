@@ -4,8 +4,6 @@ ALTER TABLE pronoun_sets ADD COLUMN opinion TEXT NOT NULL DEFAULT 'yes'
   CHECK (opinion IN ('yes', 'jokingly', 'close', 'okay', 'nope'));
 ALTER TABLE profile_pronoun_preferences ADD COLUMN opinion TEXT NOT NULL DEFAULT 'yes'
   CHECK (opinion IN ('yes', 'jokingly', 'close', 'okay', 'nope'));
-ALTER TABLE profile_identity_flags ADD COLUMN opinion TEXT NOT NULL DEFAULT 'yes'
-  CHECK (opinion IN ('yes', 'jokingly', 'close', 'okay', 'nope'));
 CREATE TABLE IF NOT EXISTS profile_word_groups (
   id TEXT PRIMARY KEY,
   profile_id TEXT NOT NULL,

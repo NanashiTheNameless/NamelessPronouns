@@ -54,6 +54,26 @@ test('admin user directory lists ranks and account information without plaintext
   assert.match(html, /\/admin\/accounts\/user-1/);
   assert.match(html, /\/admin\/users\?page=2/);
   assert.doesNotMatch(html, /private@example\.com/);
+  assert.doesNotMatch(html, /queued for deletion/, 'an ordinary account is not marked for deletion');
+});
+test('admin user directory marks accounts queued for deletion', async () => {
+  const render = (overrides) => ejs.renderFile(fileURLToPath(new URL('../views/admin/users.ejs', import.meta.url)), {
+    title: 'User directory',
+    users: [{
+      id: 'user-1', email: 'private@example.com', signup_status: 'approved', staff_role: 'none',
+      twofa_method: 'email', email_verified_at: 1, created_at: 1, updated_at: 2,
+      profile_username: 'Example', profile_display_name: 'Example User', profile_count: 1, active_sessions: 0,
+      ...overrides,
+    }],
+    page: 1, totalPages: 1, total: 1, user: null,
+    obfuscateEmail: async () => '<span data-email-hidden>Protected email</span>',
+  }, { async: true });
+  const queued = await render({ deletion_status: 'pending', deletion_purge_after: 1702592000000 });
+  assert.match(queued, /queued for deletion/);
+  assert.match(queued, /Purge 2023-12-14T22:13:20\.000Z/);
+  const held = await render({ deletion_status: 'held', deletion_purge_after: 1702592000000 });
+  assert.match(held, /deletion held/);
+  assert.doesNotMatch(held, /queued for deletion/);
 });
 
 function accountDetail(overrides = {}) {
@@ -72,6 +92,7 @@ function accountDetail(overrides = {}) {
     activeBans: [],
     canManageRole: false, canEmergency: true, canAction: true,
     canDecideSignup: true, hasSignupIp: true,
+    pendingDeletion: null, deletionGraceDays: 30,
     csrfToken: 'csrf', user: null,
     obfuscateEmail: async () => '<span data-email-hidden>Protected email</span>',
     ...overrides,
@@ -128,6 +149,39 @@ test('admin account page marks an unrecorded signup IP as unbannable', async () 
   assert.match(html, /value="ip_prefix" disabled/);
   assert.match(html, /not recorded for this request/);
 });
+test('admin account page offers deletion and switches to cancelling once scheduled', async () => {
+  const before = await ejs.renderFile(
+    fileURLToPath(new URL('../views/admin/account-detail.ejs', import.meta.url)),
+    accountDetail(),
+    { async: true },
+  );
+  assert.match(before, /action="\/admin\/accounts\/user-1\/delete"/);
+  assert.match(before, /Type DELETE ACCOUNT/);
+  assert.match(before, /erases the account after\s*30 days/);
+  assert.doesNotMatch(before, /delete\/cancel/);
+
+  const scheduled = await ejs.renderFile(
+    fileURLToPath(new URL('../views/admin/account-detail.ejs', import.meta.url)),
+    accountDetail({
+      pendingDeletion: { id: 'del-1', status: 'pending', requested_at: 1700000000000, purge_after: 1702592000000 },
+    }),
+    { async: true },
+  );
+  assert.match(scheduled, /action="\/admin\/accounts\/user-1\/delete\/cancel"/);
+  assert.match(scheduled, /Type CANCEL DELETION/);
+  assert.match(scheduled, /2023-12-14T22:13:20\.000Z/);
+  assert.doesNotMatch(scheduled, /Type DELETE ACCOUNT/);
+
+  const held = await ejs.renderFile(
+    fileURLToPath(new URL('../views/admin/account-detail.ejs', import.meta.url)),
+    accountDetail({
+      pendingDeletion: { id: 'del-1', status: 'held', requested_at: 1700000000000, purge_after: 1702592000000 },
+    }),
+    { async: true },
+  );
+  assert.match(held, /held by a legal hold/);
+  assert.match(held, /will not be purged until the legal hold is released/);
+});
 test('admin account page hides decision, state and ban controls without permission', async () => {
   const html = await ejs.renderFile(
     fileURLToPath(new URL('../views/admin/account-detail.ejs', import.meta.url)),
@@ -139,6 +193,8 @@ test('admin account page hides decision, state and ban controls without permissi
   assert.doesNotMatch(html, /revoke-sessions/);
   assert.doesNotMatch(html, /\/approve"/);
   assert.doesNotMatch(html, /\/deny"/);
+  assert.doesNotMatch(html, /\/delete"/);
+  assert.doesNotMatch(html, /delete\/cancel/);
 });
 test('signup queue shows each applicant reason and the requisite decision facts', async () => {
   const html = await ejs.renderFile(fileURLToPath(new URL('../views/admin/signups.ejs', import.meta.url)), {

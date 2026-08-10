@@ -271,6 +271,82 @@ test('admin approves a pending account (staff + CSRF + audit)', { skip }, async 
   const noCsrf = await post(`/admin/accounts/${pendingId}/deny`, {}, cookies);
   assert.equal(noCsrf.status, 403);
 });
+test('an Administrator can delete an account, cancel it, and let the purge complete', { skip }, async () => {
+  const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const adminEmail = `deleter-${suffix}@allowed-${suffix}.example`;
+  const targetEmail = `doomed-${suffix}@allowed-${suffix}.example`;
+  const pw = 'admin-deletion-passphrase';
+  await insertUser({ email: adminEmail, password: pw, status: 'approved', role: 'administrator' });
+  const targetId = await insertUser({ email: targetEmail, password: pw, status: 'approved', role: 'none' });
+  const cookies = jar();
+  await loginAs(cookies, adminEmail, pw);
+  await freshen(cookies, adminEmail, pw, '/admin');
+  const pageFor = async () => (await get(`/admin/accounts/${targetId}`, cookies)).text();
+  let page = await pageFor();
+  let csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  assert.match(page, new RegExp(`/admin/accounts/${targetId}/delete"`));
+
+  let res = await post(`/admin/accounts/${targetId}/delete`, { _csrf: csrf, reason: 'Abusive account.' }, cookies);
+  assert.equal(res.status, 400);
+  assert.equal(
+    (await db.query("SELECT COUNT(*) AS c FROM deletion_requests WHERE user_id = ?", [targetId])).rows[0].c,
+    '0',
+  );
+
+  res = await post(
+    `/admin/accounts/${targetId}/delete`,
+    { _csrf: csrf, reason: 'Abusive account.', confirmation: 'DELETE ACCOUNT' },
+    cookies,
+  );
+  assert.equal(res.status, 302);
+  const scheduled = (await db.query(
+    "SELECT id, status, purge_after FROM deletion_requests WHERE user_id = ? AND active_user_key = ?",
+    [targetId, targetId],
+  )).rows[0];
+  assert.equal(scheduled.status, 'pending');
+  assert.ok(Number(scheduled.purge_after) > Date.now(), 'the grace period is still open');
+  assert.equal(
+    (await db.query('SELECT COUNT(*) AS c FROM sessions WHERE user_id = ? AND revoked_at IS NULL', [targetId])).rows[0].c,
+    '0',
+    'every session of the deleted account was revoked',
+  );
+
+  page = await pageFor();
+  assert.match(page, new RegExp(`/admin/accounts/${targetId}/delete/cancel`));
+  csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  res = await post(
+    `/admin/accounts/${targetId}/delete/cancel`,
+    { _csrf: csrf, reason: 'Appealed successfully.', confirmation: 'CANCEL DELETION' },
+    cookies,
+  );
+  assert.equal(res.status, 302);
+  assert.equal(
+    (await db.query("SELECT status FROM deletion_requests WHERE id = ?", [scheduled.id])).rows[0].status,
+    'cancelled',
+  );
+
+  page = await pageFor();
+  csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  res = await post(
+    `/admin/accounts/${targetId}/delete`,
+    { _csrf: csrf, reason: 'Abusive account.', confirmation: 'DELETE ACCOUNT' },
+    cookies,
+  );
+  assert.equal(res.status, 302);
+  const again = (await db.query(
+    "SELECT id, purge_after FROM deletion_requests WHERE user_id = ? AND active_user_key = ?",
+    [targetId, targetId],
+  )).rows[0];
+  const { runMaintenance } = await import('../src/maintenance.js');
+  await runMaintenance({ now: Number(again.purge_after) + 1000, log: () => {} });
+  const purged = (await db.query('SELECT email, signup_status FROM users WHERE id = ?', [targetId])).rows[0];
+  assert.match(purged.email, /@deleted\.invalid$/, 'the address is released and the record anonymised');
+  assert.equal(purged.signup_status, 'terminated');
+  assert.equal(
+    (await db.query('SELECT status FROM deletion_requests WHERE id = ?', [again.id])).rows[0].status,
+    'completed',
+  );
+});
 test('admin management covers roles, rules, bans, audit, reports, and emergency revocation', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const ownerEmail = `owner-admin-${suffix}@allowed-${suffix}.example`;

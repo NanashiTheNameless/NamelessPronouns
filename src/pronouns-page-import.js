@@ -149,9 +149,7 @@ export function mapPronounsPageProfile(payload, { locale = 'en', current }) {
     .slice(0, MAX_ITEMS)
     .map((key) => boundedText(key, 80))
     .filter((key) => /^[A-Za-z0-9 _'-]{1,80}$/.test(key));
-  const flags = importedFlagKeys
-    .filter((key) => PRONOUNS_PAGE_FLAG_KEYS.has(key))
-    .map((key) => ({ key, opinion: importedOpinion(null) }));
+  const flags = importedFlagKeys.filter((key) => PRONOUNS_PAGE_FLAG_KEYS.has(key));
   const names = (Array.isArray(profile.names) ? profile.names : [])
     .slice(0, MAX_ITEMS)
     .map((entry) => ({ value: boundedText(entryValue(entry), 80), opinion: entryOpinion(entry) }))
@@ -167,7 +165,7 @@ export function mapPronounsPageProfile(payload, { locale = 'en', current }) {
       pronounPreferences,
       words: words.length ? words : [emptyWordGroup()],
       links: links.length ? links : [emptyLink()],
-      flags: flags.length ? flags : [emptyFlag()],
+      flags: flags.length ? flags : [''],
     },
     skippedPronouns: pronounResults.filter((entry) => !entry).length,
     skippedCustomFlags: Array.isArray(profile.customFlags) ? profile.customFlags.length : 0,
@@ -209,10 +207,6 @@ export function emptyLink() {
 
 export function emptyName() {
   return { value: '', opinion: DEFAULT_OPINION };
-}
-
-export function emptyFlag() {
-  return { key: '', opinion: DEFAULT_OPINION };
 }
 
 export function emptyWord() {

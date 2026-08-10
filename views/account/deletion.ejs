@@ -19,6 +19,6 @@
         <button type="submit" class="danger">Request account deletion</button>
       </form>
     <% } %>
-    <p><a href="/settings">Back to settings</a></p>
+    <% if (!deletion) { %><p><a href="/settings">Back to settings</a></p><% } %>
   </main><%- await include('../partials/site-footer') %>
 </body></html>

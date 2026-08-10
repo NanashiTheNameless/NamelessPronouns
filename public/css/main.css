@@ -89,6 +89,26 @@ body {
   color: #ffffff;
   background: var(--accent);
 }
+.nav-logout {
+  margin: 0;
+}
+.nav-logout button {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  color: var(--text);
+  background: none;
+  border: 0;
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 0.08em;
+  cursor: pointer;
+}
+.nav-logout button:hover {
+  color: var(--accent);
+}
 .container {
   width: min(100%, 80rem);
   margin: 0 auto;
@@ -207,6 +227,10 @@ h2 {
   background: var(--accent-soft);
   border-radius: 999px;
   font-size: 0.82rem;
+}
+.status-deleting {
+  color: var(--danger);
+  background: var(--danger-soft);
 }
 .legal-document {
   width: min(100%, 80rem);
@@ -853,6 +877,9 @@ img {
   button,
   .button {
     width: 100%;
+  }
+  .nav-logout button {
+    width: auto;
   }
 }
 @media (prefers-reduced-motion: reduce) {

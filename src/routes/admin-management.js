@@ -7,6 +7,7 @@ import { requireFreshAuth } from '../middleware/session.js';
 import { ipPrefixHash } from '../util/net.js';
 import { newId } from '../util/ids.js';
 import { personalProfileStatements } from '../profiles.js';
+import { DELETION_GRACE_MS } from '../maintenance.js';
 import * as V from '../validation.js';
 import * as mail from '../mail.js';
 import { isIP } from 'node:net';
@@ -47,7 +48,13 @@ router.get('/admin/users', requireStaff('administrator'), requireFreshAuth(), as
                FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
               WHERE w.owner_user_id = u.id) AS profile_count,
             (SELECT COUNT(*) FROM sessions s
-              WHERE s.user_id = u.id AND s.revoked_at IS NULL AND s.expires_at > ?) AS active_sessions
+              WHERE s.user_id = u.id AND s.revoked_at IS NULL AND s.expires_at > ?) AS active_sessions,
+            (SELECT d.status FROM deletion_requests d
+              WHERE d.user_id = u.id AND d.status IN ('pending', 'held')
+              ORDER BY d.requested_at DESC LIMIT 1) AS deletion_status,
+            (SELECT d.purge_after FROM deletion_requests d
+              WHERE d.user_id = u.id AND d.status IN ('pending', 'held')
+              ORDER BY d.requested_at DESC LIMIT 1) AS deletion_purge_after
        FROM users u
       ORDER BY u.created_at DESC, u.id
       LIMIT ? OFFSET ?`,
@@ -137,7 +144,7 @@ async function actionableTarget(req, res, { confirmation }) {
 }
 router.get('/admin/accounts/:id', requireStaff('support'), requireFreshAuth(), async (req, res) => {
   const now = Date.now();
-  const [{ rows }, sessions, profiles, bans] = await Promise.all([
+  const [{ rows }, sessions, profiles, bans, deletions] = await Promise.all([
     db.query(`SELECT id, email, signup_status, staff_role, twofa_method, email_verified_at,
                     requested_profile_username_display, requested_display_name, request_note,
                     requested_at, decided_at, decision_note, decision_reason_public,
@@ -151,6 +158,9 @@ router.get('/admin/accounts/:id', requireStaff('support'), requireFreshAuth(), a
                WHERE target_type = 'user' AND target_hash = ? AND lifted_at IS NULL
                  AND (expires_at IS NULL OR expires_at > ?)
                ORDER BY created_at DESC`, [targetHash('user', req.params.id), now]),
+    db.query(`SELECT id, status, requested_at, purge_after FROM deletion_requests
+               WHERE user_id = ? AND status IN ('pending', 'held')
+               ORDER BY requested_at DESC LIMIT 1`, [req.params.id]),
   ]);
   const row = rows[0];
   if (!row) return fail(res, 404, 'Page not found.');
@@ -167,6 +177,8 @@ router.get('/admin/accounts/:id', requireStaff('support'), requireFreshAuth(), a
     canAction,
     canDecideSignup: canAction && account.signup_status === 'pending',
     hasSignupIp: Boolean(signupIpHash),
+    pendingDeletion: deletions.rows[0] || null,
+    deletionGraceDays: Math.round(DELETION_GRACE_MS / 86400000),
   });
 });
 router.post('/admin/accounts/:id/state', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
@@ -228,6 +240,95 @@ router.post('/admin/accounts/:id/state', requireStaff('administrator'), requireF
     ipHash: ipPrefixHash(req), detail: { from: target.signup_status, to: state, reason },
   });
   mail.securityNotice(target.email, STATE_NOTICES[state]).catch(() => {});
+  res.redirect(`/admin/accounts/${target.id}`);
+});
+router.post('/admin/accounts/:id/delete', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
+  let reason;
+  try { reason = prose(req.body.reason); } catch (error) {
+    if (error instanceof V.ValidationError) return fail(res, 400, error.message);
+    throw error;
+  }
+  const target = await actionableTarget(req, res, { confirmation: 'DELETE ACCOUNT' });
+  if (!target) return undefined;
+  if (target.staff_role !== 'none') {
+    return fail(res, 409, 'Remove the staff role before deleting this account.');
+  }
+  const ownedShared = await db.query("SELECT id FROM workspaces WHERE owner_user_id = ? AND kind = 'shared' LIMIT 1", [target.id]);
+  if (ownedShared.rows.length) {
+    return fail(res, 409, 'Transfer every shared workspace this account owns to another Owner first.');
+  }
+  const now = Date.now();
+  const id = newId();
+  const hold = await db.query('SELECT id FROM legal_holds WHERE user_id = ? AND released_at IS NULL LIMIT 1', [target.id]);
+  try {
+    await db.batch([
+      {
+        sql: `INSERT INTO deletion_requests
+                (id, user_id, active_user_key, status, requested_at, purge_after)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        params: [id, target.id, target.id, hold.rows.length ? 'held' : 'pending', now, now + DELETION_GRACE_MS],
+      },
+      {
+        sql: `INSERT INTO deletion_profile_states (deletion_id, profile_id, was_published)
+              SELECT ?, p.id, p.published FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
+               WHERE w.owner_user_id = ? AND w.kind = 'personal'`,
+        params: [id, target.id],
+      },
+      {
+        sql: `UPDATE profiles SET published = 0, updated_at = ?
+               WHERE workspace_id IN (SELECT id FROM workspaces WHERE owner_user_id = ? AND kind = 'personal')`,
+        params: [now, target.id],
+      },
+      { sql: 'UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL', params: [now, target.id] },
+      { sql: 'DELETE FROM login_challenges WHERE user_id = ?', params: [target.id] },
+      { sql: 'DELETE FROM reauth_challenges WHERE user_id = ?', params: [target.id] },
+    ]);
+  } catch {
+    return fail(res, 409, 'This account already has an active deletion request.');
+  }
+  await audit.record({
+    type: 'account.deletion_requested_by_staff', actorUserId: req.user.id, subjectUserId: target.id,
+    target: id, ipHash: ipPrefixHash(req), detail: { reason, legalHold: hold.rows.length > 0 },
+  });
+  mail.securityNotice(
+    target.email,
+    `An Administrator scheduled this account for deletion. Profiles were unpublished and every session ended immediately. The account is erased after ${Math.round(DELETION_GRACE_MS / 86400000)} days.`,
+  ).catch(() => {});
+  res.redirect(`/admin/accounts/${target.id}`);
+});
+router.post('/admin/accounts/:id/delete/cancel', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
+  let reason;
+  try { reason = prose(req.body.reason); } catch (error) {
+    if (error instanceof V.ValidationError) return fail(res, 400, error.message);
+    throw error;
+  }
+  const target = await actionableTarget(req, res, { confirmation: 'CANCEL DELETION' });
+  if (!target) return undefined;
+  const deletion = (await db.query(
+    "SELECT id FROM deletion_requests WHERE user_id = ? AND status IN ('pending', 'held') AND active_user_key = ? AND purge_after > ?",
+    [target.id, target.id, Date.now()],
+  )).rows[0];
+  if (!deletion) return fail(res, 409, 'No cancellable deletion request exists for this account.');
+  const now = Date.now();
+  await db.batch([
+    {
+      sql: `UPDATE profiles SET published = (
+              SELECT was_published FROM deletion_profile_states s
+               WHERE s.deletion_id = ? AND s.profile_id = profiles.id
+            ), updated_at = ?
+            WHERE id IN (SELECT profile_id FROM deletion_profile_states WHERE deletion_id = ?)`,
+      params: [deletion.id, now, deletion.id],
+    },
+    {
+      sql: "UPDATE deletion_requests SET status = 'cancelled', active_user_key = NULL, cancelled_at = ? WHERE id = ?",
+      params: [now, deletion.id],
+    },
+  ]);
+  await audit.record({
+    type: 'account.deletion_cancelled_by_staff', actorUserId: req.user.id, subjectUserId: target.id,
+    target: deletion.id, ipHash: ipPrefixHash(req), detail: { reason },
+  });
+  mail.securityNotice(target.email, 'An Administrator cancelled the pending deletion of this account. Profile publication state was restored.').catch(() => {});
   res.redirect(`/admin/accounts/${target.id}`);
 });
 router.post('/admin/accounts/:id/ban', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {

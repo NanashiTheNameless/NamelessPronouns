@@ -105,6 +105,41 @@
       </section>
     <% } %>
 
+    <% if (canAction) { %>
+      <section class="panel">
+        <h2>Delete this account</h2>
+        <% if (pendingDeletion) { %>
+          <p>
+            Deletion is <%= pendingDeletion.status === 'held' ? 'held by a legal hold' : 'scheduled' %>, requested
+            <%= new Date(Number(pendingDeletion.requested_at)).toISOString() %>.
+            <% if (pendingDeletion.status === 'held') { %>
+              It will not be purged until the legal hold is released.
+            <% } else { %>
+              The account is erased after <%= new Date(Number(pendingDeletion.purge_after)).toISOString() %>.
+            <% } %>
+          </p>
+          <form method="post" action="/admin/accounts/<%= account.id %>/delete/cancel" class="stack">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label>Reason <input name="reason" maxlength="500" required></label>
+            <label>Type CANCEL DELETION <input name="confirmation" autocomplete="off" required></label>
+            <button type="submit" class="secondary">Cancel scheduled deletion</button>
+          </form>
+        <% } else { %>
+          <p>
+            Ends every session and unpublishes every profile straight away, then erases the account after
+            <%= deletionGraceDays %> days. It stays cancellable for that whole window. Demote staff and hand over
+            any shared workspace first.
+          </p>
+          <form method="post" action="/admin/accounts/<%= account.id %>/delete" class="stack">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label>Reason <input name="reason" maxlength="500" required></label>
+            <label>Type DELETE ACCOUNT <input name="confirmation" autocomplete="off" required></label>
+            <button type="submit">Delete account</button>
+          </form>
+        <% } %>
+      </section>
+    <% } %>
+
     <% if (canManageRole) { %>
       <section class="panel">
         <h2>Staff role</h2>

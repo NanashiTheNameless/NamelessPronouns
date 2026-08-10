@@ -15,7 +15,7 @@ test('public profiles show enabled pronoun preferences and local flags', async (
     pronouns: [{ subject: 'they', object: 'them', possessive_determiner: 'their', possessive_pronoun: 'theirs', reflexive: 'themself', opinion: 'Yes' }],
     words: [{ heading: 'I am a', words: [{ value: 'person', opinion: 'Yes' }, { value: 'lad', opinion: 'Nope' }] }],
     links: [],
-    flags: [{ label: 'Nonbinary', imageUrl: '/static/flags/Nonbinary.png', opinion: 'Yes' }],
+    flags: [{ label: 'Nonbinary', imageUrl: '/static/flags/Nonbinary.png' }],
     pronounPreferences: [{ label: 'Ask me', opinion: 'Jokingly' }, { label: 'Use my name', opinion: 'Okay' }],
     obfuscateEmails: async (value) => value,
   }, { async: true });

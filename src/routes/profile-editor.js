@@ -16,7 +16,6 @@ import { PRONOUN_PRESETS } from '../pronoun-presets.js';
 import { DEFAULT_OPINION, isOpinion, normalizeOpinion, OPINIONS } from '../opinions.js';
 import { groupProfileWords, PROFILE_WORD_GROUPS_SQL, PROFILE_WORDS_SQL } from '../profile-words.js';
 import {
-  emptyFlag,
   emptyLink,
   emptyName,
   emptyPronoun,
@@ -126,10 +125,7 @@ function formValues(body = {}) {
       label: String(value ?? ''),
       url: String(linkUrls[i] ?? ''),
     })),
-    flags: arrayField(body, 'profile_flag', 'profile_flag').map((key, i) => ({
-      key: String(key ?? ''),
-      opinion: opinionField(body, 'profile_flag_opinion', i),
-    })),
+    flags: arrayField(body, 'profile_flag', 'profile_flag').map(String),
     words: wordGroupValues(body),
     pronounPreferences: PRONOUN_PREFERENCES
       .map((preference) => ({
@@ -197,11 +193,11 @@ export function validateProfileForm(body) {
       url: V.httpsUrl(row.url, { field: 'Link URL' }),
     });
   }
-  for (const row of raw.flags) {
-    const flag = row.key.trim();
+  for (const rawFlag of raw.flags) {
+    const flag = rawFlag.trim();
     if (!flag) continue;
     if (!PRONOUNS_PAGE_FLAG_OPTIONS.includes(flag)) throw new V.ValidationError('Choose a flag from the available Pronouns.page flags.');
-    values.flags.push({ key: flag, opinion: row.opinion });
+    values.flags.push(flag);
   }
   return values;
 }
@@ -227,7 +223,7 @@ async function editorState(profile) {
     db.query('SELECT value, opinion FROM profile_names WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT subject, object, possessive_determiner, possessive_pronoun, reflexive, opinion FROM pronoun_sets WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT label, url FROM profile_links WHERE profile_id = ? ORDER BY position', [profile.id]),
-    db.query('SELECT flag_key, opinion FROM profile_identity_flags WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT flag_key FROM profile_identity_flags WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT preference_key, opinion FROM profile_pronoun_preferences WHERE profile_id = ? ORDER BY position', [profile.id]),
     profileWords(profile.id),
   ]);
@@ -249,9 +245,7 @@ async function editorState(profile) {
     })) : [emptyPronoun()],
     words: words.length ? words : [emptyWordGroup()],
     links: links.rows.length ? links.rows.map((row) => ({ label: row.label, url: row.url })) : [emptyLink()],
-    flags: flags.rows.length
-      ? flags.rows.map((row) => ({ key: row.flag_key, opinion: row.opinion }))
-      : [emptyFlag()],
+    flags: flags.rows.length ? flags.rows.map((row) => row.flag_key) : [''],
     pronounPreferences: pronounPreferences.rows.map((row) => ({ key: row.preference_key, opinion: row.opinion })),
   };
 }
@@ -409,9 +403,9 @@ function acceptedSaveStatements(profileId, userId, values, now) {
       sql: 'INSERT INTO profile_links (id, profile_id, label, url, position) VALUES (?, ?, ?, ?, ?)',
       params: [newId(), profileId, row.label, row.url, position],
     })),
-    ...values.flags.map((row, position) => ({
-      sql: 'INSERT INTO profile_identity_flags (id, profile_id, flag_key, opinion, position) VALUES (?, ?, ?, ?, ?)',
-      params: [newId(), profileId, row.key, row.opinion, position],
+    ...values.flags.map((flag, position) => ({
+      sql: 'INSERT INTO profile_identity_flags (id, profile_id, flag_key, position) VALUES (?, ?, ?, ?)',
+      params: [newId(), profileId, flag, position],
     })),
     ...values.pronounPreferences.map((preference, position) => ({
       sql: 'INSERT INTO profile_pronoun_preferences (profile_id, preference_key, opinion, position) VALUES (?, ?, ?, ?)',

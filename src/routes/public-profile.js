@@ -54,7 +54,7 @@ router.get('/u/:username', async (req, res) => {
     db.query('SELECT value, opinion FROM profile_names WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT subject, object, possessive_determiner, possessive_pronoun, reflexive, opinion FROM pronoun_sets WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT label, url FROM profile_links WHERE profile_id = ? ORDER BY position', [profile.id]),
-    db.query('SELECT flag_key, opinion FROM profile_identity_flags WHERE profile_id = ? ORDER BY position', [profile.id]),
+    db.query('SELECT flag_key FROM profile_identity_flags WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query('SELECT preference_key, opinion FROM profile_pronoun_preferences WHERE profile_id = ? ORDER BY position', [profile.id]),
     db.query(PROFILE_WORD_GROUPS_SQL, [profile.id]),
     db.query(PROFILE_WORDS_SQL, [profile.id]),
@@ -75,7 +75,6 @@ router.get('/u/:username', async (req, res) => {
       key: row.flag_key,
       label: flagLabel(row.flag_key),
       imageUrl: pronounsPageFlagUrl(row.flag_key),
-      opinion: opinionLabel(row.opinion),
     })),
     pronounPreferences: pronounPreferences.rows.map((row) => ({
       label: pronounPreferenceLabel(row.preference_key),

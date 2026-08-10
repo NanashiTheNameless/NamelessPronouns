@@ -2,6 +2,7 @@ import db from './db/index.js';
 import { keyedHash } from './util/crypto.js';
 import { hasActiveBanForAccount, targetHash } from './bans.js';
 export const DENIED_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+export const DELETION_GRACE_MS = 30 * 24 * 60 * 60 * 1000;
 const CLEANUPS = [
   { table: 'sessions', column: 'expires_at' },
   { table: 'login_challenges', column: 'expires_at' },

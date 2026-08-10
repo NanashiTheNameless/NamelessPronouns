@@ -74,7 +74,7 @@ export async function collectUserData(userId, { generatedAt = new Date().toISOSt
     [userId, userId],
   );
   const profileIdentityFlags = await db.query(
-    `SELECT id, profile_id, flag_key, opinion, position FROM profile_identity_flags
+    `SELECT id, profile_id, flag_key, position FROM profile_identity_flags
       WHERE ${profileScope} ORDER BY profile_id, position`,
     [userId, userId],
   );
