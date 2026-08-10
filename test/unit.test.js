@@ -15,6 +15,7 @@ import { safeConsentReturn } from '../src/consent-return.js';
 import config, { DEFAULT_EMAIL_DOMAIN_ALLOWLIST } from '../src/config.js';
 import { matchesEmailDomain } from '../src/email-domains.js';
 import { createD1Backend } from '../src/db/d1.js';
+import { ownerBootstrapStatements } from '../src/owner-bootstrap.js';
 test('rewrite: ? placeholders become $1..$n', () => {
   assert.equal(rewrite('SELECT * FROM t WHERE a = ? AND b = ?'), 'SELECT * FROM t WHERE a = $1 AND b = $2');
 });
@@ -140,6 +141,24 @@ test('D1 batch sends each parameterized statement as a separate query', async ()
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+test('owner bootstrap preserves normalized and display usernames in every record', () => {
+  const now = 123456;
+  const { statements } = ownerBootstrapStatements({
+    email: 'owner@example.com',
+    passwordHash: 'hash',
+    passwordHashVersion: 1,
+    username: { key: 'namelessnanashi', display: 'NamelessNanashi' },
+    now,
+  });
+  const user = statements.find((statement) => /INSERT INTO users/.test(statement.sql));
+  const claim = statements.find((statement) => /INSERT INTO public_username_claims/.test(statement.sql));
+  const profile = statements.find((statement) => /INSERT INTO profiles/.test(statement.sql));
+  assert.match(user.sql, /requested_profile_username_display/);
+  assert.deepEqual(user.params.slice(5, 8), ['namelessnanashi', 'NamelessNanashi', 'NamelessNanashi']);
+  assert.match(claim.sql, /username, username_display/);
+  assert.deepEqual(claim.params.slice(0, 2), ['namelessnanashi', 'NamelessNanashi']);
+  assert.deepEqual(profile.params.slice(2, 5), ['namelessnanashi', 'NamelessNanashi', 'NamelessNanashi']);
 });
 test('net: ipInCidr IPv4 containment', () => {
   assert.ok(ipInCidr('203.0.113.42', '203.0.113.0', 24));

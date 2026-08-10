@@ -5,6 +5,7 @@ services:
     env_file: .env
     environment:
       DB_BACKEND: d1
+    command: ["sh", "-c", "node scripts/migrate.js && exec node src/server.js"]
     expose:
       - "3000"
     read_only: true

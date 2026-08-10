@@ -46,3 +46,7 @@ test('password reset challenges store only keyed proofs and expire', async () =>
   assert.match(sql, /second_code_hash TEXT/);
   assert.match(sql, /expires_at BIGINT NOT NULL/);
 });
+test('production Compose applies pending migrations before startup', async () => {
+  const compose = await readFile(new URL('../docker-compose.yml', import.meta.url), 'utf8');
+  assert.match(compose, /command: \["sh", "-c", "node scripts\/migrate\.js && exec node src\/server\.js"\]/);
+});

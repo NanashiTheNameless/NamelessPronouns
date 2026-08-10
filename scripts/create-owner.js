@@ -3,10 +3,9 @@ import readline from 'node:readline';
 import { Writable } from 'node:stream';
 import db from '../src/db/index.js';
 import logger from '../src/logger.js';
-import { newId } from '../src/util/ids.js';
 import { hashPassword } from '../src/auth/password.js';
 import * as V from '../src/validation.js';
-import { personalProfileStatements } from '../src/profiles.js';
+import { ownerBootstrapStatements } from '../src/owner-bootstrap.js';
 function usage() {
   process.stderr.write('Usage: create-owner <email> [initial-profile-username]\n');
   process.exit(2);
@@ -66,35 +65,15 @@ async function main() {
   }
   const { hash, version } = await hashPassword(password);
   const now = Date.now();
-  const userId = newId();
-  const statements = [
-    {
-      sql: `INSERT INTO users
-              (id, email, password_hash, password_hash_version, email_verified_at,
-               signup_status, requested_profile_username, staff_role, twofa_method,
-               created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, 'approved', ?, 'owner', 'email', ?, ?)`,
-      params: [userId, email, hash, version, now, username, now, now],
-    },
-  ];
-  if (username) {
-    statements.push(
-      {
-        sql: `INSERT INTO public_username_claims
-                (username, state, pending_user_id, requested_display_name, created_at)
-              VALUES (?, 'pending', ?, ?, ?)`,
-        params: [username, userId, username, now],
-      },
-      ...personalProfileStatements({ userId, username, displayName: username, now }).statements,
-    );
-  }
-  statements.push({
-    sql: `INSERT INTO audit_events (id, event_type, actor_user_id, subject_user_id, created_at)
-          VALUES (?, 'owner.bootstrap_created', ?, ?, ?)`,
-    params: [newId(), userId, userId, now],
+  const { userId, statements } = ownerBootstrapStatements({
+    email,
+    passwordHash: hash,
+    passwordHashVersion: version,
+    username,
+    now,
   });
   await db.batch(statements);
-  logger.info('owner created', { userId, username });
+  logger.info('owner created', { userId, username: username?.key ?? null });
 }
 try {
   await main();
