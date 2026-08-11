@@ -21,18 +21,18 @@
       </label>
       <div class="prose-field">
         <label for="description">About me
-          <textarea id="description" name="description" class="tall" rows="14" maxlength="<%= markdown.max %>" data-character-constraint data-character-set="[\x20-\x7E\n]" data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A few sentences about you. **Bold**, *italics*, and headings work here."><%= values.description %></textarea>
+          <textarea id="description" name="description" aria-describedby="description-characters description-hint" class="tall" rows="14" maxlength="<%= markdown.max %>" data-character-constraint data-character-set="[\x20-\x7E\n]" data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A few sentences about you. **Bold**, *italics*, and headings work here."><%= values.description %></textarea>
         </label>
-        <p class="error" role="alert" data-character-report></p>
-        <p class="fineprint">A bio in your own words: who you are, what you do, anything you want visitors to read first. Up to <%= markdown.max %> characters.</p>
+        <p class="error" id="description-characters" role="status" aria-live="polite" data-character-report></p>
+        <p class="fineprint" id="description-hint">A bio in your own words: who you are, what you do, anything you want visitors to read first. Up to <%= markdown.max %> characters.</p>
         <%- await include('partials/markdown-help', { markdown }) %>
       </div>
       <div class="prose-field">
         <label for="notes">Identity notes
-          <textarea id="notes" name="notes" rows="10" maxlength="<%= markdown.max %>" data-character-constraint data-character-set="[\x20-\x7E\n]" data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="Anything else visitors should know about your names, pronouns, or words"><%= values.notes %></textarea>
+          <textarea id="notes" name="notes" aria-describedby="notes-characters notes-hint" rows="10" maxlength="<%= markdown.max %>" data-character-constraint data-character-set="[\x20-\x7E\n]" data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="Anything else visitors should know about your names, pronouns, or words"><%= values.notes %></textarea>
         </label>
-        <p class="error" role="alert" data-character-report></p>
-        <p class="fineprint">Extra context about your names, pronouns, or words. Up to <%= markdown.max %> characters.</p>
+        <p class="error" id="notes-characters" role="status" aria-live="polite" data-character-report></p>
+        <p class="fineprint" id="notes-hint">Extra context about your names, pronouns, or words. Up to <%= markdown.max %> characters.</p>
         <%- await include('partials/markdown-help', { markdown }) %>
       </div>
 

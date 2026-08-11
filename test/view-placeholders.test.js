@@ -68,3 +68,15 @@ test('placeholder text is dimmer than typed text', async () => {
   assert.match(css, /::placeholder\s*\{[^}]*color:\s*var\(--placeholder\)/s);
   assert.doesNotMatch(css, /::placeholder\s*\{[^}]*color:\s*var\(--text\)/s, 'a placeholder must not look like a value');
 });
+
+test('repeated dashboard actions name the profile they act on', async () => {
+  const source = await readFile(new URL('../views/dashboard.ejs', import.meta.url), 'utf8');
+  for (const [label, aria] of [
+    ['Edit', 'Edit <%= profile.username %>'],
+    ['View public page', 'View the public page for <%= profile.username %>'],
+    ['Preview page', 'Preview the unpublished page for <%= profile.username %>'],
+  ]) {
+    assert.ok(source.includes(`aria-label="${aria}">${label}</a>`), `${label} carries a distinguishing name`);
+  }
+  assert.doesNotMatch(source, /<a href="\/u\/<%= profile\.username %>">/, 'no action link is left unnamed');
+});

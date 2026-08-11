@@ -19,12 +19,12 @@
               <p class="fineprint">/u/<%= profile.username %></p>
               <div class="inline-actions">
                 <% if (profile.role === 'owner') { %>
-                  <a href="/profiles/<%= profile.id %>/edit">Edit</a>
+                  <a href="/profiles/<%= profile.id %>/edit" aria-label="Edit <%= profile.username %>">Edit</a>
                 <% } %>
                 <% if (Number(profile.published) === 1) { %>
-                  <a href="/u/<%= profile.username %>">View public page</a>
+                  <a href="/u/<%= profile.username %>" aria-label="View the public page for <%= profile.username %>">View public page</a>
                 <% } else { %>
-                  <a href="/u/<%= profile.username %>">Preview page</a>
+                  <a href="/u/<%= profile.username %>" aria-label="Preview the unpublished page for <%= profile.username %>">Preview page</a>
                   <span class="status-badge">Unpublished</span>
                 <% } %>
               </div>

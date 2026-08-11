@@ -74,15 +74,16 @@ router.get('/u/:username', async (req, res) => {
     db.query(PROFILE_WORD_GROUPS_SQL, [profile.id]),
     db.query(PROFILE_WORDS_SQL, [profile.id]),
   ]);
-  const markdown = (value) => renderProfileMarkdown(value, {
+  const markdown = (value, headingOffset) => renderProfileMarkdown(value, {
     full: fullMarkdownAllowed(profile.staff_role),
+    headingOffset,
     inlineText: obfuscateEmails,
   });
   res.render('profile', {
     title: `${profile.display_name} (@${profile.username_display})`,
     preview,
-    descriptionHtml: profile.description ? await markdown(profile.description) : '',
-    notesHtml: profile.notes ? await markdown(profile.notes) : '',
+    descriptionHtml: profile.description ? await markdown(profile.description, 0) : '',
+    notesHtml: profile.notes ? await markdown(profile.notes, 1) : '',
     username: profile.username_display,
     profile,
     staffBadge: staffRoleLabel(profile.staff_role),

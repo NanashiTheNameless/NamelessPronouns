@@ -5,7 +5,8 @@ import { hasMarkdownLink, markdownLinkUrls, renderProfileMarkdown } from '../src
 test('markdown: renders the supported inline set', async () => {
   assert.equal(
     await renderProfileMarkdown('**bold** *italic* _also italic_ __underline__ ~~gone~~ `code`'),
-    '<p><strong>bold</strong> <em>italic</em> <em>also italic</em> <u>underline</u> <s>gone</s> <code>code</code></p>',
+    '<p><strong>bold</strong> <em>italic</em> <em>also italic</em> <u class="md-underline">underline</u>'
+      + ' <s>gone</s> <code>code</code></p>',
   );
   assert.equal(await renderProfileMarkdown('**bold _mixed_**'), '<p><strong>bold <em>mixed</em></strong></p>');
   assert.equal(await renderProfileMarkdown('2 * 3 * 4 and snake_case_word'), '<p>2 * 3 * 4 and snake_case_word</p>');
@@ -101,7 +102,7 @@ test('markdown: the full level renders ordered, nested and fenced blocks', async
   );
   assert.equal(
     await renderProfileMarkdown('```js\nconst x = 1 < 2;\n```', full),
-    '<pre><code class="language-js">const x = 1 &lt; 2;</code></pre>',
+    '<pre tabindex="0" role="region" aria-label="Code block"><code class="language-js">const x = 1 &lt; 2;</code></pre>',
   );
   assert.equal(await renderProfileMarkdown('---', full), '<hr>');
   assert.equal(await renderProfileMarkdown('###### deepest', full), '<h6>deepest</h6>');
@@ -109,7 +110,7 @@ test('markdown: the full level renders ordered, nested and fenced blocks', async
 test('markdown: the full level renders tables with alignment classes', async () => {
   assert.equal(
     await renderProfileMarkdown('| a | b | c |\n| :--- | :---: | ---: |\n| 1 | 2 | 3 |', { full: true }),
-    '<div class="md-table-scroll"><table><thead><tr><th>a</th><th class="md-center">b</th>'
+    '<div class="md-table-scroll" tabindex="0" role="region" aria-label="Table"><table><thead><tr><th>a</th><th class="md-center">b</th>'
       + '<th class="md-right">c</th></tr></thead><tbody><tr><td>1</td><td class="md-center">2</td>'
       + '<td class="md-right">3</td></tr></tbody></table></div>',
   );
@@ -137,4 +138,23 @@ test('markdown: the full level still escapes raw HTML', async () => {
     await renderProfileMarkdown('<img src=x onerror=alert(1)>\n\n<b>no</b>', { full: true }),
     '<p>&lt;img src=x onerror=alert(1)&gt;</p><p>&lt;b&gt;no&lt;/b&gt;</p>',
   );
+});
+test('markdown: scrollable blocks are reachable by keyboard', async () => {
+  const table = await renderProfileMarkdown('| a | b |\n| --- | --- |\n| 1 | 2 |', { full: true });
+  assert.match(table, /<div class="md-table-scroll" tabindex="0" role="region" aria-label="Table">/);
+  const code = await renderProfileMarkdown('```\nx\n```', { full: true });
+  assert.match(code, /<pre tabindex="0" role="region" aria-label="Code block">/);
+});
+test('markdown: heading levels sit under the section that holds them', async () => {
+  assert.equal(await renderProfileMarkdown('# a\n## b\n### c'), '<h2>a</h2><h3>b</h3><h4>c</h4>');
+  assert.equal(await renderProfileMarkdown('# a\n## b', { headingOffset: 1 }), '<h3>a</h3><h4>b</h4>');
+  assert.equal(await renderProfileMarkdown('### c', { headingOffset: 1 }), '<h5>c</h5>', 'the limited cap moves with the offset');
+  assert.equal(await renderProfileMarkdown('###### f', { full: true, headingOffset: 1 }), '<h6>f</h6>', 'nothing goes past h6');
+  assert.equal(await renderProfileMarkdown('# a', { headingOffset: 99 }), '<h5>a</h5>', 'a silly offset is clamped');
+});
+test('markdown: author underline is not styled like a link', async () => {
+  assert.equal(await renderProfileMarkdown('__mine__'), '<p><u class="md-underline">mine</u></p>');
+  const linked = await renderProfileMarkdown('[label](https://example.com/) and __mine__', { full: true });
+  assert.match(linked, /<a href="https:\/\/example\.com\/"[^>]*>label<\/a>/);
+  assert.match(linked, /<u class="md-underline">mine<\/u>/);
 });

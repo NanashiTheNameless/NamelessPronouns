@@ -3,7 +3,7 @@
   <summary><%= full ? 'Full Markdown is supported' : 'Limited Markdown is supported' %></summary>
   <div class="markdown-help-body">
     <p class="fineprint">Anything not listed as supported is shown exactly as you typed it. Put a backslash before a marker (<code>\*</code>) to keep it literal.</p>
-    <h3>Supported</h3>
+    <h2 class="markdown-help-subhead">Supported</h2>
     <dl class="markdown-help-list">
       <div><dt><code>**bold**</code></dt><dd><strong>bold</strong></dd></div>
       <div><dt><code>*italics*</code> or <code>_italics_</code></dt><dd><em>italics</em></dd></div>
@@ -19,13 +19,13 @@
         <div><dt><code>1. item</code></dt><dd>Numbered list</dd></div>
         <div><dt>Two spaces of indent</dt><dd>Nested list under the item above</dd></div>
         <div><dt><code>```</code> fenced block <code>```</code></dt><dd>Code block, with an optional language after the opening fence</dd></div>
-        <div><dt><code>| a | b |</code> then <code>| --- | --- |</code></dt><dd>Table, with <code>:---:</code> and <code>---:</code> for centred and right-aligned columns</dd></div>
+        <div><dt><code>| a | b |</code> then <code>| --- | --- |</code></dt><dd>Table, with <code>:---:</code> and <code>---:</code> for centered and right-aligned columns</dd></div>
         <div><dt><code>---</code> on its own line</dt><dd>Horizontal rule</dd></div>
         <div><dt><code>&lt;https://example.com&gt;</code> or a bare HTTPS URL</dt><dd>Automatic link</dd></div>
         <div><dt><code>![alt](/static/path.png)</code></dt><dd>Image, site-hosted paths under <code>/static/</code> only</dd></div>
       <% } %>
     </dl>
-    <h3>Not supported</h3>
+    <h2 class="markdown-help-subhead">Not supported</h2>
     <ul class="markdown-help-list">
       <% if (!full) { %>
         <li>Hyperlinks — <code>[label](https://example.com)</code> is available to Administrator accounts only, and saving one here is rejected. Use the Links section instead.</li>

@@ -15,7 +15,7 @@ test('content flag fields read as names, not database keys', () => {
   assert.equal(contentFieldLabel('pronoun_possessive_determiner'), 'Pronoun possessive determiner');
   assert.equal(contentFieldLabel('word_group_headings'), 'Word group headings');
 });
-test('an unrecognised field key still reads as words', () => {
+test('an unrecognized field key still reads as words', () => {
   assert.equal(contentFieldLabel('some_future_field'), 'Some future field');
   assert.equal(contentFieldLabel(''), 'Unknown field');
   assert.equal(contentFieldLabel(null), 'Unknown field');

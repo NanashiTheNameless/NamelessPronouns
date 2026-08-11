@@ -277,8 +277,8 @@ test('profile editor offers tall Markdown-aware prose fields with a cheatsheet',
   }, { async: true });
   const html = await render({ full: false, max: 2000 });
   assert.match(html, /<label for="description">About me/);
-  assert.match(html, /<textarea id="description" name="description" class="tall" rows="14" maxlength="2000"[^>]*data-character-constraint/);
-  assert.match(html, /<textarea id="notes" name="notes" rows="10" maxlength="2000"[^>]*data-character-constraint/);
+  assert.match(html, /<textarea id="description"[^>]*class="tall"[^>]*rows="14"[^>]*maxlength="2000"[^>]*data-character-constraint/);
+  assert.match(html, /<textarea id="notes"[^>]*rows="10"[^>]*maxlength="2000"[^>]*data-character-constraint/);
   assert.doesNotMatch(html, /<input name="description"|<input name="notes"/, 'both prose fields are textareas now');
   assert.equal((html.match(/Limited Markdown is supported/g) || []).length, 2, 'both prose fields carry the note');
   assert.match(html, /<details class="markdown-help">/, 'the cheatsheet opens from the note itself');
@@ -299,6 +299,13 @@ test('profile editor offers tall Markdown-aware prose fields with a cheatsheet',
   assert.match(adminHtml, /<dd>Hyperlink, HTTPS only<\/dd>/);
   assert.match(adminHtml, /Raw HTML/, 'raw HTML stays unsupported at every level');
   assert.doesNotMatch(adminHtml, /Numbered lists and nested lists<\/li>/);
+  assert.match(html, /id="description-characters" role="status" aria-live="polite" data-character-report/,
+    'the live character report is polite, not an interrupting alert');
+  assert.doesNotMatch(html, /role="alert" data-character-report/);
+  assert.match(html, /<textarea id="description"[^>]*aria-describedby="description-characters description-hint"/);
+  assert.match(html, /<textarea id="notes"[^>]*aria-describedby="notes-characters notes-hint"/);
+  assert.doesNotMatch(html, /<h3>/, 'the cheatsheet does not skip from h1 to h3');
+  assert.match(html, /<h2 class="markdown-help-subhead">Supported<\/h2>/);
   const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
   assert.match(css, /\.prose-field textarea\s*\{[^}]*min-height:\s*11rem/s);
   assert.match(css, /\.prose-field textarea\.tall\s*\{[^}]*min-height:\s*17rem/s);

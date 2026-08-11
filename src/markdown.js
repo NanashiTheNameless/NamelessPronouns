@@ -18,7 +18,7 @@ const WORD_CHARACTER = /[A-Za-z0-9]/;
 const TRAILING_PUNCTUATION = /[.,;:!?)\]}'"]+$/;
 const INLINE_RULES = Object.freeze([
   { pattern: /^\*\*([^\n]+?)\*\*/, tag: 'strong' },
-  { pattern: /^__([^\n]+?)__/, tag: 'u', wordEdges: true },
+  { pattern: /^__([^\n]+?)__/, tag: 'u', className: 'md-underline', wordEdges: true },
   { pattern: /^~~([^\n]+?)~~/, tag: 's' },
   { pattern: /^\*([^\n]+?)\*/, tag: 'em' },
   { pattern: /^_([^\n]+?)_/, tag: 'em', wordEdges: true },
@@ -28,8 +28,10 @@ const ALIGNMENT_CLASS = Object.freeze({ left: '', center: ' class="md-center"', 
 async function escapeOnly(value) {
   return escapeHtml(value);
 }
-function headingTag(level, full) {
-  return `h${Math.min(level + 1, full ? 6 : 4)}`;
+function headingTag(level, { full, headingOffset }) {
+  const base = 2 + headingOffset;
+  const deepest = Math.min(6, full ? 6 : base + 2);
+  return `h${Math.min(base + level - 1, deepest)}`;
 }
 function matchedRule(rest, before) {
   for (const rule of INLINE_RULES) {
@@ -95,9 +97,10 @@ async function renderInline(text, options) {
     if (found) {
       const { rule, match } = found;
       await flush();
+      const attributes = rule.className ? ` class="${rule.className}"` : '';
       output += rule.literal
         ? `<code>${escapeHtml(match[1])}</code>`
-        : `<${rule.tag}>${await renderInline(match[1], options)}</${rule.tag}>`;
+        : `<${rule.tag}${attributes}>${await renderInline(match[1], options)}</${rule.tag}>`;
       index += match[0].length;
       continue;
     }
@@ -257,11 +260,14 @@ async function renderBlocks(blocks, options, { tight = false } = {}) {
     }
     if (block.type === 'code') {
       const className = block.language ? ` class="language-${escapeHtml(block.language)}"` : '';
-      html.push(`<pre><code${className}>${escapeHtml(block.lines.join('\n'))}</code></pre>`);
+      html.push(
+        '<pre tabindex="0" role="region" aria-label="Code block">'
+        + `<code${className}>${escapeHtml(block.lines.join('\n'))}</code></pre>`,
+      );
       continue;
     }
     if (block.type === 'heading') {
-      const tag = headingTag(block.level, options.full);
+      const tag = headingTag(block.level, options);
       html.push(`<${tag}>${await renderInline(block.text, options)}</${tag}>`);
       continue;
     }
@@ -289,7 +295,10 @@ async function renderBlocks(blocks, options, { tight = false } = {}) {
         for (const [column, text] of row.entries()) cells.push(await cell(text, block.align[column], 'td'));
         rows.push(`<tr>${cells.join('')}</tr>`);
       }
-      html.push(`<div class="md-table-scroll"><table><thead><tr>${head.join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`);
+      html.push(
+        '<div class="md-table-scroll" tabindex="0" role="region" aria-label="Table">'
+        + `<table><thead><tr>${head.join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`,
+      );
       continue;
     }
     const lines = [];
@@ -299,9 +308,14 @@ async function renderBlocks(blocks, options, { tight = false } = {}) {
   }
   return html.join('');
 }
-export async function renderProfileMarkdown(text, { full = false, inlineText = escapeOnly } = {}) {
+export async function renderProfileMarkdown(text, { full = false, headingOffset = 0, inlineText = escapeOnly } = {}) {
   const lines = String(text ?? '').replace(/\r\n?/g, '\n').split('\n');
-  return renderBlocks(parseBlocks(lines, full), { full, linked: false, inlineText });
+  return renderBlocks(parseBlocks(lines, full), {
+    full,
+    headingOffset: Math.max(0, Math.min(3, Number(headingOffset) || 0)),
+    linked: false,
+    inlineText,
+  });
 }
 export function hasMarkdownLink(text) {
   return LINK_SYNTAX.test(String(text ?? ''));

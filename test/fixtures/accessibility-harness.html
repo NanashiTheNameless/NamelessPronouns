@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Accessibility harness</title>
+  <script>
+    if (!sessionStorage.getItem('seeded')) {
+      localStorage.setItem('np-accessibility-theme', 'contrast');
+      localStorage.setItem('np-accessibility-font', 'serif');
+      sessionStorage.setItem('seeded', '1');
+      location.reload();
+    }
+  </script>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <script src="/static/js/accessibility.js"></script>
+  <script>
+    window.earlyApply = {
+      theme: document.documentElement.getAttribute('data-theme'),
+      font: document.documentElement.getAttribute('data-font'),
+      beforeBody: document.body === null,
+    };
+  </script>
+</head>
+<body>
+  <!--FOOTER-->
+  <output id="browser-result">pending</output>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const root = document.documentElement;
+    const dialog = document.querySelector('[data-accessibility-panel]');
+    const open = document.querySelector('[data-accessibility-open]');
+    const status = () => dialog.querySelector('[data-accessibility-status]').textContent;
+    const inline = (property) => root.style.getPropertyValue(property);
+    const pick = (name, value) => dialog.querySelector(`input[name="${name}"][value="${value}"]`).click();
+    const typeInto = (selector, value) => {
+      const field = dialog.querySelector(selector);
+      field.value = value;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    const clickAction = (action) => dialog.querySelector(`[data-accessibility-${action}]`).click();
+
+    const seededFont = getComputedStyle(document.body).fontFamily;
+    const buttonHidden = open.hidden;
+    open.click();
+    const openedState = dialog.open;
+    const openedWithStoredChecked = dialog.querySelector('input[name="accessibility_theme"]:checked').value;
+
+    pick('accessibility_theme', 'light');
+    pick('accessibility_font', 'sans');
+    const light = {
+      theme: root.getAttribute('data-theme'),
+      font: root.getAttribute('data-font'),
+      stored: [localStorage.getItem('np-accessibility-theme'), localStorage.getItem('np-accessibility-font')],
+      background: getComputedStyle(document.body).backgroundColor,
+      color: getComputedStyle(document.body).color,
+    };
+
+    pick('accessibility_theme', 'custom');
+    pick('accessibility_font', 'custom');
+    const sectionsShown = {
+      colors: dialog.querySelector('[data-accessibility-colors]').hidden === false,
+      family: dialog.querySelector('[data-accessibility-family]').hidden === false,
+    };
+    typeInto('[name="accessibility_color_bg"]', '#102030');
+    typeInto('[name="accessibility_color_text"]', '#f0f4ff');
+    typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
+    const custom = {
+      inlineBg: inline('--bg'),
+      inlineText: inline('--text'),
+      inlineFont: inline('--font-body'),
+      colorScheme: root.style.colorScheme,
+      background: getComputedStyle(document.body).backgroundColor,
+      fontFamily: getComputedStyle(document.body).fontFamily,
+      contrastNote: dialog.querySelector('[data-accessibility-contrast]').textContent,
+      exported: dialog.querySelector('[data-accessibility-transfer]').value,
+    };
+
+    typeInto('[name="accessibility_color_bg"]', 'not-a-color');
+    const rejected = { message: status(), inlineBg: inline('--bg') };
+    typeInto('[name="accessibility_color_bg"]', '#102030');
+
+    typeInto('[name="accessibility_font_family"]', 'url(https://evil.example/f.woff)');
+    const rejectedFamily = { message: status(), inlineFont: inline('--font-body') };
+    typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
+
+    typeInto('[data-accessibility-transfer]', JSON.stringify({
+      version: 1,
+      theme: 'custom',
+      font: 'custom',
+      colors: { bg: '#204020', text: '#ffffff', accent: 'javascript:alert(1)' },
+      fontFamily: 'Verdana, sans-serif',
+    }));
+    clickAction('import');
+    const imported = {
+      message: status(),
+      inlineBg: inline('--bg'),
+      inlineAccent: inline('--accent'),
+      inlineFont: inline('--font-body'),
+      stored: localStorage.getItem('np-accessibility-colors'),
+    };
+
+    typeInto('[data-accessibility-transfer]', 'not json at all');
+    clickAction('import');
+    const badImport = { message: status(), inlineBg: inline('--bg') };
+
+    clickAction('reset');
+    const reset = {
+      theme: root.getAttribute('data-theme'),
+      font: root.getAttribute('data-font'),
+      stored: [localStorage.getItem('np-accessibility-theme'), localStorage.getItem('np-accessibility-font')],
+      checked: dialog.querySelector('input[name="accessibility_theme"]:checked').value,
+      inlineBg: inline('--bg'),
+      inlineFont: inline('--font-body'),
+      storedColors: localStorage.getItem('np-accessibility-colors'),
+      storedFamily: localStorage.getItem('np-accessibility-font-family'),
+    };
+
+    clickAction('close');
+    const closedState = dialog.open;
+    document.getElementById('browser-result').textContent = JSON.stringify({
+      early: window.earlyApply,
+      seededFont,
+      buttonHidden,
+      openedState,
+      closedState,
+      openedWithStoredChecked,
+      light,
+      sectionsShown,
+      custom,
+      rejected,
+      rejectedFamily,
+      imported,
+      badImport,
+      reset,
+    });
+  });
+  </script>
+</body>
+</html>

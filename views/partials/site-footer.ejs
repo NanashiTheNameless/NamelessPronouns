@@ -7,6 +7,87 @@
     <a href="/acknowledgements">Open Source</a>
   </nav>
   <p>Operated by NamelessNanashi.</p>
+  <button type="button" class="secondary compact" data-accessibility-open hidden>Accessibility</button>
 </footer>
+<dialog class="accessibility-panel" aria-labelledby="accessibility-h" data-accessibility-panel>
+  <h2 id="accessibility-h">Accessibility</h2>
+  <p class="fineprint">These settings are kept in this browser only. They are never sent to the server and are not part of your account.</p>
+  <form method="dialog">
+    <fieldset>
+      <legend>Theme</legend>
+      <label class="choice"><input type="radio" name="accessibility_theme" value="default" checked><span>Site default (dark)</span></label>
+      <label class="choice"><input type="radio" name="accessibility_theme" value="light"><span>Light</span></label>
+      <label class="choice"><input type="radio" name="accessibility_theme" value="contrast"><span>High contrast, dark</span></label>
+      <label class="choice"><input type="radio" name="accessibility_theme" value="contrast-light"><span>High contrast, light</span></label>
+      <label class="choice"><input type="radio" name="accessibility_theme" value="custom"><span>Arbitrary theme, your own colors</span></label>
+    </fieldset>
+    <fieldset data-accessibility-colors hidden>
+      <legend>Your colors</legend>
+      <p class="fineprint">Each one takes an HTML color code such as <code>#1a2b3c</code>. Leave a box empty to keep the site default for it.</p>
+      <div class="accessibility-colors">
+        <label for="accessibility-color-bg">Page background
+          <input id="accessibility-color-bg" name="accessibility_color_bg" type="text" inputmode="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false" data-color-label="The page background" placeholder="The color behind the whole page">
+        </label>
+        <label for="accessibility-color-surface">Panels and entry fields
+          <input id="accessibility-color-surface" name="accessibility_color_surface" type="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false" data-color-label="The panel color" placeholder="The color of cards, panels, and text boxes">
+        </label>
+        <label for="accessibility-color-text">Body text
+          <input id="accessibility-color-text" name="accessibility_color_text" type="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false" data-color-label="The body text color" placeholder="The color of ordinary reading text">
+        </label>
+        <label for="accessibility-color-muted">Secondary text
+          <input id="accessibility-color-muted" name="accessibility_color_muted" type="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false" data-color-label="The secondary text color" placeholder="The color of hints and small print">
+        </label>
+        <label for="accessibility-color-border">Borders
+          <input id="accessibility-color-border" name="accessibility_color_border" type="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false" data-color-label="The border color" placeholder="The outline around fields and panels">
+        </label>
+        <label for="accessibility-color-accent">Buttons and highlights
+          <input id="accessibility-color-accent" name="accessibility_color_accent" type="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false" data-color-label="The button color" placeholder="The fill behind primary buttons">
+        </label>
+        <label for="accessibility-color-accentText">Text on buttons
+          <input id="accessibility-color-accentText" name="accessibility_color_accentText" type="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false" data-color-label="The button label color" placeholder="The lettering shown on primary buttons">
+        </label>
+        <label for="accessibility-color-link">Links in profile text
+          <input id="accessibility-color-link" name="accessibility_color_link" type="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false" data-color-label="The link color" placeholder="The color of links inside a profile bio">
+        </label>
+        <label for="accessibility-color-focus">Keyboard focus ring
+          <input id="accessibility-color-focus" name="accessibility_color_focus" type="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false" data-color-label="The focus ring color" placeholder="The outline that follows keyboard focus">
+        </label>
+        <label for="accessibility-color-placeholder">Placeholder text
+          <input id="accessibility-color-placeholder" name="accessibility_color_placeholder" type="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" autocomplete="off" spellcheck="false" data-color-label="The placeholder color" placeholder="The color of the hint inside an empty field">
+        </label>
+      </div>
+      <p class="fineprint" role="status" aria-live="polite" data-accessibility-contrast></p>
+    </fieldset>
+    <fieldset>
+      <legend>Text font</legend>
+      <label class="choice"><input type="radio" name="accessibility_font" value="default" checked><span>Site default (0xProto)</span></label>
+      <label class="choice"><input type="radio" name="accessibility_font" value="sans"><span>Your system sans-serif font</span></label>
+      <label class="choice"><input type="radio" name="accessibility_font" value="serif"><span>Your system serif font</span></label>
+      <label class="choice"><input type="radio" name="accessibility_font" value="mono"><span>Your system monospace font</span></label>
+      <label class="choice"><input type="radio" name="accessibility_font" value="custom"><span>Arbitrary font family, named by you</span></label>
+    </fieldset>
+    <div data-accessibility-family hidden>
+      <label for="accessibility-font-family">Font family
+        <input id="accessibility-font-family" name="accessibility_font_family" type="text" maxlength="120" autocomplete="off" spellcheck="false" placeholder="The name of a font installed on your device, with fallbacks after commas">
+      </label>
+      <p class="fineprint">Only fonts already on your device can be used. Nothing is downloaded, so a name your device does not have falls back to the site font.</p>
+    </div>
+    <fieldset>
+      <legend>Copy or paste your settings</legend>
+      <label for="accessibility-transfer">Settings text
+        <textarea id="accessibility-transfer" rows="6" spellcheck="false" data-accessibility-transfer placeholder="Your current settings appear here, ready to copy into another browser"></textarea>
+      </label>
+      <div class="inline-actions">
+        <button type="button" class="secondary" data-accessibility-copy>Copy settings</button>
+        <button type="button" class="secondary" data-accessibility-import>Apply pasted settings</button>
+      </div>
+    </fieldset>
+    <p class="fineprint" role="status" aria-live="polite" data-accessibility-status></p>
+    <div class="inline-actions">
+      <button type="button" class="secondary" data-accessibility-reset>Reset to defaults</button>
+      <button type="button" data-accessibility-close>Done</button>
+    </div>
+  </form>
+</dialog>
 <script type="module" src="/static/js/email-obfuscation.js"></script>
 <script src="/static/js/field-messages.js"></script>

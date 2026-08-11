@@ -97,3 +97,20 @@ test('an unpublished profile page explains why the viewer can see it', async () 
   assert.doesNotMatch(await render({ preview: null }), /not published/);
   assert.doesNotMatch(await render({}), /not published/, 'the banner needs an explicit reason');
 });
+test('notes headings nest under the Notes section, and prose links stay distinct', async () => {
+  const html = await ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
+    title: 'Example',
+    profile: { id: 'profile-1', display_name: 'Example', description: '', notes: '' },
+    username: 'example',
+    avatar: '/static/avatar.svg',
+    names: [], pronouns: [], words: [], links: [], flags: [], pronounPreferences: [],
+    descriptionHtml: await renderProfileMarkdown('# Bio heading'),
+    notesHtml: await renderProfileMarkdown('# Notes heading', { headingOffset: 1 }),
+    obfuscateEmails: async (value) => value,
+  }, { async: true });
+  assert.match(html, /<h2>Bio heading<\/h2>/, 'the bio sits beside the page sections');
+  assert.match(html, /<h2 id="notes-h">Notes<\/h2>\s*<div class="profile-prose"><h3>Notes heading<\/h3>/);
+  const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
+  assert.match(css, /\.profile-prose a\s*\{[^}]*color:\s*var\(--link\)/s, 'prose links carry a color cue as well as an underline');
+  assert.match(css, /\.profile-prose \.md-underline\s*\{/, 'author underline is styled apart from links');
+});
