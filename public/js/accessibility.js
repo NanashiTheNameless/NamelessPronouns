@@ -380,7 +380,7 @@ function wireKeyboardEggs() {
     headingClicks = 0;
     const original = ownerHeading.textContent;
     ownerHeading.textContent = 'Yes, this is the Owner.';
-    announce('Yes, this is still the Owner.');
+    announce('Yes, this is the Owner.');
     setTimeout(() => { ownerHeading.textContent = original; }, 1500);
   });
   let badgeVisits = 0;

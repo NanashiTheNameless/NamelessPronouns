@@ -125,7 +125,7 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     });
     assert.equal(result.ownerHeadingEncore, 'Yes, this is the Owner.');
     assert.deepEqual(result.ownerHeadingToast, {
-      message: 'Yes, this is still the Owner.', visible: true, topLayer: true,
+      message: 'Yes, this is the Owner.', visible: true, topLayer: true,
     });
     assert.equal(result.ownerBadgeEncore, 'still wrote this bit');
     assert.equal(result.fortyTwo, 'You have the answer. The question remains unavailable.');
