@@ -295,6 +295,11 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Redirects to the Owner's own profile at /u/NamelessNanashi"
   },
   {
+    "name": "Alternate profile URLs",
+    "activation": "Visit /@nobody or /user/nobody, in any capitalisation",
+    "effect": "Redirects to /u/nobody, so every reserved profile answers the same URL shapes a real profile does"
+  },
+  {
     "name": "Titles are not people",
     "activation": "Visit /u/admin, /u/administrator, /u/moderator, or /u/support",
     "effect": "Returns HTTP 404 with \"Titles are not people.\""

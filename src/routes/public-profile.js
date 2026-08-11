@@ -241,7 +241,18 @@ async function placeholderProfile(res, username) {
 export const staticProfileRouter = express.Router();
 const TITLE_ONLY_USERNAMES = new Set(['admin', 'administrator', 'moderator', 'support']);
 const OWNER_USERNAME = 'NamelessNanashi';
+export const EGG_USERNAMES = new Set([
+  ...Object.keys(PLACEHOLDER_PROFILES),
+  ...TITLE_ONLY_USERNAMES,
+  '404', 'nanashi', 'me', 'self',
+]);
 staticProfileRouter.use(publicPageHeaders);
+staticProfileRouter.get(['/user/:username', '/@:username'], (req, res, next) => {
+  const requested = String(req.params.username || '').toLowerCase();
+  if (!EGG_USERNAMES.has(requested)) return next();
+  noStore(res);
+  return res.redirect(301, `/u/${requested}`);
+});
 staticProfileRouter.get('/u/:username', async (req, res, next) => {
   const requested = String(req.params.username || '').toLowerCase();
   if (requested === '404') {

@@ -164,6 +164,18 @@ test('every documented endpoint egg answers with the status it claims', async ()
   }
   assert.ok(checked > 30, `the documented endpoints are all exercised (saw ${checked})`);
 });
+test('every Easter egg username answers the same URL shapes a real profile does', async () => {
+  const { EGG_USERNAMES } = await import('../src/routes/public-profile.js');
+  const staleSession = signValue(config.COOKIE_SECRET, 'stale-session-that-would-query-the-database');
+  assert.ok(EGG_USERNAMES.size > 20, `the reserved names are all covered (saw ${EGG_USERNAMES.size})`);
+  for (const username of EGG_USERNAMES) {
+    for (const path of [`/user/${username}`, `/@${username}`, `/user/${username.toUpperCase()}`]) {
+      const res = await fetch(`${base}${path}`, { redirect: 'manual', headers: { cookie: `np_sid=${staleSession}` } });
+      assert.equal(res.status, 301, `${path} redirects`);
+      assert.equal(res.headers.get('location'), `/u/${username}`, `${path} lands on the canonical profile URL`);
+    }
+  }
+});
 test('every Easter egg username is reserved against real signups', async () => {
   const { PLACEHOLDER_PROFILES } = await import('../src/routes/public-profile.js');
   const { RESERVED_USERNAMES } = await import('../src/validation.js');
