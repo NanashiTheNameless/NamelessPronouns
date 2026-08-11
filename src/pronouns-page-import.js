@@ -108,12 +108,12 @@ function entryOpinion(entry) {
 }
 
 function wordGroup(group) {
-  const heading = boundedText(group?.header ?? group?.heading, 80);
+  const heading = boundedText(group?.header, 80) || 'Other words';
   const words = (Array.isArray(group?.values) ? group.values : [])
     .slice(0, MAX_ITEMS)
     .map((entry) => ({ value: boundedText(entryValue(entry), 80), opinion: entryOpinion(entry) }))
     .filter((word) => word.value);
-  if (!heading || !words.length) return null;
+  if (!words.length) return null;
   return { heading, words };
 }
 

@@ -471,7 +471,7 @@ router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, r
     if (result.skippedPronouns) omissions.push(`${result.skippedPronouns} pronoun set${result.skippedPronouns === 1 ? '' : 's'} that could not be expanded safely`);
     if (result.skippedCustomFlags) omissions.push(`${result.skippedCustomFlags} custom flag${result.skippedCustomFlags === 1 ? '' : 's'} whose artwork cannot be transferred`);
     if (result.skippedFlags) omissions.push(`${result.skippedFlags} unavailable built-in flag${result.skippedFlags === 1 ? '' : 's'}`);
-    if (result.skippedWordGroups) omissions.push(`${result.skippedWordGroups} empty or unnamed word group${result.skippedWordGroups === 1 ? '' : 's'}`);
+    if (result.skippedWordGroups) omissions.push(`${result.skippedWordGroups} empty word group${result.skippedWordGroups === 1 ? '' : 's'}`);
     const suffix = omissions.length ? ` Skipped ${omissions.join(' and ')}.` : '';
     return res.render('profile-edit', editorView(profile, result.values, {
       importNotice: `Imported the ${result.locale} profile for review.${suffix} Save the profile to keep these changes.`,

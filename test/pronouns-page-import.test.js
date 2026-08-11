@@ -48,7 +48,7 @@ test('Pronouns.page profiles map into reviewable local fields', () => {
       words: [
         { header: 'I am a', values: [{ value: 'person', opinion: 'yes' }, { value: 'lad', opinion: 'no' }] },
         { header: 'Nameless group', values: [] },
-        { header: '', values: [{ value: 'orphan', opinion: 'yes' }] },
+        { header: null, values: [{ value: 'orphan', opinion: 'yes' }] },
       ],
       links: ['https://example.com/profile'],
       flags: ['Nonbinary', "Fa'afafine", 'Future Flag'],
@@ -78,11 +78,14 @@ test('Pronouns.page profiles map into reviewable local fields', () => {
     subject: 'ae', object: 'aer', possessiveDeterminer: 'aer', possessivePronoun: 'aers', reflexive: 'aerself',
     opinion: 'yes',
   });
-  assert.deepEqual(result.values.words, [{
-    heading: 'I am a',
-    words: [{ value: 'person', opinion: 'yes' }, { value: 'lad', opinion: 'nope' }],
-  }]);
-  assert.equal(result.skippedWordGroups, 2);
+  assert.deepEqual(result.values.words, [
+    {
+      heading: 'I am a',
+      words: [{ value: 'person', opinion: 'yes' }, { value: 'lad', opinion: 'nope' }],
+    },
+    { heading: 'Other words', words: [{ value: 'orphan', opinion: 'yes' }] },
+  ]);
+  assert.equal(result.skippedWordGroups, 1);
   assert.deepEqual(result.values.links, [{ label: 'example com', url: 'https://example.com/profile' }]);
   assert.deepEqual(result.values.flags, ['Nonbinary', "Fa'afafine"]);
   assert.equal(result.skippedPronouns, 1);
@@ -114,7 +117,7 @@ test('Pronouns.page opinions map onto the local Yes/Jokingly/Close/Okay/Nope sca
   assert.deepEqual(result.values.pronounPreferences, [{ key: 'any_pronouns', opinion: 'jokingly' }]);
 });
 
-test('word groups import in the shape the live Pronouns.page API returns', () => {
+test('word groups import in the shape used by the Pronouns.page source', () => {
   const result = mapPronounsPageProfile({
     profiles: [{
       locale: 'en',
