@@ -14,6 +14,8 @@ test('the public text-file and teapot eggs bypass consent', async () => {
   assert.equal(teapot.headers.get('x-tea-made-by'), 'NamelessNanashi');
   assert.equal(teapot.headers.get('x-nanashi'), 'was-here');
   assert.equal(await teapot.text(), "I'm a teapot. It/its, thanks.\n");
+  const curl = await fetch(`${base}/teapot`, { headers: { 'user-agent': 'curl/8.16.0' } });
+  assert.equal(curl.headers.get('x-curl'), 'excellent-choice');
   const coffee = await fetch(`${base}/teapot?coffee`);
   assert.equal(coffee.status, 406);
   assert.equal(await coffee.text(), 'Wrong appliance.\n');
@@ -53,6 +55,18 @@ test('GET / is gated: redirects to /consent before acceptance', async () => {
   const res = await fetch(`${base}/`, { redirect: 'manual' });
   assert.equal(res.status, 302);
   assert.equal(res.headers.get('location'), '/consent');
+});
+test('GET /u/self reports a missing self when signed out', async () => {
+  const consent = await fetch(`${base}/consent`, {
+    method: 'POST',
+    redirect: 'manual',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ policies: 'on', age18: 'on', next: '/u/self' }),
+  });
+  const cookie = consent.headers.getSetCookie().find((value) => value.startsWith('np_policy='));
+  const response = await fetch(`${base}/u/self`, { headers: { cookie } });
+  assert.equal(response.status, 404);
+  assert.match(await response.text(), /Self not found\./);
 });
 test('GET /consent renders with baseline security headers and RUM allowance', async () => {
   const res = await fetch(`${base}/consent`);

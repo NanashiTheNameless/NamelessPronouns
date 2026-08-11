@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { requestedBans } from '../src/routes/admin.js';
 import { ValidationError } from '../src/validation.js';
+import { EASTER_EGGS } from '../src/easter-eggs.js';
 
 test('denying a request never bans on its own', () => {
   assert.deepEqual(requestedBans({}), { targets: [], scope: 'account', expiresAt: null });
@@ -260,9 +261,31 @@ test('admin tools use a responsive action grid', async () => {
   assert.match(html, /class="admin-tools-grid"/);
   assert.match(html, /href="\/admin\/users"/);
   assert.match(html, /href="\/admin\/reports"/);
+  assert.match(html, /href="\/admin\/easter-eggs">Easter egg catalog/);
   const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
   assert.match(css, /\.admin-tools-grid\s*\{[^}]*display:\s*grid/s);
   assert.match(css, /grid-template-columns:\s*repeat\(auto-fit/s);
+});
+test('every staff role can open the complete Easter egg catalog', async () => {
+  const overview = await ejs.renderFile(fileURLToPath(new URL('../views/admin/overview.ejs', import.meta.url)), {
+    title: 'Administration', canReport: false, canApprove: false,
+    pending: [], searched: null, email: '', lookupMessage: '', csrfToken: 'csrf',
+    user: { staff_role: 'support' }, obfuscateEmail: async () => '',
+  }, { async: true });
+  assert.match(overview, /href="\/admin\/easter-eggs">Easter egg catalog/);
+  assert.doesNotMatch(overview, /href="\/admin\/users"/);
+
+  const html = await ejs.renderFile(fileURLToPath(new URL('../views/admin/easter-eggs.ejs', import.meta.url)), {
+    title: 'Easter eggs', eggs: EASTER_EGGS, user: { staff_role: 'support' }, csrfToken: 'csrf',
+  }, { async: true });
+  assert.equal(new Set(EASTER_EGGS.map((egg) => egg.name)).size, EASTER_EGGS.length);
+  assert.equal((html.match(/<tr>/g) || []).length, EASTER_EGGS.length + 1);
+  for (const phrase of ['All 78 documented Easter eggs', 'Empty-state optimism', 'Staff egg catalog',
+    'An easter egg collector, Apparently.', 'NamelessNanashi.fix()', 'X-Curl: excellent-choice']) {
+    assert.match(html, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+  const route = await readFile(new URL('../src/routes/admin.js', import.meta.url), 'utf8');
+  assert.match(route, /router\.get\('\/admin\/easter-eggs', requireStaff\('support'\)/);
 });
 test('the admin lookup has an answer for sudo', async () => {
   const html = await ejs.renderFile(fileURLToPath(new URL('../views/admin/overview.ejs', import.meta.url)), {

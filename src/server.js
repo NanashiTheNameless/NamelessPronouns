@@ -43,6 +43,7 @@ export function createApp() {
   app.use((req, res, next) => {
     res.append('Link', '</humans.txt>; rel="author"');
     res.setHeader('X-Nanashi', 'was-here');
+    if (/\bcurl\//i.test(req.get('user-agent') || '')) res.setHeader('X-Curl', 'excellent-choice');
     next();
   });
   app.head('/teapot', (req, res) => {

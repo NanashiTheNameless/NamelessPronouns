@@ -95,11 +95,15 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     }, 'reset clears the attributes, the inline colors, and everything stored, and hides the color fields');
     assert.equal(result.doubleReset, 'Still default. NamelessNanashi would be proud.');
     assert.match(result.colorQuip, /Coffee detected/);
+    assert.equal(result.orderedColorQuip, 'Everything appears to be in order.');
+    assert.equal(result.luckyColorQuip, 'Seven. Naturally.');
+    assert.equal(result.alphabeticalColorQuip, 'Alphabetical, hexadecimal, and suspiciously organized.');
     assert.equal(result.monochromeQuip, 'You have chosen sides.');
     assert.equal(result.stealthQuip, 'Stealth mode enabled. Readability was not invited.');
     assert.match(result.fontQuip, /helps some dyslexic readers/);
     assert.equal(result.timesQuip, 'The Times are new. The Roman is unchanged.');
     assert.equal(result.defaultFontQuip, 'You came all this way to choose the default. Respect.');
+    assert.equal(result.papyrusQuip, 'The ancient records warned us.');
     assert.deepEqual(result.konami, { initiallyHidden: true, unlocked: true, stored: 'unlocked' });
     assert.deepEqual(result.konamiToast, {
       message: 'Achievement already achieved.',
@@ -115,17 +119,30 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.equal(result.shortcutInception, 'You are already here.');
     assert.deepEqual(result.ownerBusinessCard, { role: 'Owner', status: 'probably debugging' });
     assert.equal(result.ownerBusinessCardText, '[Owner probably debugging]');
+    assert.equal(result.ownerFix, 'Have you tried turning it off and on again?');
     assert.equal(result.backupBackup, 'Backup of backup complete.');
     assert.match(result.ownerSequence, /Owner located.*3-5 business eternities/);
     assert.equal(result.ownerSequenceToast.visible, true);
     assert.equal(result.ownerSequenceToast.topLayer, true);
+    assert.deepEqual(result.whoamiToast, {
+      message: 'An easter egg collector, Apparently.', visible: true, topLayer: true,
+    });
+    assert.deepEqual(result.helpToast, {
+      message: 'Shift+? was right there.', visible: true, topLayer: true,
+    });
     assert.equal(result.footerPersistence, 'Still NamelessNanashi');
     assert.deepEqual(result.footerPersistenceToast, {
       message: 'NamelessNanashi remains operational.', visible: true, topLayer: true,
     });
     assert.equal(result.ownerHeadingEncore, 'Yes, this is the Owner.');
     assert.deepEqual(result.ownerHeadingToast, {
-      message: 'Yes, this is the Owner.', visible: true, topLayer: true,
+      message: 'Yes, this is still the Owner.', visible: true, topLayer: true,
+    });
+    assert.deepEqual(result.offlineToast, {
+      message: 'NamelessNanashi cannot fix your Wi-Fi.', visible: true, topLayer: true,
+    });
+    assert.deepEqual(result.onlineToast, {
+      message: 'Connection restored. NamelessNanashi accepts the credit.', visible: true, topLayer: true,
     });
     assert.equal(result.ownerBadgeEncore, 'still wrote this bit');
     assert.equal(result.fortyTwo, 'You have the answer. The question remains unavailable.');
@@ -168,7 +185,7 @@ test('the accessibility script contains the local-only keyboard and input eggs',
   const script = await readFile(new URL('../public/js/accessibility.js', import.meta.url), 'utf8');
   assert.match(script, /ArrowUp.*ArrowUp.*ArrowDown.*ArrowDown.*ArrowLeft.*ArrowRight.*ArrowLeft.*ArrowRight.*'b'.*'a'/s);
   assert.match(script, /np-accessibility-konami/);
-  for (const code of ['#c0ffee', '#bada55', '#0ff1ce', '#facade', '#deface']) assert.match(script, new RegExp(code));
+  for (const code of ['#c0ffee', '#bada55', '#0ff1ce', '#facade', '#deface', '#123456', '#777777', '#abcdef']) assert.match(script, new RegExp(code));
   assert.match(script, /Bold choice\. Genuinely: it helps some dyslexic readers\./);
   assert.match(script, /You have chosen sides\./);
   assert.match(script, /Stealth mode enabled\. Readability was not invited\./);
@@ -185,9 +202,15 @@ test('the accessibility script contains the local-only keyboard and input eggs',
   assert.match(script, /Preserved by NamelessNanashi/);
   assert.match(script, /Achievement Get: Read the console!/);
   assert.match(script, /The Times are new\. The Roman is unchanged\./);
+  assert.match(script, /The ancient records warned us\./);
   assert.match(script, /Backup of backup complete\./);
   assert.match(script, /Settings recovered from 1998\./);
   assert.match(script, /You have the answer\. The question remains unavailable\./);
+  assert.match(script, /An easter egg collector, Apparently\./);
+  assert.match(script, /Shift\+\? was right there\./);
+  assert.match(script, /NamelessNanashi cannot fix your Wi-Fi\./);
+  assert.match(script, /Connection restored\. NamelessNanashi accepts the credit\./);
+  assert.match(script, /Have you tried turning it off and on again\?/);
 });
 test('the panel offers arbitrary colors, an arbitrary font, and settings transfer', async () => {
   const footer = await readFile(new URL('../views/partials/site-footer.ejs', import.meta.url), 'utf8');

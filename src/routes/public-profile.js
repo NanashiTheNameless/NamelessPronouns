@@ -96,6 +96,14 @@ export const PLACEHOLDER_PROFILES = Object.freeze({
     pronouns: [{ short: 'no/no', opinion: 'yes' }, { short: 'it/its', opinion: 'okay' }],
     words: [{ heading: 'I am', words: [{ value: 'wrong', opinion: 'okay' }, { value: 'true', opinion: 'nope' }] }],
   },
+  root: {
+    displayName: 'Root',
+    bio: 'I have access to everything except a normal conversation.\n\n**Status:** operating with unnecessary privileges.',
+    notes: '- Pronoun changes require elevated permissions.\n- Please do not run me in production.\n- The Owner denies granting this account access.',
+    names: [{ value: 'Root', opinion: 'yes' }, { value: 'Superuser', opinion: 'jokingly' }],
+    pronouns: [{ short: 'sudo/sudo', opinion: 'jokingly' }, { short: 'it/its', opinion: 'okay' }],
+    words: [{ heading: 'I am', words: [{ value: 'privileged', opinion: 'yes' }, { value: 'a shell', opinion: 'nope' }] }],
+  },
 });
 router.use(publicPageHeaders);
 function noStore(res) {
@@ -148,6 +156,20 @@ router.get(['/user/:username', '/@:username'], (req, res) => {
 router.get('/u/me', async (req, res) => {
   noStore(res);
   if (!req.user) return res.redirect('/login');
+  const { rows } = await db.query(
+    `SELECT p.username_display FROM profiles p
+       JOIN workspaces w ON w.id = p.workspace_id
+      WHERE w.owner_user_id = ? ORDER BY p.created_at LIMIT 1`,
+    [req.user.id],
+  );
+  if (!rows[0]) return res.redirect('/dashboard');
+  return res.redirect(`/u/${encodeURIComponent(rows[0].username_display)}`);
+});
+router.get('/u/self', async (req, res) => {
+  noStore(res);
+  if (!req.user) {
+    return res.status(404).render('error', { title: 'Self not found', status: 404, message: 'Self not found.' });
+  }
   const { rows } = await db.query(
     `SELECT p.username_display FROM profiles p
        JOIN workspaces w ON w.id = p.workspace_id
@@ -224,6 +246,7 @@ router.get('/u/:username', async (req, res) => {
   if (pronouns.rows[0]) {
     res.setHeader('X-Pronouns', `${pronouns.rows[0].subject}/${pronouns.rows[0].object}`);
   }
+  if (profile.staff_role === 'owner') res.setHeader('X-Owner-Status', 'probably-debugging');
   res.render('profile', {
     title: `${profile.display_name} (@${profile.username_display})`,
     preview,

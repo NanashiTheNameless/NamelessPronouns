@@ -25,6 +25,7 @@ console.info('NamelessPronouns, Achievement Get: Read the console!');
 window.NamelessNanashi = Object.freeze({
   role: 'Owner',
   status: 'probably debugging',
+  fix() { return 'Have you tried turning it off and on again?'; },
   toString() { return '[Owner probably debugging]'; },
 });
 
@@ -262,6 +263,9 @@ function wirePanel() {
         '#facade': 'The facade is holding up.',
         '#decade': 'A decade fits neatly into six hex digits.',
         '#deface': 'No faces were harmed in the selection of this color.',
+        '#123456': 'Everything appears to be in order.',
+        '#777777': 'Seven. Naturally.',
+        '#abcdef': 'Alphabetical, hexadecimal, and suspiciously organized.',
       };
       const paired = colors.bg && colors.text;
       const paletteQuip = paired && colors.bg === colors.text
@@ -286,6 +290,7 @@ function wirePanel() {
         'comic sans ms': 'Bold choice. Genuinely: it helps some dyslexic readers.',
         '0xproto': 'You came all this way to choose the default. Respect.',
         'times new roman': 'The Times are new. The Roman is unchanged.',
+        papyrus: 'The ancient records warned us.',
       };
       say(status, fontQuips[family.toLowerCase()] || '');
       applyAll();
@@ -341,11 +346,15 @@ function wireKeyboardEggs() {
   let position = 0;
   let nanashiPosition = 0;
   let answerPosition = 0;
+  let whoamiPosition = 0;
+  let helpPosition = 0;
   let headingTimer;
   let ownerTimer;
   let toastTimer;
   const nanashiSequence = [...'nanashi'];
   const answerSequence = ['4', '2'];
+  const whoamiSequence = [...'whoami'];
+  const helpSequence = [...'help'];
   const announce = (message) => {
     if (!easterStatus) return;
     clearTimeout(toastTimer);
@@ -380,7 +389,7 @@ function wireKeyboardEggs() {
     headingClicks = 0;
     const original = ownerHeading.textContent;
     ownerHeading.textContent = 'Yes, this is the Owner.';
-    announce('Yes, this is the Owner.');
+    announce('Yes, this is still the Owner.');
     setTimeout(() => { ownerHeading.textContent = original; }, 1500);
   });
   let badgeVisits = 0;
@@ -393,6 +402,8 @@ function wireKeyboardEggs() {
   };
   ownerBadge?.addEventListener('mouseenter', visitOwnerBadge);
   ownerBadge?.addEventListener('focus', visitOwnerBadge);
+  window.addEventListener('offline', () => announce('NamelessNanashi cannot fix your Wi-Fi.'));
+  window.addEventListener('online', () => announce('Connection restored. NamelessNanashi accepts the credit.'));
   shortcuts?.querySelector('[data-shortcuts-close]')?.addEventListener('click', () => shortcuts.close());
   document.addEventListener('keydown', (event) => {
     const editable = event.target instanceof HTMLElement
@@ -421,6 +432,20 @@ function wireKeyboardEggs() {
     if (answerPosition === answerSequence.length) {
       answerPosition = 0;
       announce('You have the answer. The question remains unavailable.');
+    }
+    whoamiPosition = key === whoamiSequence[whoamiPosition]
+      ? whoamiPosition + 1
+      : (key === whoamiSequence[0] ? 1 : 0);
+    if (whoamiPosition === whoamiSequence.length) {
+      whoamiPosition = 0;
+      announce('An easter egg collector, Apparently.');
+    }
+    helpPosition = key === helpSequence[helpPosition]
+      ? helpPosition + 1
+      : (key === helpSequence[0] ? 1 : 0);
+    if (helpPosition === helpSequence.length) {
+      helpPosition = 0;
+      announce('Shift+? was right there.');
     }
     position = key === sequence[position] ? position + 1 : (key === sequence[0] ? 1 : 0);
     if (position !== sequence.length) return;

@@ -13,6 +13,7 @@ import { newId } from '../util/ids.js';
 import { normalizedExemptionHash } from '../content-exemptions.js';
 import { createBan, targetHash } from '../bans.js';
 import { roleAtLeast } from '../middleware/staff.js';
+import { EASTER_EGGS } from '../easter-eggs.js';
 const router = express.Router();
 router.get('/admin', requireStaff('support'), async (req, res) => {
   const pending = await db.query(
@@ -42,6 +43,9 @@ router.get('/admin', requireStaff('support'), async (req, res) => {
     email,
     lookupMessage,
   });
+});
+router.get('/admin/easter-eggs', requireStaff('support'), (req, res) => {
+  res.render('admin/easter-eggs', { title: 'Easter eggs', eggs: EASTER_EGGS });
 });
 router.get('/admin/content-flags', requireStaff('administrator'), requireFreshAuth(), async (req, res) => {
   const [{ rows }, { rows: selfFlags }] = await Promise.all([db.query(

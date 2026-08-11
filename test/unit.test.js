@@ -209,6 +209,8 @@ test('validation: username rules and reserved names', () => {
   assert.throws(() => V.username('trail-'), V.ValidationError);
   assert.throws(() => V.username('a--b'), V.ValidationError);
   assert.throws(() => V.username('Admin'), V.ValidationError);
+  assert.throws(() => V.username('self'), V.ValidationError);
+  assert.throws(() => V.username('root'), V.ValidationError);
 });
 test('validation: httpsUrl rejects non-HTTPS, credentials, and bad ports', () => {
   assert.equal(V.httpsUrl('https://example.com/x'), 'https://example.com/x');

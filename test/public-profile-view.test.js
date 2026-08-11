@@ -90,6 +90,7 @@ test('a profile with eleven flags earns the collector caption', async () => {
 });
 
 test('reserved profiles each have distinct bios, notes, pronouns, and personality', async () => {
+  assert.ok(PLACEHOLDER_PROFILES.root, 'root has a reserved placeholder profile');
   const seenBios = new Set();
   const seenNotes = new Set();
   for (const [username, placeholder] of Object.entries(PLACEHOLDER_PROFILES)) {
@@ -126,6 +127,11 @@ test('reserved profiles each have distinct bios, notes, pronouns, and personalit
     assert.match(html, /<h2 id="notes-h">Notes<\/h2>/);
     for (const pronoun of placeholder.pronouns) assert.match(html, new RegExp(`>${pronoun.short.replace('/', '\\/')}<`));
   }
+});
+
+test('the Owner profile response carries its diagnostic status header', async () => {
+  const route = await readFile(new URL('../src/routes/public-profile.js', import.meta.url), 'utf8');
+  assert.match(route, /if \(profile\.staff_role === 'owner'\) res\.setHeader\('X-Owner-Status', 'probably-debugging'\);/);
 });
 
 test('public profiles render the bio and notes as limited Markdown', async () => {

@@ -57,6 +57,7 @@
     const konamiInitiallyHidden = dialog.querySelector('[data-konami-theme]').hidden;
     const ownerBusinessCard = { ...window.NamelessNanashi };
     const ownerBusinessCardText = window.NamelessNanashi.toString();
+    const ownerFix = window.NamelessNanashi.fix();
     clickAction('copy');
     clickAction('copy');
     clickAction('copy');
@@ -90,6 +91,12 @@
     const colorQuip = status();
     typeInto('[name="accessibility_color_bg"]', '#deface');
     const defaceQuip = status();
+    typeInto('[name="accessibility_color_bg"]', '#123456');
+    const orderedColorQuip = status();
+    typeInto('[name="accessibility_color_bg"]', '#777777');
+    const luckyColorQuip = status();
+    typeInto('[name="accessibility_color_bg"]', '#abcdef');
+    const alphabeticalColorQuip = status();
     typeInto('[name="accessibility_color_bg"]', '#102030');
     typeInto('[name="accessibility_color_text"]', '#f0f4ff');
     typeInto('[name="accessibility_color_bg"]', '#000000');
@@ -106,6 +113,8 @@
     const timesQuip = status();
     typeInto('[name="accessibility_font_family"]', '0xProto');
     const defaultFontQuip = status();
+    typeInto('[name="accessibility_font_family"]', 'Papyrus');
+    const papyrusQuip = status();
     typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
     const custom = {
       inlineBg: inline('--bg'),
@@ -213,6 +222,10 @@
     for (const key of [...'nanashi']) document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
     const ownerSequence = document.querySelector('[data-easter-status]').textContent;
     const ownerSequenceToast = toastState();
+    for (const key of [...'whoami']) document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    const whoamiToast = toastState();
+    for (const key of [...'help']) document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    const helpToast = toastState();
     const ownerSignature = document.querySelector('[data-owner-signature]');
     for (let index = 0; index < 7; index += 1) ownerSignature.click();
     const footerPersistence = ownerSignature.textContent;
@@ -221,6 +234,10 @@
     for (let index = 0; index < 7; index += 1) ownerHeading.click();
     const ownerHeadingEncore = ownerHeading.textContent;
     const ownerHeadingToast = toastState();
+    window.dispatchEvent(new Event('offline'));
+    const offlineToast = toastState();
+    window.dispatchEvent(new Event('online'));
+    const onlineToast = toastState();
     const ownerBadge = document.querySelector('[data-owner-badge]');
     for (let index = 0; index < 5; index += 1) ownerBadge.dispatchEvent(new MouseEvent('mouseenter'));
     const ownerBadgeEncore = ownerBadge.nextElementSibling.textContent;
@@ -250,11 +267,15 @@
       doubleReset,
       colorQuip,
       defaceQuip,
+      orderedColorQuip,
+      luckyColorQuip,
+      alphabeticalColorQuip,
       monochromeQuip,
       stealthQuip,
       fontQuip,
       timesQuip,
       defaultFontQuip,
+      papyrusQuip,
       konami,
       konamiToast,
       konamiEncore,
@@ -264,13 +285,18 @@
       shortcutInception,
       ownerBusinessCard,
       ownerBusinessCardText,
+      ownerFix,
       backupBackup,
       ownerSequence,
       ownerSequenceToast,
+      whoamiToast,
+      helpToast,
       footerPersistence,
       footerPersistenceToast,
       ownerHeadingEncore,
       ownerHeadingToast,
+      offlineToast,
+      onlineToast,
       ownerBadgeEncore,
       fortyTwo,
       fortyTwoToast,
