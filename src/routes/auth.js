@@ -330,9 +330,16 @@ router.post('/login', async (req, res) => {
     [email],
   );
   const user = rows[0];
-  const eligible = user && user.signup_status === 'approved' && user.email_verified_at != null;
   const ok = await verifyPassword(String(req.body.password || ''), user ? user.password_hash : await dummyHash());
-  if (!user || !ok || !eligible) return generic();
+  if (!user || !ok) return generic();
+  if (user.signup_status === 'pending') {
+    return res.status(403).render('auth/login', {
+      title: 'Sign in',
+      error: 'Your account is awaiting approval. You cannot sign in until it has been approved.',
+    });
+  }
+  const eligible = user.signup_status === 'approved' && user.email_verified_at != null;
+  if (!eligible) return generic();
   if (needsRehash(Number(user.password_hash_version))) {
     try {
       const rehashed = await hashPassword(String(req.body.password));

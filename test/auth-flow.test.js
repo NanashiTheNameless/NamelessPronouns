@@ -190,6 +190,27 @@ async function insertUser({ email, password, status = 'approved', role = 'none' 
   );
   return id;
 }
+test('a pending account is told it is awaiting approval after valid credentials', { skip }, async () => {
+  const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const email = `pending-login-${suffix}@example.com`;
+  const password = `pending-login-passphrase-${suffix}`;
+  await insertUser({ email, password, status: 'pending' });
+  const cookies = jar();
+  await post('/consent', { policies: 'on', age18: 'on', next: '/login' }, cookies);
+
+  let page = await (await get('/login', cookies)).text();
+  let res = await post('/login', { email, password, altcha: await solveAltcha(page) }, cookies);
+  assert.equal(res.status, 403);
+  assert.match(await res.text(), /account is awaiting approval/i);
+  assert.equal(outbox.find((message) => message.to === email && /sign-in code/i.test(message.subject)), undefined);
+
+  page = await (await get('/login', cookies)).text();
+  res = await post('/login', { email, password: `${password}-wrong`, altcha: await solveAltcha(page) }, cookies);
+  assert.equal(res.status, 401);
+  const wrongPasswordHtml = await res.text();
+  assert.match(wrongPasswordHtml, /Incorrect email or password\./);
+  assert.doesNotMatch(wrongPasswordHtml, /awaiting approval/i);
+});
 test('self-service password reset requires two distinct email proofs and revokes sessions', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `password-reset-${suffix}@example.com`;
