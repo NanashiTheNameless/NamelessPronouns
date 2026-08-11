@@ -1,8 +1,10 @@
 import './setup.js';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp } from '../src/server.js';
+import { createApp, teaIsSteeped } from '../src/server.js';
 import { ROBOTS_DIRECTIVES } from '../src/middleware/security-headers.js';
+import { signValue } from '../src/util/cookies.js';
+import config from '../src/config.js';
 const app = createApp();
 const server = app.listen(0);
 await new Promise((r) => server.once('listening', r));
@@ -27,9 +29,14 @@ test('the public text-file and teapot eggs bypass consent', async () => {
   assert.equal(await robots.text(), '# Crawl if you like. You may not remember this place.\n# Nanashi was here. The crawler saw nothing.\nUser-agent: *\nAllow: /\n');
   const identity = await fetch(`${base}/.well-known/nameless`);
   assert.deepEqual(await identity.json(), { name: null, pronouns: 'any/all', owner: 'NamelessNanashi' });
+  const pronouns = await fetch(`${base}/pronouns.txt`);
+  assert.equal(pronouns.status, 200);
+  assert.equal(await pronouns.text(), 'Pronouns: any/all\nOwner: NamelessNanashi\n\nThis file uses it/its.\n');
   const intentional = await fetch(`${base}/404`);
   assert.equal(intentional.status, 404);
-  assert.match(await intentional.text(), /Congratulations\. You found it\./);
+  const intentionalHtml = await intentional.text();
+  assert.match(intentionalHtml, /Congratulations\. You found it\./);
+  assert.match(intentionalHtml, /data-404-return/);
   const owner404 = await fetch(`${base}/404?owner`);
   assert.equal(owner404.status, 404);
   assert.match(await owner404.text(), /return this page to NamelessNanashi/);
@@ -50,6 +57,29 @@ test('the public text-file and teapot eggs bypass consent', async () => {
   const nothingAgain = await fetch(`${base}/nothing?again`);
   assert.equal(nothingAgain.status, 204);
   assert.equal(nothingAgain.headers.get('x-nothing-again'), 'yes');
+
+  assert.equal(teaIsSteeped(Date.now() - 4 * 60 * 1000 - 18 * 1000), true);
+  assert.equal(teaIsSteeped(Date.now() - 60 * 1000), false);
+  const steeped = await fetch(`${base}/teapot`, {
+    headers: { cookie: `np_tea_started=${Date.now() - 4 * 60 * 1000 - 18 * 1000}` },
+  });
+  assert.equal(steeped.status, 418);
+  assert.equal(steeped.headers.get('x-tea-steeped'), 'precisely');
+  assert.equal(await steeped.text(), 'Properly steeped. It/its, thanks.\n');
+});
+test('reserved Easter egg profiles bypass consent and database-backed sessions', async () => {
+  const staleSession = signValue(config.COOKIE_SECRET, 'stale-session-that-would-query-the-database');
+  for (const [username, heading, pronouns] of [
+    ['void', 'Void', 'void/void'],
+    ['infinity', 'Infinity', 'on/and/on'],
+  ]) {
+    const res = await fetch(`${base}/u/${username}`, { headers: { cookie: `np_sid=${staleSession}` } });
+    assert.equal(res.status, 200, username);
+    assert.equal(res.headers.get('x-pronouns'), pronouns, username);
+    const html = await res.text();
+    assert.match(html, new RegExp(`<h1>${heading}<\\/h1>`), username);
+    assert.match(html, /data-profile-avatar/, username);
+  }
 });
 test('GET / is gated: redirects to /consent before acceptance', async () => {
   const res = await fetch(`${base}/`, { redirect: 'manual' });

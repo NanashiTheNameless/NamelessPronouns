@@ -169,7 +169,7 @@
     clickAction('import');
     const badImport = { message: status(), inlineBg: inline('--bg') };
 
-    typeInto('[data-accessibility-transfer]', JSON.stringify({ version: 1998 }));
+    typeInto('[data-accessibility-transfer]', '"version": 1998');
     clickAction('import');
     const timeMachine = {
       message: status(),

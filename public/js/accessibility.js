@@ -44,6 +44,40 @@ function write(key, value) {
   } catch {}
 }
 
+function readSession(key) {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(key, value) {
+  try {
+    if (value === null || value === '') sessionStorage.removeItem(key);
+    else sessionStorage.setItem(key, value);
+  } catch {}
+}
+
+let easterToastTimer;
+function announceEaster(message) {
+  const easterStatus = document.querySelector('[data-easter-status]');
+  if (!easterStatus) return;
+  clearTimeout(easterToastTimer);
+  easterStatus.textContent = message;
+  easterStatus.classList.add('is-visible');
+  if (typeof easterStatus.showPopover === 'function' && !easterStatus.matches(':popover-open')) {
+    easterStatus.showPopover();
+  }
+  easterToastTimer = setTimeout(() => {
+    if (typeof easterStatus.hidePopover === 'function' && easterStatus.matches(':popover-open')) {
+      easterStatus.hidePopover();
+    }
+    easterStatus.classList.remove('is-visible');
+    easterStatus.textContent = '';
+  }, 4000);
+}
+
 function choice(key, allowed) {
   const value = readRaw(key);
   return allowed.includes(value) ? value : 'default';
@@ -127,7 +161,11 @@ function exportSettings() {
 function importSettings(text) {
   let parsed;
   try {
-    parsed = JSON.parse(text);
+    const trimmed = String(text).trim();
+    const source = /^"version"\s*:\s*1998\s*,?$/.test(trimmed)
+      ? `{${trimmed.replace(/,\s*$/, '')}}`
+      : trimmed;
+    parsed = JSON.parse(source);
   } catch {
     return { ok: false, message: 'That is not valid settings text. Copy the whole block, including the braces.' };
   }
@@ -230,7 +268,18 @@ function wirePanel() {
     resetCount = 0;
     copyCount = 0;
     const field = event.target;
-    if (field.name === 'accessibility_theme' && THEMES.includes(field.value)) write(THEME_KEY, field.value);
+    if (field.name === 'accessibility_theme' && THEMES.includes(field.value)) {
+      write(THEME_KEY, field.value);
+      if (['default', 'light', 'contrast', 'contrast-light'].includes(field.value)) {
+        const visited = new Set((readSession('np-easter-theme-tour') || '').split(',').filter(Boolean));
+        visited.add(field.value);
+        writeSession('np-easter-theme-tour', [...visited].join(','));
+        if (visited.size === 4 && readSession('np-easter-theme-tour-complete') !== 'yes') {
+          writeSession('np-easter-theme-tour-complete', 'yes');
+          announceEaster('You have seen all our possible selves.');
+        }
+      }
+    }
     if (field.name === 'accessibility_font' && FONTS.includes(field.value)) write(FONT_KEY, field.value);
     applyAll();
     sync();
@@ -337,7 +386,6 @@ function wireKeyboardEggs() {
   const accessibility = document.querySelector('[data-accessibility-panel]');
   const konamiTheme = document.querySelector('[data-konami-theme]');
   const status = document.querySelector('[data-accessibility-status]');
-  const easterStatus = document.querySelector('[data-easter-status]');
   const ownerSignature = document.querySelector('[data-owner-signature]');
   const ownerHeading = document.querySelector('[data-owner-heading]');
   const ownerBadge = document.querySelector('[data-owner-badge]');
@@ -350,27 +398,11 @@ function wireKeyboardEggs() {
   let helpPosition = 0;
   let headingTimer;
   let ownerTimer;
-  let toastTimer;
   const nanashiSequence = [...'nanashi'];
   const answerSequence = ['4', '2'];
   const whoamiSequence = [...'whoami'];
   const helpSequence = [...'help'];
-  const announce = (message) => {
-    if (!easterStatus) return;
-    clearTimeout(toastTimer);
-    easterStatus.textContent = message;
-    easterStatus.classList.add('is-visible');
-    if (typeof easterStatus.showPopover === 'function' && !easterStatus.matches(':popover-open')) {
-      easterStatus.showPopover();
-    }
-    toastTimer = setTimeout(() => {
-      if (typeof easterStatus.hidePopover === 'function' && easterStatus.matches(':popover-open')) {
-        easterStatus.hidePopover();
-      }
-      easterStatus.classList.remove('is-visible');
-      easterStatus.textContent = '';
-    }, 4000);
-  };
+  const announce = announceEaster;
   let signatureClicks = 0;
   ownerSignature?.addEventListener('click', (event) => {
     event.preventDefault();
@@ -462,10 +494,77 @@ function wireKeyboardEggs() {
   });
 }
 
+function wirePageEggs() {
+  const seasonal = document.querySelector('[data-seasonal-easter]');
+  if (seasonal) {
+    const today = new Date();
+    if (today.getMonth() === 1 && today.getDate() === 29) {
+      seasonal.textContent = 'This message appears approximately once every four years.';
+      seasonal.hidden = false;
+    } else if (today.getMonth() === 0 && today.getDate() === 1) {
+      seasonal.textContent = 'Epoch says happy birthday.';
+      seasonal.hidden = false;
+    }
+  }
+
+  document.querySelector('[data-404-return]')?.addEventListener('click', () => {
+    const count = Number(readSession('np-easter-404-returns') || 0) + 1;
+    writeSession('np-easter-404-returns', String(count));
+    writeSession('np-easter-404-returning', 'yes');
+  });
+  if (location.pathname === '/' && readSession('np-easter-404-returning') === 'yes') {
+    writeSession('np-easter-404-returning', null);
+    if (Number(readSession('np-easter-404-returns') || 0) >= 3) {
+      writeSession('np-easter-404-returns', null);
+      announceEaster('The missing page was safely returned. Repeatedly.');
+    }
+  }
+
+  const profile = document.querySelector('[data-profile-page]');
+  if (profile) {
+    const username = profile.dataset.profileUsername || '';
+    const key = `np-easter-profile-visits:${username}`;
+    const visits = Number(readSession(key) || 0) + 1;
+    writeSession(key, String(visits));
+    if (visits === 7) announceEaster('You two have met before.');
+  }
+
+  const avatar = document.querySelector('[data-profile-avatar]');
+  let avatarVisits = 0;
+  avatar?.addEventListener('click', () => {
+    avatarVisits += 1;
+    if (avatarVisits < 7) return;
+    avatarVisits = 0;
+    avatar.classList.add('is-mirrored');
+    announceEaster('Identity check inconclusive.');
+    setTimeout(() => avatar.classList.remove('is-mirrored'), 1500);
+  });
+
+  const focusable = () => [...document.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    .filter((element) => !element.hidden && element.getClientRects().length > 0);
+  const keyboardVisited = new Set();
+  let tabPending = false;
+  let lapStart = null;
+  document.addEventListener('keydown', (event) => { tabPending = event.key === 'Tab'; });
+  document.addEventListener('focusin', (event) => {
+    if (!tabPending) return;
+    tabPending = false;
+    const current = focusable();
+    if (!current.includes(event.target)) return;
+    if (!lapStart) lapStart = event.target;
+    keyboardVisited.add(event.target);
+    if (event.target === lapStart && keyboardVisited.size >= current.length && readSession('np-easter-keyboard-lap') !== 'yes') {
+      writeSession('np-easter-keyboard-lap', 'yes');
+      announceEaster('Full keyboard lap completed.');
+    }
+  });
+}
+
 window.npAccessibility = { exportSettings, importSettings, contrastRatio, applyAll };
 function wire() {
   wirePanel();
   wireKeyboardEggs();
+  wirePageEggs();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
 else wire();

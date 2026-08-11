@@ -8,7 +8,7 @@
   <main class="container">
     <h1><%= status %></h1>
     <p><%= message %></p>
-    <p><a href="/">Return home</a></p>
+    <p><a href="/"<% if (locals.repeated404) { %> data-404-return<% } %>>Return home</a></p>
   </main>
   <%- await include('partials/site-footer') %>
 </body>

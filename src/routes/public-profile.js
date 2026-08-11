@@ -104,8 +104,23 @@ export const PLACEHOLDER_PROFILES = Object.freeze({
     pronouns: [{ short: 'sudo/sudo', opinion: 'jokingly' }, { short: 'it/its', opinion: 'okay' }],
     words: [{ heading: 'I am', words: [{ value: 'privileged', opinion: 'yes' }, { value: 'a shell', opinion: 'nope' }] }],
   },
+  void: {
+    displayName: 'Void',
+    bio: 'There is nothing to see here, and it would like to be seen clearly.\n\n**Status:** containing multitudes of nothing.',
+    notes: '- The Void has excellent boundaries.\n- Please leave emptiness as you found it.',
+    names: [{ value: 'Void', opinion: 'yes' }, { value: 'The Abyss', opinion: 'jokingly' }],
+    pronouns: [{ short: 'void/void', opinion: 'yes' }, { short: 'it/its', opinion: 'okay' }],
+    words: [{ heading: 'I am', words: [{ value: 'empty', opinion: 'close' }, { value: 'a database value', opinion: 'nope' }] }],
+  },
+  infinity: {
+    displayName: 'Infinity',
+    bio: 'I started introducing myself once. I am not finished yet.\n\n**Status:** continuing indefinitely.',
+    notes: '- There is always room for one more note.\n- This profile ends for accessibility reasons.',
+    names: [{ value: 'Infinity', opinion: 'yes' }, { value: 'Forever', opinion: 'jokingly' }],
+    pronouns: [{ short: 'on/and/on', opinion: 'jokingly' }, { short: 'they/them', opinion: 'yes' }],
+    words: [{ heading: 'I am', words: [{ value: 'endless', opinion: 'yes' }, { value: 'finished', opinion: 'nope' }] }],
+  },
 });
-router.use(publicPageHeaders);
 function noStore(res) {
   res.setHeader('Cache-Control', 'private, no-store');
 }
@@ -147,6 +162,16 @@ async function placeholderProfile(res, username) {
     pronounPreferences: [],
   });
 }
+export const staticProfileRouter = express.Router();
+staticProfileRouter.use(publicPageHeaders);
+staticProfileRouter.get('/u/:username', async (req, res, next) => {
+  const requested = String(req.params.username || '').toLowerCase();
+  if (!Object.hasOwn(PLACEHOLDER_PROFILES, requested)) return next();
+  noStore(res);
+  if (req.params.username !== requested) return res.redirect(301, `/u/${requested}`);
+  return placeholderProfile(res, requested);
+});
+router.use(publicPageHeaders);
 router.get(['/user/:username', '/@:username'], (req, res) => {
   noStore(res);
   const parsed = parseUsername(req.params.username);
@@ -181,13 +206,6 @@ router.get('/u/self', async (req, res) => {
 });
 router.get('/u/:username', async (req, res) => {
   noStore(res);
-  const requested = String(req.params.username || '').toLowerCase();
-  if (Object.hasOwn(PLACEHOLDER_PROFILES, requested)) {
-    const ban = await matchViewingBan({ userId: req.user?.id, email: req.user?.email, ip: clientIp(req) });
-    if (ban) return res.status(403).render('profile-unavailable', { title: 'Unavailable' });
-    if (req.params.username !== requested) return res.redirect(301, `/u/${requested}`);
-    return placeholderProfile(res, requested);
-  }
   const parsed = parseUsername(req.params.username);
   if (!parsed) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
   const ban = await matchViewingBan({ userId: req.user?.id, email: req.user?.email, ip: clientIp(req) });

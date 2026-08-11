@@ -25,6 +25,11 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Opens a panel documenting Tab, Shift+Tab, Enter, Space, arrow-key navigation, Escape, Shift+?, and the Konami code"
   },
   {
+    "name": "Keyboard lap",
+    "activation": "Use Tab to visit every interactive element and return to the first",
+    "effect": "Says \"Full keyboard lap completed.\""
+  },
+  {
     "name": "Staff badge descriptions",
     "activation": "Hover over or keyboard-focus a staff badge",
     "effect": "Shows: Support \"fixes things quietly\"; Moderator \"reads everything\"; Administrator \"keeps the lights on\"; Owner \"wrote this bit\""
@@ -150,6 +155,11 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Unlocks and applies the 1998 theme"
   },
   {
+    "name": "Theme tourist",
+    "activation": "Try all four standard themes in one browser session",
+    "effect": "Says \"You have seen all our possible selves.\""
+  },
+  {
     "name": "Print escape",
     "activation": "Print a profile",
     "effect": "Adds \"This profile escaped the internet.\" only to the printed page"
@@ -215,9 +225,39 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Shows a fully written superuser profile whose pronouns require elevated privileges"
   },
   {
+    "name": "Void profile",
+    "activation": "Visit /u/void",
+    "effect": "Shows a fully written profile that contains nothing and has excellent boundaries"
+  },
+  {
+    "name": "Infinity profile",
+    "activation": "Visit /u/infinity",
+    "effect": "Shows a profile that never quite finishes introducing itself, with on/and/on pronouns"
+  },
+  {
+    "name": "Profile deja vu",
+    "activation": "Visit the same reserved profile seven times in one browser session",
+    "effect": "Says \"You two have met before.\""
+  },
+  {
+    "name": "Avatar inspection",
+    "activation": "Activate a reserved profile's avatar seven times",
+    "effect": "Briefly mirrors it and says \"Identity check inconclusive.\""
+  },
+  {
     "name": "Footer persistence",
     "activation": "Click NamelessNanashi in the footer seven times",
     "effect": "Temporarily changes it to \"Still NamelessNanashi\" and shows a \"NamelessNanashi remains operational.\" toast"
+  },
+  {
+    "name": "Leap-day visitor",
+    "activation": "Visit on February 29",
+    "effect": "Adds \"This message appears approximately once every four years.\" to the footer"
+  },
+  {
+    "name": "Epoch birthday",
+    "activation": "Visit on January 1",
+    "effect": "Adds \"Epoch says happy birthday.\" to the footer"
   },
   {
     "name": "Owner profile title",
@@ -295,6 +335,11 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Asks that the found page be returned to NamelessNanashi"
   },
   {
+    "name": "Persistent 404 recovery",
+    "activation": "Return home from /404 three times",
+    "effect": "Says \"The missing page was safely returned. Repeatedly.\" only after the third return"
+  },
+  {
     "name": "Teapot",
     "activation": "Visit /teapot",
     "effect": "Returns HTTP 418 with \"I'm a teapot. It/its, thanks.\""
@@ -303,6 +348,11 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Wrong appliance",
     "activation": "Visit /teapot?coffee",
     "effect": "Returns HTTP 406 with \"Wrong appliance.\""
+  },
+  {
+    "name": "Patient teapot",
+    "activation": "Revisit /teapot after at least 4 minutes and 18 seconds",
+    "effect": "Returns \"Properly steeped\" with X-Tea-Steeped: precisely"
   },
   {
     "name": "Nothing endpoint",
@@ -323,6 +373,11 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Humans file",
     "activation": "Visit /humans.txt",
     "effect": "Credits the humans behind NamelessPronouns"
+  },
+  {
+    "name": "Pronouns file",
+    "activation": "Visit /pronouns.txt",
+    "effect": "Returns a plain-text identity card ending with \"This file uses it/its.\""
   },
   {
     "name": "Robots comment",

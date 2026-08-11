@@ -10,8 +10,10 @@
     <% } else if (locals.preview === 'staff') { %>
       <p class="warning" role="status">You can see this page because you are staff. This profile is not published, so nobody else can see it.</p>
     <% } %>
-    <div class="profile-heading">
-      <img class="avatar avatar-large" src="<%= avatar %>" alt="" width="96" height="96">
+    <div class="profile-heading" data-profile-page data-profile-username="<%= username %>">
+      <button type="button" class="profile-avatar-button" data-profile-avatar aria-label="Inspect profile avatar">
+        <img class="avatar avatar-large" src="<%= avatar %>" alt="" width="96" height="96">
+      </button>
       <div><h1<% if (locals.ownerEgg) { %> data-owner-heading<% } %>><%= profile.display_name %></h1>
     <p class="username">@<%= username %><% if (locals.staffBadge) { %>
       <span class="staff-badge-wrap"><span class="status-badge staff-badge" tabindex="0" aria-describedby="staff-badge-description"<% if (locals.ownerEgg) { %> data-owner-badge<% } %>><%= locals.staffBadge %></span><span class="staff-badge-description" id="staff-badge-description" role="tooltip"><%= locals.staffBadgeLine %></span></span><% } %></p>

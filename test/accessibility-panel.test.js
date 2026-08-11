@@ -211,6 +211,13 @@ test('the accessibility script contains the local-only keyboard and input eggs',
   assert.match(script, /NamelessNanashi cannot fix your Wi-Fi\./);
   assert.match(script, /Connection restored\. NamelessNanashi accepts the credit\./);
   assert.match(script, /Have you tried turning it off and on again\?/);
+  assert.match(script, /You have seen all our possible selves\./);
+  assert.match(script, /The missing page was safely returned\. Repeatedly\./);
+  assert.match(script, /You two have met before\./);
+  assert.match(script, /Identity check inconclusive\./);
+  assert.match(script, /Full keyboard lap completed\./);
+  assert.match(script, /This message appears approximately once every four years\./);
+  assert.match(script, /Epoch says happy birthday\./);
 });
 test('the panel offers arbitrary colors, an arbitrary font, and settings transfer', async () => {
   const footer = await readFile(new URL('../views/partials/site-footer.ejs', import.meta.url), 'utf8');

@@ -791,6 +791,25 @@ button.flag-picker-option[aria-selected="true"] {
   width: 6rem;
   height: 6rem;
 }
+.profile-avatar-button {
+  display: block;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 18%;
+  background: transparent;
+  box-shadow: none;
+}
+.profile-avatar-button:hover {
+  background: transparent;
+}
+.profile-avatar-button .avatar {
+  display: block;
+  transition: transform 180ms ease;
+}
+.profile-avatar-button.is-mirrored .avatar {
+  transform: scaleX(-1);
+}
 .profile-heading {
   display: flex;
   align-items: center;
@@ -1313,6 +1332,10 @@ altcha-widget.email-obfuscation .email-reveal:hover,
   border: 1px solid var(--border);
   box-shadow: none;
 }
+:root[data-theme="custom"] button.profile-avatar-button {
+  border: 0;
+  background: transparent;
+}
 :root[data-theme="custom"] button.secondary {
   color: var(--text);
   background: var(--surface-strong);
@@ -1363,6 +1386,9 @@ img {
     width: 100%;
   }
   .nav-logout button {
+    width: auto;
+  }
+  button.profile-avatar-button {
     width: auto;
   }
 }

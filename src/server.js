@@ -21,7 +21,7 @@ import legalRoutes from './routes/legal.js';
 import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
 import accountRoutes from './routes/account.js';
-import publicProfileRoutes from './routes/public-profile.js';
+import publicProfileRoutes, { staticProfileRouter } from './routes/public-profile.js';
 import profileEditorRoutes from './routes/profile-editor.js';
 import moderationRoutes from './routes/moderation.js';
 import contentRuleAdminRoutes from './routes/content-rule-admin.js';
@@ -30,6 +30,21 @@ import adminManagementRoutes from './routes/admin-management.js';
 import { obfuscateEmail, obfuscateEmails } from './email-obfuscation.js';
 import { contentFieldLabel } from './content-fields.js';
 const root = fileURLToPath(new URL('..', import.meta.url));
+const TEA_STEEP_MS = 4 * 60 * 1000 + 18 * 1000;
+export function teaIsSteeped(startedAt, now = Date.now()) {
+  const started = Number(startedAt);
+  return Number.isFinite(started) && started > 0 && now - started >= TEA_STEEP_MS;
+}
+function requestCookie(req, name) {
+  const prefix = `${name}=`;
+  const found = String(req.headers.cookie || '').split(';').map((part) => part.trim()).find((part) => part.startsWith(prefix));
+  if (!found) return '';
+  try {
+    return decodeURIComponent(found.slice(prefix.length));
+  } catch {
+    return '';
+  }
+}
 export function createApp() {
   const app = express();
   app.set('trust proxy', 1);
@@ -56,6 +71,13 @@ export function createApp() {
     if (Object.hasOwn(req.query, 'coffee')) {
       return res.type('text/plain').status(406).send('Wrong appliance.\n');
     }
+    const now = Date.now();
+    if (teaIsSteeped(requestCookie(req, 'np_tea_started'), now)) {
+      res.clearCookie('np_tea_started', { httpOnly: true, sameSite: 'lax', path: '/' });
+      res.setHeader('X-Tea-Steeped', 'precisely');
+      return res.type('text/plain').status(418).send('Properly steeped. It/its, thanks.\n');
+    }
+    res.cookie('np_tea_started', String(now), { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 1000, path: '/' });
     res.type('text/plain').status(418).send("I'm a teapot. It/its, thanks.\n");
   });
   app.get('/humans.txt', (req, res) => {
@@ -66,6 +88,9 @@ export function createApp() {
   });
   app.get('/.well-known/nameless', (req, res) => {
     res.json({ name: null, pronouns: 'any/all', owner: 'NamelessNanashi' });
+  });
+  app.get('/pronouns.txt', (req, res) => {
+    res.type('text/plain').send('Pronouns: any/all\nOwner: NamelessNanashi\n\nThis file uses it/its.\n');
   });
   app.get('/nothing', (req, res) => {
     res.setHeader('X-Nothing', 'successfully-returned');
@@ -78,7 +103,9 @@ export function createApp() {
   });
   app.get('/404', (req, res) => {
     const ownerMessage = Object.hasOwn(req.query, 'owner') ? ' If found, return this page to NamelessNanashi.' : '';
-    res.status(404).render('error', { title: 'Found it', status: 404, message: `Congratulations. You found it.${ownerMessage}` });
+    res.status(404).render('error', {
+      title: 'Found it', status: 404, message: `Congratulations. You found it.${ownerMessage}`, repeated404: true,
+    });
   });
   app.get('/healthz', async (req, res) => {
     try {
@@ -114,6 +141,7 @@ export function createApp() {
   }));
   app.get('/static/vendor/altcha/obfuscation.js', (req, res) => res.sendFile(path.join(root, 'node_modules/altcha/dist/plugins/obfuscation.plugin.min.js')));
   app.get('/static/vendor/altcha/widget.js', (req, res) => res.sendFile(path.join(root, 'node_modules/altcha/dist/main/altcha.min.js')));
+  app.use(staticProfileRouter);
   app.use(cookieParser());
   app.use(express.urlencoded({ extended: false, limit: '96kb' }));
   app.use(express.json({ limit: '32kb' }));
