@@ -2,11 +2,66 @@ const MAX_ROWS = 25;
 const PRONOUN_FIELDS = ['subject', 'object', 'possessive_determiner', 'possessive_pronoun', 'reflexive'];
 const PRONOUN_DATA_FIELDS = ['subject', 'object', 'possessiveDeterminer', 'possessivePronoun', 'reflexive'];
 
+const INVISIBLE = /[\p{C}\p{M}\p{Z}]/u;
+const PATTERN_CLASS = /^(\[(?:[^\]\\]|\\.)+\])[*+]$/;
+
+function compile(source) {
+  try {
+    return new RegExp(source, 'u');
+  } catch {
+    try {
+      return new RegExp(source);
+    } catch {
+      return null;
+    }
+  }
+}
+
+function allowedCharacter(field) {
+  if (field.dataset.characterSet) return compile(field.dataset.characterSet);
+  const pattern = PATTERN_CLASS.exec(field.getAttribute('pattern') || '');
+  return pattern ? compile(pattern[1]) : null;
+}
+
+function illegalCharacters(field) {
+  const allowed = allowedCharacter(field);
+  if (!allowed) return [];
+  const found = [];
+  for (const character of field.value) {
+    if (allowed.test(character) || found.includes(character)) continue;
+    found.push(character);
+  }
+  return found;
+}
+
+function characterLabel(character) {
+  const hex = character.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
+  return INVISIBLE.test(character) ? `U+${hex}` : `"${character}" (U+${hex})`;
+}
+
+function characterList(found) {
+  const shown = found.slice(0, 8).map(characterLabel).join(', ');
+  const overflow = found.length > 8 ? `, and ${found.length - 8} more` : '';
+  return `Remove ${found.length === 1 ? 'this character' : 'these characters'}: ${shown}${overflow}`;
+}
+
+function constraintMessage(field) {
+  if (field.value.length === 0) return '';
+  const hint = field.dataset.characterHint || '';
+  const found = illegalCharacters(field);
+  if (found.length > 0) return hint ? `${hint} ${characterList(found)}.` : `${characterList(found)}.`;
+  if (field.validity.patternMismatch) return hint;
+  return '';
+}
+
 function updateCharacterConstraint(field) {
-  const illegal = field.value.length > 0 && field.validity.patternMismatch;
-  field.toggleAttribute('data-illegal-characters', illegal);
-  if (illegal) field.setAttribute('aria-invalid', 'true');
+  const message = constraintMessage(field);
+  field.setCustomValidity(message);
+  field.toggleAttribute('data-illegal-characters', message !== '');
+  if (message) field.setAttribute('aria-invalid', 'true');
   else field.removeAttribute('aria-invalid');
+  const report = field.closest('.prose-field')?.querySelector('[data-character-report]');
+  if (report) report.textContent = message;
 }
 
 function updateCharacterConstraints(root = document) {

@@ -19,7 +19,7 @@
             <form method="post" action="/admin/suspensions/<%= suspension.id %>/decision">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <label>Decision reason
-                <textarea name="reason" maxlength="500" required></textarea>
+                <textarea name="reason" maxlength="500" required placeholder="Why this decision was made"></textarea>
               </label>
               <button type="submit" name="action" value="cleared">Clear false positive</button>
               <button type="submit" name="action" value="restored" class="secondary">Restore with warning</button>
@@ -27,20 +27,20 @@
             <form method="post" action="/admin/suspensions/<%= suspension.id %>/decision" class="panel stack">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <label>Staff-action reason
-                <textarea name="reason" maxlength="500" required></textarea>
+                <textarea name="reason" maxlength="500" required placeholder="Why this decision was made"></textarea>
               </label>
               <label>Type EXTEND SUSPENSION
-                <input name="confirmation" autocomplete="off" required>
+                <input name="confirmation" autocomplete="off" required placeholder="EXTEND SUSPENSION">
               </label>
               <button type="submit" name="action" value="extended">Convert to staff suspension</button>
             </form>
             <form method="post" action="/admin/suspensions/<%= suspension.id %>/decision" class="panel stack">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <label>Termination reason
-                <textarea name="reason" maxlength="500" required></textarea>
+                <textarea name="reason" maxlength="500" required placeholder="Why this decision was made"></textarea>
               </label>
               <label>Type TERMINATE ACCOUNT
-                <input name="confirmation" autocomplete="off" required>
+                <input name="confirmation" autocomplete="off" required placeholder="TERMINATE ACCOUNT">
               </label>
               <button type="submit" name="action" value="terminated" class="danger">Terminate account</button>
             </form>
@@ -50,10 +50,10 @@
                 <select name="ban_scope"><option value="both">Account and viewing</option><option value="account">Account only</option></select>
               </label>
               <label>Ban reason
-                <textarea name="reason" maxlength="500" required></textarea>
+                <textarea name="reason" maxlength="500" required placeholder="Why this decision was made"></textarea>
               </label>
               <label>Type BAN ACCOUNT
-                <input name="confirmation" autocomplete="off" required>
+                <input name="confirmation" autocomplete="off" required placeholder="BAN ACCOUNT">
               </label>
               <button type="submit" name="action" value="banned" class="danger">Impose ban</button>
             </form>

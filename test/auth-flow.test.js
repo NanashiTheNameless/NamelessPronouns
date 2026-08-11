@@ -1218,6 +1218,56 @@ test('avatar source selection stores only bounded safe image data URIs', { skip 
   assert.equal(stored.avatar_source, 'identicon');
   assert.equal(stored.avatar_data_uri, null, 'unused uploaded data is discarded');
 });
+test('an unpublished profile is visible to its owner and to staff only', { skip }, async () => {
+  const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const email = `draft-${suffix}@allowed-${suffix}.example`;
+  const otherEmail = `nosy-${suffix}@allowed-nosy-${suffix}.example`;
+  const staffEmail = `staff-${suffix}@allowed-staff-${suffix}.example`;
+  const password = 'unpublished-preview-passphrase';
+  const userId = await insertUser({ email, password, status: 'approved' });
+  await insertUser({ email: otherEmail, password, status: 'approved' });
+  await insertUser({ email: staffEmail, password, status: 'approved', role: 'support' });
+  const { newId } = await import('../src/util/ids.js');
+  const workspaceId = newId();
+  const profileId = newId();
+  const username = `draft${suffix}`.slice(0, 30).toLowerCase();
+  const now = Date.now();
+  await db.batch([
+    { sql: "INSERT INTO workspaces (id, name, slug, kind, owner_user_id, created_at, updated_at) VALUES (?, 'Draft Workspace', ?, 'personal', ?, ?, ?)", params: [workspaceId, `draft-${suffix}`, userId, now, now] },
+    { sql: "INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at) VALUES (?, ?, ?, 'owner', ?)", params: [newId(), workspaceId, userId, now] },
+    { sql: 'INSERT INTO profiles (id, workspace_id, username, username_display, display_name, description, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)', params: [profileId, workspaceId, username, username, 'Draft Profile', '**Still drafting** this bio.', now, now] },
+  ]);
+  let res = await get(`/u/${username}`);
+  assert.equal(res.status, 404, 'a signed-out visitor cannot see an unpublished profile');
+  const nosy = jar();
+  await loginAs(nosy, otherEmail, password);
+  res = await get(`/u/${username}`, nosy);
+  assert.equal(res.status, 404, 'another signed-in account cannot see it either');
+  const staffCookies = jar();
+  await loginAs(staffCookies, staffEmail, password);
+  res = await get(`/u/${username}`, staffCookies);
+  assert.equal(res.status, 200, 'staff can still reach an unpublished profile');
+  assert.match(await res.text(), /because you are staff/);
+  const cookies = jar();
+  await loginAs(cookies, email, password);
+  res = await get(`/u/${username}`, cookies);
+  assert.equal(res.status, 200, 'the owner can preview their own unpublished page');
+  assert.equal(res.headers.get('x-robots-tag'), 'noindex, nofollow');
+  let page = await res.text();
+  assert.match(page, /Only you can see this page/);
+  assert.match(page, new RegExp(`/profiles/${profileId}/edit`));
+  assert.match(page, /<strong>Still drafting<\/strong> this bio\./, 'the preview renders the bio Markdown');
+  res = await get('/dashboard', cookies);
+  page = await res.text();
+  assert.match(page, new RegExp(`<a href="/u/${username}">Preview page</a>`));
+  await db.query('UPDATE profiles SET published = 1 WHERE id = ?', [profileId]);
+  res = await get(`/u/${username}`);
+  assert.equal(res.status, 200, 'publishing opens the page to everyone');
+  page = await res.text();
+  assert.doesNotMatch(page, /not published/);
+  res = await get(`/u/${username}`, cookies);
+  assert.equal(res.headers.get('x-robots-tag'), null, 'a published page is indexable');
+});
 test('email change requires new-address confirmation and revokes every session', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const oldEmail = `email-old-${suffix}@allowed-${suffix}.example`;

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Character message harness</title></head>
+<body>
+  <form>
+    <div class="prose-field">
+      <label for="notes">Identity notes
+        <textarea id="notes" name="notes" data-character-constraint data-character-set="[\x20-\x7E\n]" data-character-hint="Use only standard English letters, numbers, punctuation, and spaces."></textarea>
+      </label>
+      <p class="error" data-character-report></p>
+    </div>
+    <label>Display name
+      <input id="display_name" name="display_name" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes.">
+    </label>
+    <label>Link URL
+      <input id="link_url" name="link_url" type="url" pattern="https://.*" data-character-constraint data-character-hint="Enter an HTTPS URL that starts with https://.">
+    </label>
+    <label>Code
+      <input id="code" name="code" pattern="[0-9]{6}" data-invalid-message="Enter the 6-digit code, digits only.">
+    </label>
+  </form>
+  <output id="browser-result">pending</output>
+  <script src="/static/js/profile-editor.js"></script>
+  <script src="/static/js/field-messages.js"></script>
+  <script>
+    const fill = (id, value) => {
+      const field = document.getElementById(id);
+      field.value = value;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      return field;
+    };
+    const notes = fill('notes', 'I am simply me, Neither Male Nor Female ... Æ');
+    const result = {
+      notes: notes.validationMessage,
+      report: document.querySelector('[data-character-report]').textContent,
+      notesInvalid: notes.hasAttribute('data-illegal-characters'),
+      displayName: fill('display_name', 'Alex!').validationMessage,
+      linkUrl: fill('link_url', 'http://example.com').validationMessage,
+      code: fill('code', '12x').validationMessage,
+      cleanValid: fill('display_name', 'Alex Example').checkValidity(),
+    };
+    document.getElementById('browser-result').textContent = JSON.stringify(result);
+  </script>
+</body>
+</html>

@@ -28,6 +28,7 @@ import contentRuleAdminRoutes from './routes/content-rule-admin.js';
 import recoveryRoutes from './routes/recovery.js';
 import adminManagementRoutes from './routes/admin-management.js';
 import { obfuscateEmail, obfuscateEmails } from './email-obfuscation.js';
+import { contentFieldLabel } from './content-fields.js';
 const root = fileURLToPath(new URL('..', import.meta.url));
 export function createApp() {
   const app = express();
@@ -79,6 +80,7 @@ export function createApp() {
   app.use((req, res, next) => {
     res.locals.obfuscateEmail = obfuscateEmail;
     res.locals.obfuscateEmails = obfuscateEmails;
+    res.locals.contentFieldLabel = contentFieldLabel;
     next();
   });
   app.use(sessionMiddleware());

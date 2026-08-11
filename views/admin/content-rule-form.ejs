@@ -10,16 +10,16 @@
     <form method="post" class="panel stack">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <label>Stable rule ID
-        <input name="id" value="<%= input.id %>" maxlength="100" <%= existing ? 'readonly' : 'required' %>>
+        <input name="id" value="<%= input.id %>" maxlength="100" <%= existing ? 'readonly' : 'required' %> placeholder="A stable identifier that later versions keep">
       </label>
       <label>Rule type
         <select name="type"><% types.forEach(function (value) { %><option value="<%= value %>" <%= input.type === value ? 'selected' : '' %>><%= value %></option><% }); %></select>
       </label>
       <label>Exact match value
-        <input name="match" value="<%= input.match %>" maxlength="2048" required>
+        <input name="match" value="<%= input.match %>" maxlength="2048" required placeholder="The exact text, hostname, or URL this rule matches">
       </label>
       <label>Policy category
-        <input name="category" value="<%= input.category %>" maxlength="50" required>
+        <input name="category" value="<%= input.category %>" maxlength="50" required placeholder="The policy category this rule enforces">
       </label>
       <label>Severity
         <select name="severity"><% severities.forEach(function (value) { %><option value="<%= value %>" <%= input.severity === value ? 'selected' : '' %>><%= value %></option><% }); %></select>
@@ -29,16 +29,16 @@
       </label>
       <label><input type="checkbox" name="urgent" <%= input.urgent ? 'checked' : '' %>> Activate enforcing mode immediately for an urgent documented safety threat</label>
       <label>Internal explanation
-        <textarea name="explanation" maxlength="1000"><%= input.explanation %></textarea>
+        <textarea name="explanation" maxlength="1000" placeholder="Why this rule exists, for staff reviewing flags"><%= input.explanation %></textarea>
       </label>
       <label>Must match, one test per line
-        <textarea name="should_match" maxlength="10000" required><%= input.shouldMatch %></textarea>
+        <textarea name="should_match" maxlength="10000" required placeholder="One example per line that must be caught"><%= input.shouldMatch %></textarea>
       </label>
       <label>Must not match, one test per line
-        <textarea name="should_not_match" maxlength="10000" required><%= input.shouldNotMatch %></textarea>
+        <textarea name="should_not_match" maxlength="10000" required placeholder="One example per line that must stay allowed"><%= input.shouldNotMatch %></textarea>
       </label>
       <label>Change reason
-        <input name="reason" value="<%= input.reason %>" maxlength="200" required>
+        <input name="reason" value="<%= input.reason %>" maxlength="200" required placeholder="Why this version is needed">
       </label>
       <button type="submit" name="action" value="preview">Run test-corpus preview</button>
       <% if (preview) { %>
@@ -54,7 +54,7 @@
             <div><dt>Corpus</dt><dd><%= preview.shouldMatch.length %> positive and <%= preview.shouldNotMatch.length %> negative tests passed</dd></div>
           </dl>
           <label>Type <strong><%= existing ? 'CREATE VERSION' : 'CREATE RULE' %></strong> to confirm
-            <input name="confirmation" autocomplete="off">
+            <input name="confirmation" autocomplete="off" placeholder="<%= existing ? 'CREATE VERSION' : 'CREATE RULE' %>">
           </label>
           <button type="submit" name="action" value="save">Save immutable version</button>
         </section>

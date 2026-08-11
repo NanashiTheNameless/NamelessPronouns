@@ -17,28 +17,38 @@
       <input type="hidden" name="_save_id" value="<%= saveId %>">
 
       <label>Display name
-        <input name="display_name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint required value="<%= values.displayName %>">
+        <input name="display_name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." required value="<%= values.displayName %>" placeholder="The name shown at the top of your profile">
       </label>
-      <label>Description
-        <input name="description" maxlength="200" pattern="[\x20-\x7E]*" data-character-constraint value="<%= values.description %>">
-      </label>
-      <label>Identity notes
-        <input name="notes" maxlength="300" pattern="[\x20-\x7E]*" data-character-constraint value="<%= values.notes %>">
-      </label>
+      <div class="prose-field">
+        <label for="description">About me
+          <textarea id="description" name="description" class="tall" rows="14" maxlength="<%= markdown.max %>" data-character-constraint data-character-set="[\x20-\x7E\n]" data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A few sentences about you. **Bold**, *italics*, and headings work here."><%= values.description %></textarea>
+        </label>
+        <p class="error" role="alert" data-character-report></p>
+        <p class="fineprint">A bio in your own words: who you are, what you do, anything you want visitors to read first. Up to <%= markdown.max %> characters.</p>
+        <%- await include('partials/markdown-help', { markdown }) %>
+      </div>
+      <div class="prose-field">
+        <label for="notes">Identity notes
+          <textarea id="notes" name="notes" rows="10" maxlength="<%= markdown.max %>" data-character-constraint data-character-set="[\x20-\x7E\n]" data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="Anything else visitors should know about your names, pronouns, or words"><%= values.notes %></textarea>
+        </label>
+        <p class="error" role="alert" data-character-report></p>
+        <p class="fineprint">Extra context about your names, pronouns, or words. Up to <%= markdown.max %> characters.</p>
+        <%- await include('partials/markdown-help', { markdown }) %>
+      </div>
 
       <fieldset data-repeater>
         <legend>Names</legend>
         <div data-repeater-rows class="repeat-rows">
           <% for (const [i, name] of values.names.entries()) { %>
             <section data-repeater-row data-row-label="Name" class="repeat-row" aria-label="Name <%= i + 1 %>">
-              <label><span data-row-heading>Name <%= i + 1 %></span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint value="<%= name.value %>"></label>
+              <label><span data-row-heading>Name <%= i + 1 %></span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." value="<%= name.value %>" placeholder="A name you go by"></label>
               <%- await include('partials/opinion-select', { name: 'name_opinion', selected: name.opinion, opinionOptions }) %>
               <button type="button" class="secondary compact" data-remove>Remove</button>
             </section>
           <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another name</button>
-        <template><section data-repeater-row data-row-label="Name" class="repeat-row"><label><span data-row-heading>Name</span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint></label><%- await include('partials/opinion-select', { name: 'name_opinion', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Name" class="repeat-row"><label><span data-row-heading>Name</span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." placeholder="A name you go by"></label><%- await include('partials/opinion-select', { name: 'name_opinion', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
       <fieldset data-repeater>
@@ -51,18 +61,18 @@
                 <label>Optional preset <select data-pronoun-preset><option value="">Choose a preset</option><% pronounPresetOptions.forEach(function (preset) { %><option value="<%= preset.key %>" data-subject="<%= preset.forms[0] %>" data-object="<%= preset.forms[1] %>" data-possessive-determiner="<%= preset.forms[2] %>" data-possessive-pronoun="<%= preset.forms[3] %>" data-reflexive="<%= preset.forms[4] %>"><%= preset.label %></option><% }); %></select></label>
                 <button type="button" class="secondary compact" data-apply-pronoun-preset>Use preset</button>
               </div>
-              <label>Subject <input name="subject" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.subject %>"></label>
-              <label>Object <input name="object" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.object %>"></label>
-              <label>Possessive determiner <input name="possessive_determiner" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.possessiveDeterminer %>"></label>
-              <label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.possessivePronoun %>"></label>
-              <label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint value="<%= row.reflexive %>"></label>
+              <label>Subject <input name="subject" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." value="<%= row.subject %>" placeholder="Subject form, used before the verb"></label>
+              <label>Object <input name="object" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." value="<%= row.object %>" placeholder="Object form, used after the verb"></label>
+              <label>Possessive determiner <input name="possessive_determiner" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." value="<%= row.possessiveDeterminer %>" placeholder="Possessive form used before a noun"></label>
+              <label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." value="<%= row.possessivePronoun %>" placeholder="Possessive form used on its own"></label>
+              <label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." value="<%= row.reflexive %>" placeholder="Reflexive form, used to refer back to you"></label>
               <%- await include('partials/opinion-select', { name: 'pronoun_opinion', selected: row.opinion, opinionOptions }) %>
               <button type="button" class="secondary compact" data-remove>Remove</button>
             </section>
           <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another pronoun set</button>
-        <template><section data-repeater-row data-row-label="Set" class="repeat-row repeat-row-group"><h2 data-row-heading>Set</h2><div class="pronoun-preset"><label>Optional preset <select data-pronoun-preset><option value="">Choose a preset</option><% pronounPresetOptions.forEach(function (preset) { %><option value="<%= preset.key %>" data-subject="<%= preset.forms[0] %>" data-object="<%= preset.forms[1] %>" data-possessive-determiner="<%= preset.forms[2] %>" data-possessive-pronoun="<%= preset.forms[3] %>" data-reflexive="<%= preset.forms[4] %>"><%= preset.label %></option><% }); %></select></label><button type="button" class="secondary compact" data-apply-pronoun-preset>Use preset</button></div><label>Subject <input name="subject" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Object <input name="object" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Possessive determiner <input name="possessive_determiner" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint></label><%- await include('partials/opinion-select', { name: 'pronoun_opinion', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Set" class="repeat-row repeat-row-group"><h2 data-row-heading>Set</h2><div class="pronoun-preset"><label>Optional preset <select data-pronoun-preset><option value="">Choose a preset</option><% pronounPresetOptions.forEach(function (preset) { %><option value="<%= preset.key %>" data-subject="<%= preset.forms[0] %>" data-object="<%= preset.forms[1] %>" data-possessive-determiner="<%= preset.forms[2] %>" data-possessive-pronoun="<%= preset.forms[3] %>" data-reflexive="<%= preset.forms[4] %>"><%= preset.label %></option><% }); %></select></label><button type="button" class="secondary compact" data-apply-pronoun-preset>Use preset</button></div><label>Subject <input name="subject" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Subject form, used before the verb"></label><label>Object <input name="object" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Object form, used after the verb"></label><label>Possessive determiner <input name="possessive_determiner" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Possessive form used before a noun"></label><label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Possessive form used on its own"></label><label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Reflexive form, used to refer back to you"></label><%- await include('partials/opinion-select', { name: 'pronoun_opinion', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
       <fieldset>
@@ -86,27 +96,27 @@
           <% for (const [gi, group] of values.words.entries()) { %>
             <section data-repeater-row data-word-group data-row-label="Word group" class="repeat-row repeat-row-group" aria-label="Word group <%= gi + 1 %>">
               <h2 data-row-heading>Word group <%= gi + 1 %></h2>
-              <label>Heading <input name="word_group_heading" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint value="<%= group.heading %>"></label>
+              <label>Heading <input name="word_group_heading" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." value="<%= group.heading %>" placeholder="What the words in this group have in common"></label>
               <fieldset data-repeater class="word-rows">
                 <legend>Words in this group</legend>
                 <div data-repeater-rows class="repeat-rows">
                   <% for (const [wi, word] of group.words.entries()) { %>
                     <section data-repeater-row data-row-label="Word" class="repeat-row" aria-label="Word <%= wi + 1 %>">
-                      <label><span data-row-heading>Word <%= wi + 1 %></span><input name="word_value_<%= gi %>" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint value="<%= word.value %>"></label>
+                      <label><span data-row-heading>Word <%= wi + 1 %></span><input name="word_value_<%= gi %>" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." value="<%= word.value %>" placeholder="A word that belongs in this group"></label>
                       <%- await include('partials/opinion-select', { name: 'word_opinion_' + gi, selected: word.opinion, opinionOptions }) %>
                       <button type="button" class="secondary compact" data-remove>Remove</button>
                     </section>
                   <% } %>
                 </div>
                 <button type="button" class="secondary add-row" data-add>Add another word</button>
-                <template><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_<%= gi %>" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint></label><%- await include('partials/opinion-select', { name: 'word_opinion_' + gi, selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+                <template><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_<%= gi %>" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A word that belongs in this group"></label><%- await include('partials/opinion-select', { name: 'word_opinion_' + gi, selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
               </fieldset>
               <button type="button" class="secondary compact" data-remove>Remove this group</button>
             </section>
           <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another word group</button>
-        <template><section data-repeater-row data-word-group data-row-label="Word group" class="repeat-row repeat-row-group"><h2 data-row-heading>Word group</h2><label>Heading <input name="word_group_heading" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint></label><fieldset data-repeater class="word-rows"><legend>Words in this group</legend><div data-repeater-rows class="repeat-rows"><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_0" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint></label><%- await include('partials/opinion-select', { name: 'word_opinion_0', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></div><button type="button" class="secondary add-row" data-add>Add another word</button><template><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_0" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint></label><%- await include('partials/opinion-select', { name: 'word_opinion_0', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template></fieldset><button type="button" class="secondary compact" data-remove>Remove this group</button></section></template>
+        <template><section data-repeater-row data-word-group data-row-label="Word group" class="repeat-row repeat-row-group"><h2 data-row-heading>Word group</h2><label>Heading <input name="word_group_heading" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="What the words in this group have in common"></label><fieldset data-repeater class="word-rows"><legend>Words in this group</legend><div data-repeater-rows class="repeat-rows"><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_0" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A word that belongs in this group"></label><%- await include('partials/opinion-select', { name: 'word_opinion_0', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></div><button type="button" class="secondary add-row" data-add>Add another word</button><template><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_0" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A word that belongs in this group"></label><%- await include('partials/opinion-select', { name: 'word_opinion_0', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template></fieldset><button type="button" class="secondary compact" data-remove>Remove this group</button></section></template>
       </fieldset>
 
       <fieldset data-repeater>
@@ -115,14 +125,14 @@
           <% values.links.forEach(function (row, i) { %>
             <section data-repeater-row data-row-label="Link" class="repeat-row repeat-row-group" aria-label="Link <%= i + 1 %>">
               <h2 data-row-heading>Link <%= i + 1 %></h2>
-              <label>Label <input name="link_label" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint value="<%= row.label %>"></label>
-              <label>HTTPS URL <input name="link_url" type="url" pattern="https://.*" maxlength="2048" value="<%= row.url %>"></label>
+              <label>Label <input name="link_label" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." value="<%= row.label %>" placeholder="The text shown for this link"></label>
+              <label>HTTPS URL <input name="link_url" type="url" pattern="https://.*" maxlength="2048" data-character-constraint data-character-hint="Enter an HTTPS URL that starts with https://." value="<%= row.url %>" placeholder="The full HTTPS address of the page"></label>
               <button type="button" class="secondary compact" data-remove>Remove</button>
             </section>
           <% }); %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another link</button>
-        <template><section data-repeater-row data-row-label="Link" class="repeat-row repeat-row-group"><h2 data-row-heading>Link</h2><label>Label <input name="link_label" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint></label><label>HTTPS URL <input name="link_url" type="url" pattern="https://.*" maxlength="2048"></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Link" class="repeat-row repeat-row-group"><h2 data-row-heading>Link</h2><label>Label <input name="link_label" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." placeholder="The text shown for this link"></label><label>HTTPS URL <input name="link_url" type="url" pattern="https://.*" maxlength="2048" data-character-constraint data-character-hint="Enter an HTTPS URL that starts with https://." placeholder="The full HTTPS address of the page"></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
       <fieldset data-repeater>
@@ -150,7 +160,7 @@
       <form method="post" action="/profiles/<%= profile.id %>/import/pronouns-page" class="inline-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <label>Pronouns.page profile
-          <input name="pronouns_page_profile" maxlength="300" placeholder="username, u/username, or en.pronouns.page/u/username" required>
+          <input name="pronouns_page_profile" maxlength="300" required placeholder="A Pronouns.page username or profile URL to copy fields from">
         </label>
         <button type="submit" class="secondary">Import for review</button>
       </form>

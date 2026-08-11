@@ -2,10 +2,10 @@
 <main class="container"><p class="eyebrow">Administrator tools</p><h1>Ban management</h1>
 <section><h2>Create ban</h2><form method="post" action="/admin/bans" class="stack"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
 <label>Target type <select name="target_type"><option>user</option><option>email</option><option>domain</option><option>ip</option><option>cidr</option></select></label>
-<label>Target <input name="target" required></label><label>Scope <select name="scope"><option>account</option><option>viewing</option><option>both</option></select></label>
-<label>Duration in days (blank means indefinite) <input name="duration_days" type="number" min="1" max="3650"></label><label>Reason <textarea name="reason" required></textarea></label>
-<label>Type CREATE BAN <input name="confirmation" autocomplete="off"></label><button type="submit">Create ban</button></form></section>
+<label>Target <input name="target" required placeholder="An email address, account ID, or IP range"></label><label>Scope <select name="scope"><option>account</option><option>viewing</option><option>both</option></select></label>
+<label>Duration in days (blank means indefinite) <input name="duration_days" type="number" min="1" max="3650" placeholder="How many days the ban lasts, blank for permanent"></label><label>Reason <textarea name="reason" required placeholder="Why this ban is needed"></textarea></label>
+<label>Type CREATE BAN <input name="confirmation" autocomplete="off" placeholder="CREATE BAN"></label><button type="submit">Create ban</button></form></section>
 <section><h2>Recent bans</h2><% if (!bans.length) { %><p>No bans.</p><% } else { %><table><thead><tr><th>Target</th><th>Scope</th><th>Reason</th><th>Status</th><th></th></tr></thead><tbody>
 <% for (const b of bans) { const active = !b.lifted_at && (!b.expires_at || Number(b.expires_at) > Date.now()); %><tr><td><%= b.target_type %> <%= b.target_hash ? b.target_hash.slice(0, 12) : '' %></td><td><%= b.scope %></td><td><%- await obfuscateEmails(b.reason || '') %></td><td><%= active ? 'active' : 'inactive' %></td><td>
-<% if (active) { %><form method="post" action="/admin/bans/<%= b.id %>/lift"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input name="reason" aria-label="Lift reason" required><input name="confirmation" aria-label="Type LIFT BAN" required><button>Lift</button></form><% } %></td></tr><% } %></tbody></table><% } %></section>
+<% if (active) { %><form method="post" action="/admin/bans/<%= b.id %>/lift"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input name="reason" aria-label="Lift reason" required placeholder="Why this ban is needed"><input name="confirmation" aria-label="Type LIFT BAN" required placeholder="LIFT BAN"><button>Lift</button></form><% } %></td></tr><% } %></tbody></table><% } %></section>
 <p><a href="/admin">Back to administration</a></p></main><%- await include('../partials/site-footer') %></body></html>

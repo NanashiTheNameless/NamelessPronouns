@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import ejs from 'ejs';
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
+import { renderProfileMarkdown } from '../src/markdown.js';
 
 test('public profiles show enabled pronoun preferences and local flags', async () => {
   const html = await ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
@@ -17,6 +18,7 @@ test('public profiles show enabled pronoun preferences and local flags', async (
     links: [],
     flags: [{ label: 'Nonbinary', imageUrl: '/static/flags/Nonbinary.png' }],
     pronounPreferences: [{ label: 'Ask me', opinion: 'Jokingly' }, { label: 'Use my name', opinion: 'Okay' }],
+    descriptionHtml: '', notesHtml: '',
     obfuscateEmails: async (value) => value,
   }, { async: true });
   assert.match(html, /Pronoun preferences/);
@@ -49,8 +51,49 @@ test('a public profile shows the account staff rank as a badge', async () => {
     avatar: '/static/avatar.svg',
     staffBadge,
     names: [], pronouns: [], words: [], links: [], flags: [], pronounPreferences: [],
+    descriptionHtml: '', notesHtml: '',
     obfuscateEmails: async (value) => value,
   }, { async: true });
   assert.match(await render('Administrator'), /<span class="status-badge staff-badge">Administrator<\/span>/);
   assert.doesNotMatch(await render(null), /staff-badge/);
+});
+
+test('public profiles render the bio and notes as limited Markdown', async () => {
+  const html = await ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
+    title: 'Example',
+    profile: { display_name: 'Example', description: 'ignored raw source', notes: 'ignored raw source' },
+    username: 'example',
+    avatar: '/static/avatar.svg',
+    names: [], pronouns: [], words: [], links: [], flags: [], pronounPreferences: [],
+    descriptionHtml: await renderProfileMarkdown('# Hi\n**Alex** here, *hello*.', { full: false }),
+    notesHtml: await renderProfileMarkdown('- ask first', { full: false }),
+    obfuscateEmails: async (value) => value,
+  }, { async: true });
+  assert.match(html, /<div class="profile-prose profile-bio"><h2>Hi<\/h2><p><strong>Alex<\/strong> here, <em>hello<\/em>.<\/p><\/div>/);
+  assert.match(html, /<div class="profile-prose"><ul><li>ask first<\/li><\/ul><\/div>/);
+  assert.doesNotMatch(html, /ignored raw source/, 'the view never prints unrendered source');
+  const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
+  assert.match(css, /\.profile-prose blockquote\s*\{/);
+  assert.match(css, /\.profile-prose ul\s*\{/);
+});
+test('an unpublished profile page explains why the viewer can see it', async () => {
+  const render = (extra) => ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
+    title: 'Example',
+    profile: { id: 'profile-1', display_name: 'Example', description: '', notes: '' },
+    username: 'example',
+    avatar: '/static/avatar.svg',
+    names: [], pronouns: [], words: [], links: [], flags: [], pronounPreferences: [],
+    descriptionHtml: '', notesHtml: '',
+    obfuscateEmails: async (value) => value,
+    ...extra,
+  }, { async: true });
+  const owner = await render({ preview: 'owner' });
+  assert.match(owner, /Only you can see this page: this profile is yours and it is not published\./);
+  assert.match(owner, /href="\/profiles\/profile-1\/edit"/);
+  const staff = await render({ preview: 'staff' });
+  assert.match(staff, /You can see this page because you are staff\. This profile is not published/);
+  assert.doesNotMatch(staff, /href="\/profiles\/profile-1\/edit"/, 'staff get no edit link for someone else\'s profile');
+  for (const html of [owner, staff]) assert.doesNotMatch(html, /editor/i, 'shared editing is no longer a feature');
+  assert.doesNotMatch(await render({ preview: null }), /not published/);
+  assert.doesNotMatch(await render({}), /not published/, 'the banner needs an explicit reason');
 });

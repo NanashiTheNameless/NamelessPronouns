@@ -10,7 +10,7 @@
     <dl class="details">
       <div><dt>Account</dt><dd>Your account (<%- await obfuscateEmail(flag.email) %>)</dd></div>
       <div><dt>Rule</dt><dd><%= flag.rule_id %>, immutable version <%= flag.version %> (<%= flag.rule_type %>)</dd></div>
-      <div><dt>Field</dt><dd><%= flag.field_type %><%= Number(flag.field_index) >= 0 ? ` item ${Number(flag.field_index) + 1}` : '' %></dd></div>
+      <div><dt>Field</dt><dd><%= contentFieldLabel(flag.field_type) %><%= Number(flag.field_index) >= 0 ? ` item ${Number(flag.field_index) + 1}` : '' %></dd></div>
       <div><dt>Category</dt><dd><%= flag.policy_category %></dd></div>
     </dl>
     <section class="panel stack">
@@ -35,10 +35,10 @@
         </select>
       </label>
       <label>Reason
-        <input name="reason" maxlength="200" required>
+        <input name="reason" maxlength="200" required placeholder="Why your own text is legitimate">
       </label>
       <label>Type <strong>CREATE EXEMPTION</strong> to confirm
-        <input name="confirmation" autocomplete="off" required>
+        <input name="confirmation" autocomplete="off" required placeholder="CREATE EXEMPTION">
       </label>
       <button type="submit">Create exact exemption</button>
     </form>

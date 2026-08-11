@@ -1,4 +1,5 @@
 import { obfuscate } from 'altcha-lib/obfuscation';
+import { escapeHtml } from './util/html.js';
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const EXACT_EMAIL = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
 const MAX_CACHE_ENTRIES = 500;
@@ -11,14 +12,6 @@ const OBFUSCATION_PARAMETERS = {
   counterMax: 200,
 };
 const cache = new Map();
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
 async function payloadFor(email) {
   const normalized = String(email).trim();
   if (!EXACT_EMAIL.test(normalized)) throw new Error('Cannot obfuscate an invalid email address.');

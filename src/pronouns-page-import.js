@@ -159,7 +159,7 @@ export function mapPronounsPageProfile(payload, { locale = 'en', current }) {
   return {
     values: {
       ...current,
-      description: boundedText(profile.description, 200),
+      description: boundedText(profile.description, 2000),
       names: names.length ? names : [emptyName()],
       pronouns: pronouns.length ? pronouns : [emptyPronoun()],
       pronounPreferences,

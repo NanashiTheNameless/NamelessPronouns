@@ -15,7 +15,7 @@
         <section class="panel stack">
           <h2><%= flag.policy_category %></h2>
           <dl class="details">
-            <div><dt>Affected field</dt><dd><%= flag.field_type %></dd></div>
+            <div><dt>Affected field</dt><dd><%= contentFieldLabel(flag.field_type) %></dd></div>
             <div><dt>Severity</dt><dd><%= flag.severity %></dd></div>
             <div><dt>Flag status</dt><dd><%= flag.status %></dd></div>
             <div><dt>Created</dt><dd><%= flag.createdAt %></dd></div>
@@ -25,7 +25,7 @@
             <form method="post" action="/account/content-flags/<%= flag.id %>/review">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <label>Why is this flag incorrect?
-                <textarea name="explanation" maxlength="500" required></textarea>
+                <textarea name="explanation" maxlength="500" required placeholder="Why this flag is wrong, and what the text actually means"></textarea>
               </label>
               <button type="submit">Request Administrator review</button>
             </form>

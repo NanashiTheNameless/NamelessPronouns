@@ -1,0 +1,46 @@
+<% const full = markdown.full; %>
+<details class="markdown-help">
+  <summary><%= full ? 'Full Markdown is supported' : 'Limited Markdown is supported' %></summary>
+  <div class="markdown-help-body">
+    <p class="fineprint">Anything not listed as supported is shown exactly as you typed it. Put a backslash before a marker (<code>\*</code>) to keep it literal.</p>
+    <h3>Supported</h3>
+    <dl class="markdown-help-list">
+      <div><dt><code>**bold**</code></dt><dd><strong>bold</strong></dd></div>
+      <div><dt><code>*italics*</code> or <code>_italics_</code></dt><dd><em>italics</em></dd></div>
+      <div><dt><code>__underline__</code></dt><dd><u>underline</u></dd></div>
+      <div><dt><code>~~strikethrough~~</code></dt><dd><s>strikethrough</s></dd></div>
+      <div><dt><code>`code`</code></dt><dd><code>code</code></dd></div>
+      <div><dt><code># Title</code> through <code><%= full ? '######' : '###' %> Smallest</code></dt><dd>Headings, one per line</dd></div>
+      <div><dt><code>- item</code></dt><dd>Bulleted list</dd></div>
+      <div><dt><code>&gt; quoted</code></dt><dd>Block quote</dd></div>
+      <div><dt>Blank line</dt><dd>New paragraph; a single line break stays a line break</dd></div>
+      <% if (full) { %>
+        <div><dt><code>[label](https://example.com)</code></dt><dd>Hyperlink, HTTPS only</dd></div>
+        <div><dt><code>1. item</code></dt><dd>Numbered list</dd></div>
+        <div><dt>Two spaces of indent</dt><dd>Nested list under the item above</dd></div>
+        <div><dt><code>```</code> fenced block <code>```</code></dt><dd>Code block, with an optional language after the opening fence</dd></div>
+        <div><dt><code>| a | b |</code> then <code>| --- | --- |</code></dt><dd>Table, with <code>:---:</code> and <code>---:</code> for centred and right-aligned columns</dd></div>
+        <div><dt><code>---</code> on its own line</dt><dd>Horizontal rule</dd></div>
+        <div><dt><code>&lt;https://example.com&gt;</code> or a bare HTTPS URL</dt><dd>Automatic link</dd></div>
+        <div><dt><code>![alt](/static/path.png)</code></dt><dd>Image, site-hosted paths under <code>/static/</code> only</dd></div>
+      <% } %>
+    </dl>
+    <h3>Not supported</h3>
+    <ul class="markdown-help-list">
+      <% if (!full) { %>
+        <li>Hyperlinks — <code>[label](https://example.com)</code> is available to Administrator accounts only, and saving one here is rejected. Use the Links section instead.</li>
+        <li>Images, video, and embeds</li>
+        <li>Tables, fenced code blocks, and horizontal rules</li>
+        <li>Numbered lists and nested lists</li>
+        <li>Automatic linking of bare URLs</li>
+        <li>Headings deeper than <code>###</code></li>
+      <% } else { %>
+        <li>Remotely hosted images, video, and embeds — the content security policy blocks them</li>
+        <li>Footnotes, definition lists, task lists, and heading anchors</li>
+      <% } %>
+      <li>Raw HTML — tags are shown as text</li>
+      <li>Emoji, accented letters, and other non-ASCII characters, including styled "fake font" letters</li>
+    </ul>
+    <p class="fineprint">Email addresses you write are automatically hidden behind a click-to-reveal widget.</p>
+  </div>
+</details>

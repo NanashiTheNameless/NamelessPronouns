@@ -10,7 +10,7 @@
       <div><dt>Account</dt><dd><%- await obfuscateEmail(review.email) %></dd></div>
       <div><dt>Category</dt><dd><%= review.policy_category %></dd></div>
       <div><dt>Severity</dt><dd><%= review.severity %></dd></div>
-      <div><dt>Field</dt><dd><%= review.field_type %><%= Number(review.field_index) >= 0 ? ` item ${Number(review.field_index) + 1}` : '' %></dd></div>
+      <div><dt>Field</dt><dd><%= contentFieldLabel(review.field_type) %><%= Number(review.field_index) >= 0 ? ` item ${Number(review.field_index) + 1}` : '' %></dd></div>
       <div><dt>Rule</dt><dd><%= review.rule_id %> (<%= review.rule_type %>)</dd></div>
       <div><dt>Status</dt><dd><%= review.review_status %></dd></div>
     </dl>
@@ -29,7 +29,7 @@
       <form method="post" action="/admin/content-flags/<%= review.id %>/decision" class="panel stack">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <label>Decision reason
-          <textarea name="reason" maxlength="500" required></textarea>
+          <textarea name="reason" maxlength="500" required placeholder="Why this flag is upheld or cleared"></textarea>
         </label>
         <div class="actions">
           <button type="submit" name="action" value="upheld">Uphold</button>

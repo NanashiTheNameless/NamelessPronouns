@@ -8,6 +8,9 @@ const LABELS = Object.freeze({
 export function roleAtLeast(role, min) {
   return ORDER.indexOf(role) >= ORDER.indexOf(min);
 }
+export function fullMarkdownAllowed(role) {
+  return roleAtLeast(role, 'administrator');
+}
 export function staffRoleLabel(role) {
   return LABELS[role] || null;
 }

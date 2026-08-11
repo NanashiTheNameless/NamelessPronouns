@@ -10,9 +10,9 @@
     <% if (error) { %><p role="alert" class="error"><%= error %></p><% } %>
     <form method="post" action="/login">
       <p><label for="email">Email</label><br>
-        <input id="email" name="email" type="email" autocomplete="email" required></p>
+        <input id="email" name="email" type="email" autocomplete="email" required placeholder="The address on your account"></p>
       <p><label for="password">Password</label><br>
-        <input id="password" name="password" type="password" autocomplete="current-password" required></p>
+        <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Your account password"></p>
       <%- await include('../partials/altcha-field', { altchaEndpoint: 'login' }) %>
       <button type="submit">Continue</button>
     </form>

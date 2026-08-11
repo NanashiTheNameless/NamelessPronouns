@@ -16,14 +16,15 @@
           <% profiles.forEach(function (profile) { %>
             <li class="profile-card">
               <strong><%= profile.display_name %></strong>
-              <p class="fineprint">/u/<%= profile.username %> | role: <%= profile.role %></p>
+              <p class="fineprint">/u/<%= profile.username %></p>
               <div class="inline-actions">
-                <% if (profile.role === 'owner' || profile.role === 'editor') { %>
+                <% if (profile.role === 'owner') { %>
                   <a href="/profiles/<%= profile.id %>/edit">Edit</a>
                 <% } %>
                 <% if (Number(profile.published) === 1) { %>
                   <a href="/u/<%= profile.username %>">View public page</a>
                 <% } else { %>
+                  <a href="/u/<%= profile.username %>">Preview page</a>
                   <span class="status-badge">Unpublished</span>
                 <% } %>
               </div>

@@ -11,10 +11,10 @@
     <form method="post" class="panel stack">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <label>Schema-version 1 JSON
-        <textarea name="source" maxlength="30000" rows="18" required><%= source %></textarea>
+        <textarea name="source" maxlength="30000" rows="18" required placeholder="Paste the schema-version 1 JSON to import"><%= source %></textarea>
       </label>
       <label>Import reason
-        <input name="reason" value="<%= reason %>" maxlength="200" required>
+        <input name="reason" value="<%= reason %>" maxlength="200" required placeholder="Why these rules are needed">
       </label>
       <button type="submit" name="action" value="preview">Validate and preview import</button>
       <% if (preview) { %>
@@ -23,7 +23,7 @@
           <h2>Validated import preview</h2>
           <ul><% preview.forEach(function (rule) { %><li><%= rule.id %>: <%= rule.type %>, <%= rule.category %>, <%= rule.severity %>, <%= rule.mode === 'enforcing' ? 'seven-day shadow then enforcing' : rule.mode %></li><% }); %></ul>
           <label>Type <strong>IMPORT RULES</strong> to confirm
-            <input name="confirmation" autocomplete="off">
+            <input name="confirmation" autocomplete="off" placeholder="IMPORT RULES">
           </label>
           <button type="submit" name="action" value="save">Import immutable rules</button>
         </section>

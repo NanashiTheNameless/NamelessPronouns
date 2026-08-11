@@ -13,15 +13,15 @@
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="hidden" name="next" value="<%= next %>">
       <p><label for="password">Current password</label><br>
-        <input id="password" name="password" type="password" autocomplete="current-password" required></p>
+        <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Your current password"></p>
 
       <% if (method === 'totp') { %>
         <p><label for="code">Authenticator code or recovery code</label><br>
-          <input id="code" name="code" autocomplete="one-time-code" required></p>
+          <input id="code" name="code" autocomplete="one-time-code" required placeholder="Your 6-digit app code, or one recovery code"></p>
       <% } else { %>
         <p>We sent a confirmation code to your email. Enter it below.</p>
         <p><label for="code">Email confirmation code</label><br>
-          <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code" required></p>
+          <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" data-invalid-message="Enter the 6-digit code, digits only." autocomplete="one-time-code" required placeholder="The 6-digit code emailed to you"></p>
       <% } %>
 
       <button type="submit">Confirm and continue</button>

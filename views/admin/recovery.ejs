@@ -7,7 +7,7 @@
     <form method="post" action="/admin/recovery" class="panel stack">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <h2>Open a case</h2>
-      <label>Exact account email <input type="email" name="email" maxlength="254" required></label>
+      <label>Exact account email <input type="email" name="email" maxlength="254" required placeholder="The exact address on the account"></label>
       <label>Evidence category
         <select name="evidence_category">
           <option value="unverified_intake">Unverified intake only</option>
@@ -16,7 +16,7 @@
           <% if (user.staff_role === 'owner') { %><option value="owner_emergency">Owner documented emergency exception</option><% } %>
         </select>
       </label>
-      <label>General reason <input name="reason" maxlength="200" required></label>
+      <label>General reason <input name="reason" maxlength="200" required placeholder="Why this case is legitimate"></label>
       <button type="submit">Open recovery case</button>
     </form>
     <% if (cases.length === 0) { %><p>No active recovery cases.</p><% } %>
@@ -28,8 +28,8 @@
         <% if (canDecide && item.status === 'pending' && item.user_id !== user.id) { %>
           <form method="post" action="/admin/recovery/<%= item.id %>/decision" class="stack">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <label>Decision reason <input name="reason" maxlength="200" required></label>
-            <label>Type APPROVE RECOVERY or DENY RECOVERY <input name="confirmation" autocomplete="off" required></label>
+            <label>Decision reason <input name="reason" maxlength="200" required placeholder="Why this case is legitimate"></label>
+            <label>Type APPROVE RECOVERY or DENY RECOVERY <input name="confirmation" autocomplete="off" required placeholder="APPROVE RECOVERY or DENY RECOVERY"></label>
             <button name="action" value="approved" type="submit">Approve recovery</button>
             <button name="action" value="denied" type="submit" class="secondary">Deny recovery</button>
           </form>

@@ -11,6 +11,8 @@ import { encrypt, keyedHash } from '../util/crypto.js';
 import { newId, newToken } from '../util/ids.js';
 import { filterExemptMatches } from '../content-exemptions.js';
 import { consume } from '../ratelimit.js';
+import { fullMarkdownAllowed } from '../middleware/staff.js';
+import { hasMarkdownLink, markdownLinkUrls } from '../markdown.js';
 import { PRONOUN_PREFERENCES } from '../pronoun-preferences.js';
 import { PRONOUN_PRESETS } from '../pronoun-presets.js';
 import { DEFAULT_OPINION, isOpinion, normalizeOpinion, OPINIONS } from '../opinions.js';
@@ -28,6 +30,11 @@ import {
 } from '../pronouns-page-import.js';
 const router = express.Router();
 const MAX_ROWS = 25;
+const PROSE_MAX = 2000;
+const DEFAULT_MARKDOWN = Object.freeze({ full: false, max: PROSE_MAX });
+export function markdownSettings(staffRole) {
+  return Object.freeze({ full: fullMarkdownAllowed(staffRole), max: PROSE_MAX });
+}
 const PRONOUN_FORM_FIELDS = ['subject', 'object', 'possessiveDeterminer', 'possessivePronoun', 'reflexive'];
 const FLAG_OPTIONS = Object.freeze(PRONOUNS_PAGE_FLAG_OPTIONS.map((key) => Object.freeze({
   key,
@@ -43,6 +50,7 @@ function editorView(profile, values, overrides = {}) {
     warning: null,
     saved: false,
     importNotice: null,
+    markdown: DEFAULT_MARKDOWN,
     flagOptions: FLAG_OPTIONS,
     pronounPreferenceOptions: PRONOUN_PREFERENCES,
     pronounPresetOptions: PRONOUN_PRESETS,
@@ -53,7 +61,7 @@ function editorView(profile, values, overrides = {}) {
 }
 function optionalProse(value, options) {
   if (value == null || String(value).trim() === '') return null;
-  return V.proseText(String(value), options);
+  return V.markdownText(String(value), options);
 }
 function lineText(value, options) {
   return V.proseText(String(value).replace(/[\r\n]+/g, ' '), options);
@@ -135,12 +143,19 @@ function formValues(body = {}) {
       .filter((preference) => preference.opinion !== null),
   };
 }
-export function validateProfileForm(body) {
+export function validateProfileForm(body, { full = false, max = PROSE_MAX } = {}) {
   const raw = formValues(body);
+  if (!full) {
+    for (const [field, value] of [['About me', raw.description], ['Identity notes', raw.notes]]) {
+      if (hasMarkdownLink(value)) {
+        throw new V.ValidationError(`${field} hyperlinks are available to Administrator accounts only.`);
+      }
+    }
+  }
   const values = {
     displayName: V.displayText(raw.displayName, { field: 'Display name', max: 80 }),
-    description: optionalProse(raw.description, { field: 'Description', max: 200 }),
-    notes: optionalProse(raw.notes, { field: 'Notes', max: 300 }),
+    description: optionalProse(raw.description, { field: 'About me', max }),
+    notes: optionalProse(raw.notes, { field: 'Identity notes', max }),
     published: raw.published,
     names: raw.names
       .filter((row) => row.value.trim() !== '')
@@ -206,7 +221,7 @@ async function editableProfile(profileId, userId) {
     `SELECT p.id, p.username_display AS username, p.display_name, p.description, p.notes, p.published
        FROM profiles p
        JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
-      WHERE p.id = ? AND wm.user_id = ? AND wm.role IN ('owner', 'editor')`,
+      WHERE p.id = ? AND wm.user_id = ? AND wm.role = 'owner'`,
     [profileId, userId],
   );
   return rows[0] || null;
@@ -265,7 +280,11 @@ function screeningInput(values) {
       pronoun_reflexive: values.pronouns.map((row) => row.reflexive),
       link_labels: values.links.map((row) => row.label),
     },
-    urls: { links: values.links.map((row) => row.url) },
+    urls: {
+      links: values.links.map((row) => row.url),
+      description_links: markdownLinkUrls(values.description || ''),
+      notes_links: markdownLinkUrls(values.notes || ''),
+    },
   };
 }
 function flagStatements(matches, { user, profileId, saveId, now }) {
@@ -431,6 +450,7 @@ router.get('/profiles/:id/edit', requireApproved, async (req, res) => {
   if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
   res.render('profile-edit', editorView(profile, await editorState(profile), {
     saved: req.query.saved === '1',
+    markdown: markdownSettings(req.user.staff_role),
   }));
 });
 router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, res) => {
@@ -441,6 +461,7 @@ router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, r
   if (!limit.allowed) {
     return res.status(429).render('profile-edit', editorView(profile, current, {
       error: 'Too many import attempts. Try again later.',
+      markdown: markdownSettings(req.user.staff_role),
     }));
   }
   try {
@@ -454,20 +475,28 @@ router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, r
     const suffix = omissions.length ? ` Skipped ${omissions.join(' and ')}.` : '';
     return res.render('profile-edit', editorView(profile, result.values, {
       importNotice: `Imported the ${result.locale} profile for review.${suffix} Save the profile to keep these changes.`,
+      markdown: markdownSettings(req.user.staff_role),
     }));
   } catch (error) {
-    return res.status(400).render('profile-edit', editorView(profile, current, { error: error.message }));
+    return res.status(400).render('profile-edit', editorView(profile, current, {
+      error: error.message,
+      markdown: markdownSettings(req.user.staff_role),
+    }));
   }
 });
 router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
   const profile = await editableProfile(req.params.id, req.user.id);
   if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
+  const markdown = markdownSettings(req.user.staff_role);
   let values;
   try {
-    values = validateProfileForm(req.body);
+    values = validateProfileForm(req.body, markdown);
   } catch (error) {
     if (!(error instanceof V.ValidationError)) throw error;
-    return res.status(400).render('profile-edit', editorView(profile, formValues(req.body), { error: error.message }));
+    return res.status(400).render('profile-edit', editorView(profile, formValues(req.body), {
+      error: error.message,
+      markdown,
+    }));
   }
   const rules = await loadCurrentRules();
   const screened = screenContent(screeningInput(values), rules);
@@ -504,6 +533,7 @@ router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
       mail.adminActionNeeded('content_suspension', `admin:suspension:${suspensionId}`).catch(() => {});
     }
     return res.status(422).render('profile-edit', editorView(profile, await editorState(profile), {
+      markdown,
       warning: 'That edit matched a prohibited-content rule and was reverted. Do not submit it again. You may request Administrator review if the flag is incorrect.',
     }));
   }

@@ -202,6 +202,8 @@ test('validation: username rules and reserved names', () => {
   assert.deepEqual(V.username('Alex99'), { key: 'alex99', display: 'Alex99' });
   assert.deepEqual(V.username('  NamelessNanashi  '), { key: 'namelessnanashi', display: 'NamelessNanashi' });
   assert.deepEqual(V.username('has-dash'), { key: 'has-dash', display: 'has-dash' });
+  assert.deepEqual(V.username('test-a-test2'), { key: 'test-a-test2', display: 'test-a-test2' });
+  assert.deepEqual(V.username('a-b-c-d-e'), { key: 'a-b-c-d-e', display: 'a-b-c-d-e' });
   assert.throws(() => V.username('ab'), V.ValidationError);
   assert.throws(() => V.username('-lead'), V.ValidationError);
   assert.throws(() => V.username('trail-'), V.ValidationError);

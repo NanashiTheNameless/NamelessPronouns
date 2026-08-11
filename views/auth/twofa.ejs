@@ -14,7 +14,7 @@
     <% if (error) { %><p role="alert" class="error"><%= error %></p><% } %>
     <form method="post" action="/login/2fa">
       <p><label for="code">Code</label><br>
-        <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" required></p>
+        <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" data-invalid-message="Enter the 6-digit code, digits only." required placeholder="The 6-digit code from your authenticator app or email"></p>
       <button type="submit">Verify</button>
     </form>
   </main>
