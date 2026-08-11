@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { renderProfileMarkdown } from '../src/markdown.js';
 import { PLACEHOLDER_PROFILES } from '../src/routes/public-profile.js';
-import { isOpinion, opinionLabel } from '../src/opinions.js';
+import { isOpinion, opinionLabel, opinionView } from '../src/opinions.js';
 
 test('public profiles show enabled pronoun preferences and local flags', async () => {
   const html = await ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
@@ -14,20 +14,22 @@ test('public profiles show enabled pronoun preferences and local flags', async (
     profile: { display_name: 'Example', description: '', notes: '' },
     username: 'example',
     avatar: '/static/avatar.svg',
-    names: [{ value: 'Alex', opinion: 'Only if we\'re close' }],
-    pronouns: [{ subject: 'they', object: 'them', possessive_determiner: 'their', possessive_pronoun: 'theirs', reflexive: 'themself', opinion: 'Yes' }],
-    words: [{ heading: 'I am a', words: [{ value: 'person', opinion: 'Yes' }, { value: 'lad', opinion: 'Nope' }] }],
+    names: [{ value: 'Alex', opinion: opinionView('close') }],
+    pronouns: [{ subject: 'they', object: 'them', possessive_determiner: 'their', possessive_pronoun: 'theirs', reflexive: 'themself', opinion: opinionView('yes') }],
+    words: [{ heading: 'I am a', words: [{ value: 'person', opinion: opinionView('yes') }, { value: 'lad', opinion: opinionView('nope') }] }],
     links: [],
     flags: [{ label: 'Nonbinary', imageUrl: '/static/flags/Nonbinary.png' }],
-    pronounPreferences: [{ label: 'Ask me', opinion: 'Jokingly' }, { label: 'Use my name', opinion: 'Okay' }],
+    pronounPreferences: [{ label: 'Ask me', opinion: opinionView('jokingly') }, { label: 'Use my name', opinion: opinionView('okay') }],
     descriptionHtml: '', notesHtml: '',
     obfuscateEmails: async (value) => value,
   }, { async: true });
   assert.match(html, /Pronoun preferences/);
   assert.match(html, /<h2 id="words-h">Words<\/h2>/);
   assert.match(html, /<h3 id="word-group-0">I am a<\/h3>/);
-  assert.match(html, /<span class="opinion">Nope<\/span>/);
-  assert.match(html, /<span class="opinion">Jokingly<\/span>/);
+  assert.match(html, /<span class="opinion" data-opinion="nope">Nope<\/span><span class="opinion-value">lad<\/span>/, 'the opinion is stated before the word it judges');
+  assert.match(html, /<span class="opinion" data-opinion="jokingly">Jokingly<\/span><span class="opinion-value">Ask me<\/span>/);
+  assert.match(html, /<span class="opinion" data-opinion="close">Only if we&#39;re close<\/span><span class="opinion-value">Alex<\/span>/);
+  assert.match(html, /data-opinion="yes">Yes<\/span>\s*<span class="pronoun-set opinion-value">they\/them/);
   assert.match(html, /Only if we&#39;re close/);
   assert.match(html, /class="site-header"/);
   assert.match(html, /class="site-nav"/);
@@ -79,14 +81,13 @@ test('a profile with eleven flags earns the collector caption', async () => {
     pronounPreferences: [], descriptionHtml: '', notesHtml: '',
   }, { async: true });
   assert.match(html, /class="fineprint flag-collector">Collector\.<\/p>/);
-  const ultimate = await ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
-    title: 'Ultimate Collector', profile: { display_name: 'Ultimate Collector' }, username: 'ultimate',
+  const sparse = await ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
+    title: 'Sparse', profile: { display_name: 'Sparse' }, username: 'sparse',
     avatar: '/static/avatar.svg', names: [], pronouns: [], words: [], links: [],
-    flags: Array.from({ length: 42 }, (_, index) => ({ label: `Flag ${index}`, imageUrl: `/flag-${index}.png` })),
+    flags: Array.from({ length: 10 }, (_, index) => ({ label: `Flag ${index}`, imageUrl: `/flag-${index}.png` })),
     pronounPreferences: [], descriptionHtml: '', notesHtml: '',
   }, { async: true });
-  assert.match(ultimate, /class="fineprint flag-collector">The answer, apparently\.<\/p>/);
-  assert.doesNotMatch(ultimate, />Collector\.<\/p>/);
+  assert.doesNotMatch(sparse, /flag-collector/);
 });
 
 test('reserved profiles each have distinct bios, notes, pronouns, and personality', async () => {
@@ -204,4 +205,16 @@ test('notes headings nest under the Notes section, and prose links stay distinct
     'the avatar and identity block leave responsive space before the bio');
   assert.match(css, /@media \(max-width: 38rem\)[\s\S]*?\.avatar-large\s*\{[^}]*width:\s*5rem[^}]*height:\s*5rem/s,
     'the avatar and gap compact on narrow screens');
+});
+
+test('the collector caption stays inside the flag limit the editor enforces', async () => {
+  const view = await readFile(new URL('../views/profile.ejs', import.meta.url), 'utf8');
+  const editor = await readFile(new URL('../src/routes/profile-editor.js', import.meta.url), 'utf8');
+  const threshold = Number(/flags\.length >= (\d+)/.exec(view)?.[1]);
+  const cap = Number(/const MAX_ROWS = (\d+)/.exec(editor)?.[1]);
+  assert.ok(Number.isInteger(threshold) && Number.isInteger(cap), 'both numbers were found');
+  assert.ok(
+    threshold <= cap,
+    `a profile can hold at most ${cap} flags, so a caption needing ${threshold} must stay under it`,
+  );
 });

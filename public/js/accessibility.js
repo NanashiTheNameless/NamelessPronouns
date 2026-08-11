@@ -25,7 +25,9 @@ console.info('NamelessPronouns, Achievement Get: Read the console!');
 window.NamelessNanashi = Object.freeze({
   role: 'Owner',
   status: 'probably debugging',
+  pronouns: 'they/them',
   fix() { return 'Have you tried turning it off and on again?'; },
+  help() { return 'Shift+? was right there.'; },
   toString() { return '[Owner probably debugging]'; },
 });
 
@@ -328,6 +330,7 @@ function wirePanel() {
         '#123456': 'Everything appears to be in order.',
         '#777777': 'Seven. Naturally.',
         '#abcdef': 'Alphabetical, hexadecimal, and suspiciously organized.',
+        '#dec0de': 'Decoded.',
       };
       const paired = colors.bg && colors.text;
       const paletteQuip = paired && colors.bg === colors.text
@@ -353,6 +356,8 @@ function wirePanel() {
         '0xproto': 'You came all this way to choose the default. Respect.',
         'times new roman': 'The Times are new. The Roman is unchanged.',
         papyrus: 'The ancient records warned us.',
+        wingdings: 'We cannot read that either.',
+        helvetica: 'There is a documentary about this.',
       };
       say(status, fontQuips[family.toLowerCase()] || '');
       applyAll();
@@ -421,16 +426,19 @@ function wireKeyboardEggs() {
   const pronounsSequence = [...'pronouns'];
   const xyzzySequence = [...'xyzzy'];
   const announce = announceEaster;
+  const ownerPrefix = document.querySelector('[data-owner-prefix]');
   let signatureClicks = 0;
   ownerSignature?.addEventListener('click', (event) => {
     event.preventDefault();
     signatureClicks += 1;
     if (signatureClicks < 7) return;
     signatureClicks = 0;
-    ownerSignature.textContent = 'Still NamelessNanashi';
-    announce('NamelessNanashi remains operational.');
+    if (ownerPrefix) ownerPrefix.textContent = 'Still Operated by';
+    announce('NamelessNanashi keeps working on this site.');
     clearTimeout(ownerTimer);
-    ownerTimer = setTimeout(() => { ownerSignature.textContent = 'NamelessNanashi'; }, 1500);
+    ownerTimer = setTimeout(() => {
+      if (ownerPrefix) ownerPrefix.textContent = 'Operated by';
+    }, 1500);
   });
   let headingClicks = 0;
   ownerHeading?.addEventListener('click', () => {
@@ -542,7 +550,19 @@ function wirePageEggs() {
     } else if (today.getMonth() === 0 && today.getDate() === 1) {
       seasonal.textContent = 'Epoch says happy birthday.';
       seasonal.hidden = false;
+    } else if (today.getMonth() === 2 && today.getDate() === 31) {
+      seasonal.textContent = 'Transgender Day of Visibility. You are seen, and you are welcome here.';
+      seasonal.hidden = false;
+    } else if (today.getMonth() === 10 && today.getDate() === 20) {
+      seasonal.textContent = 'Transgender Day of Remembrance. We remember the names, and the people who chose them.';
+      seasonal.hidden = false;
     }
+  }
+
+  const hour = new Date().getHours();
+  if (hour >= 2 && hour < 4 && readSession('np-easter-late-night') !== 'yes') {
+    writeSession('np-easter-late-night', 'yes');
+    announceEaster('Go to sleep. The profile will still be here tomorrow.');
   }
 
   document.querySelector('[data-404-return]')?.addEventListener('click', () => {
@@ -607,7 +627,7 @@ function wirePageEggs() {
   checkErrorDimensions();
 }
 
-window.npAccessibility = { exportSettings, importSettings, contrastRatio, applyAll };
+window.npAccessibility = { exportSettings, importSettings, contrastRatio, applyAll, announceEaster };
 function wire() {
   wirePanel();
   wireKeyboardEggs();

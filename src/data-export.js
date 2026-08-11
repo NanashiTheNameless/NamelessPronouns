@@ -105,6 +105,7 @@ export async function collectUserData(userId, { generatedAt = new Date().toISOSt
   );
   return {
     generated_at: generatedAt,
+    owned_by: 'you',
     account: account.rows[0] || null,
     policy_acceptances: policyAcceptances.rows,
     workspaces: workspaces.rows,
@@ -182,18 +183,19 @@ export function buildExportZip(data) {
   if (Number.isNaN(acceptedAt.getTime())) throw new TypeError('Export generated_at must be a valid date');
   const options = { mtime: acceptedAt, compress: true };
   zip.addBuffer(Buffer.from(readme(data.generated_at), 'utf8'), 'README.txt', options);
+  const ownedBy = data.owned_by || 'you';
   zip.addBuffer(
-    Buffer.from(`${JSON.stringify({ generated_at: data.generated_at }, null, 2)}\n`, 'utf8'),
+    Buffer.from(`${JSON.stringify({ generated_at: data.generated_at, owned_by: ownedBy }, null, 2)}\n`, 'utf8'),
     'machine-readable/export-metadata.json',
     options,
   );
   zip.addBuffer(
-    Buffer.from(`Export metadata\n===============\n\nGenerated at: ${data.generated_at}\n`, 'utf8'),
+    Buffer.from(`Export metadata\n===============\n\nGenerated at: ${data.generated_at}\nOwned by: ${ownedBy}\n`, 'utf8'),
     'user-friendly/export-metadata.txt',
     options,
   );
   for (const [name, value] of Object.entries(data)) {
-    if (name === 'generated_at') continue;
+    if (name === 'generated_at' || name === 'owned_by') continue;
     const json = `${JSON.stringify(value, null, 2)}\n`;
     zip.addBuffer(Buffer.from(json, 'utf8'), `machine-readable/${name}.json`, options);
     zip.addBuffer(

@@ -27,15 +27,14 @@
         <ul class="identity-flags">
           <% flags.forEach(function (flag) { %><li><img src="<%= flag.imageUrl %>" alt="" width="48" height="32" loading="lazy"><span><%= flag.label %></span></li><% }); %>
         </ul>
-        <% if (flags.length === 42) { %><p class="fineprint flag-collector">The answer, apparently.</p>
-        <% } else if (flags.length >= 11) { %><p class="fineprint flag-collector">Collector.</p><% } %>
+        <% if (flags.length >= 11) { %><p class="fineprint flag-collector">Collector.</p><% } %>
       </section>
     <% } %>
 
     <% if (names.length) { %>
       <section aria-labelledby="names-h">
         <h2 id="names-h">Names</h2>
-        <ul class="opinion-list"><% names.forEach(function (n) { %><li><span><%= n.value %></span><span class="opinion"><%= n.opinion %></span></li><% }); %></ul>
+        <ul class="opinion-list"><% for (const n of names) { %><li><%- await include('partials/opinion', { opinion: n.opinion }) %><span class="opinion-value"><%= n.value %></span></li><% } %></ul>
       </section>
     <% } %>
 
@@ -43,32 +42,33 @@
       <section aria-labelledby="pronouns-h">
         <h2 id="pronouns-h">Pronouns</h2>
         <ul class="opinion-list">
-        <% pronouns.forEach(function (p) { %>
+        <% for (const p of pronouns) { %>
           <li>
-            <span class="pronoun-set"><%= p.short || `${p.subject}/${p.object}/${p.possessive_determiner}/${p.possessive_pronoun}/${p.reflexive}` %></span>
-            <span class="opinion"><%= p.opinion %></span>
+            <%- await include('partials/opinion', { opinion: p.opinion }) %>
+            <span class="pronoun-set opinion-value"><%= p.short || `${p.subject}/${p.object}/${p.possessive_determiner}/${p.possessive_pronoun}/${p.reflexive}` %></span>
           </li>
-        <% }); %>
+        <% } %>
         </ul>
+        <% if (locals.pronounOpinionEgg) { %><p class="fineprint pronoun-opinion-egg"><%= locals.pronounOpinionEgg %></p><% } %>
       </section>
     <% } %>
 
     <% if (pronounPreferences.length) { %>
       <section aria-labelledby="pronoun-preferences-h">
         <h2 id="pronoun-preferences-h">Pronoun preferences</h2>
-        <ul class="opinion-list"><% pronounPreferences.forEach(function (preference) { %><li><span><%= preference.label %></span><span class="opinion"><%= preference.opinion %></span></li><% }); %></ul>
+        <ul class="opinion-list"><% for (const preference of pronounPreferences) { %><li><%- await include('partials/opinion', { opinion: preference.opinion }) %><span class="opinion-value"><%= preference.label %></span></li><% } %></ul>
       </section>
     <% } %>
 
     <% if (words.length) { %>
       <section class="word-groups" aria-labelledby="words-h">
         <h2 id="words-h">Words</h2>
-        <% words.forEach(function (group, gi) { %>
+        <% for (const [gi, group] of words.entries()) { %>
           <section class="word-group" aria-labelledby="word-group-<%= gi %>">
             <h3 id="word-group-<%= gi %>"><%= group.heading %></h3>
-            <ul class="opinion-list"><% group.words.forEach(function (word) { %><li><span><%= word.value %></span><span class="opinion"><%= word.opinion %></span></li><% }); %></ul>
+            <ul class="opinion-list"><% for (const word of group.words) { %><li><%- await include('partials/opinion', { opinion: word.opinion }) %><span class="opinion-value"><%= word.value %></span></li><% } %></ul>
           </section>
-        <% }); %>
+        <% } %>
       </section>
     <% } %>
 
@@ -91,6 +91,7 @@
     <% } %>
     <p class="print-easter-egg">This profile escaped the internet.</p>
     <% if (locals.ownerEgg) { %><p class="print-easter-egg">Approved for escape by NamelessNanashi.</p><% } %>
+    <% if (username === 'nobody') { %><p class="print-easter-egg">Nobody printed this.</p><% } %>
   </main>
   <%- await include('partials/site-footer') %>
 </body>

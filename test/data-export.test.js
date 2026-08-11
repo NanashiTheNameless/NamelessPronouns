@@ -50,7 +50,7 @@ test('account export has valid user-friendly and machine-readable versions', asy
     assert.match(friendly.stdout, /Email: user@example\.com/);
     assert.doesNotMatch(friendly.stdout, /[{}\[\]"]/);
     const metadata = spawnSync('unzip', ['-p', path, 'machine-readable/export-metadata.json'], { encoding: 'utf8' });
-    assert.deepEqual(JSON.parse(metadata.stdout), { generated_at: generatedAt });
+    assert.deepEqual(JSON.parse(metadata.stdout), { generated_at: generatedAt, owned_by: 'you' });
     const readme = spawnSync('unzip', ['-p', path, 'README.txt'], { encoding: 'utf8' });
     assert.ok(readme.stdout.includes(generatedAt));
     const central = archive.indexOf(Buffer.from('PK\x01\x02', 'binary'));

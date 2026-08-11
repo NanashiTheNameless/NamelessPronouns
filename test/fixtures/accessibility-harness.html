@@ -58,6 +58,7 @@
     const ownerBusinessCard = { ...window.NamelessNanashi };
     const ownerBusinessCardText = window.NamelessNanashi.toString();
     const ownerFix = window.NamelessNanashi.fix();
+    const ownerHelp = window.NamelessNanashi.help();
     clickAction('copy');
     clickAction('copy');
     clickAction('copy');
@@ -234,7 +235,7 @@
     const helpToast = toastState();
     const ownerSignature = document.querySelector('[data-owner-signature]');
     for (let index = 0; index < 7; index += 1) ownerSignature.click();
-    const footerPersistence = ownerSignature.textContent;
+    const footerPersistence = ownerSignature.closest('p').textContent.replace(/\s+/g, ' ').trim();
     const footerPersistenceToast = toastState();
     const ownerHeading = document.querySelector('[data-owner-heading]');
     for (let index = 0; index < 7; index += 1) ownerHeading.click();
@@ -292,6 +293,7 @@
       ownerBusinessCard,
       ownerBusinessCardText,
       ownerFix,
+      ownerHelp,
       backupBackup,
       ownerSequence,
       ownerSequenceToast,

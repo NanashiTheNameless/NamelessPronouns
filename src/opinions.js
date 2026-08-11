@@ -31,6 +31,11 @@ export function opinionLabel(key) {
   return OPINIONS.find((opinion) => opinion.key === key)?.label
     || OPINIONS.find((opinion) => opinion.key === DEFAULT_OPINION).label;
 }
+export function opinionView(key) {
+  const opinion = OPINIONS.find((row) => row.key === key)
+    || OPINIONS.find((row) => row.key === DEFAULT_OPINION);
+  return { key: opinion.key, label: opinion.label };
+}
 export function importedOpinion(value) {
   if (value == null) return DEFAULT_OPINION;
   return IMPORT_ALIASES[String(value).trim().toLowerCase()] || DEFAULT_OPINION;

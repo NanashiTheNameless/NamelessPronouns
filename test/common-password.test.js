@@ -163,3 +163,15 @@ test('Chromium hard-blocks submission and cites the matching wordlist', async (t
     await new Promise((resolve) => server.close(resolve));
   }
 });
+test('every quipped password is actually in the shipped index', (t) => {
+  if (missing) return t.skip(STALE);
+  const script = readFileSync(path.join(root, 'public/js/common-password.js'), 'utf8');
+  const quips = [...script.matchAll(/^\s{4}([A-Za-z0-9]+):\s'/gm)].map((match) => match[1]);
+  assert.ok(quips.length >= 2, `the quip list was found in the script (saw ${quips.length})`);
+  for (const password of quips) {
+    assert.ok(
+      presentAnywhere(password),
+      `${password} is in a wordlist, so its quip can actually be reached`,
+    );
+  }
+});

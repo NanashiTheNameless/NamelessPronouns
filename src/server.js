@@ -31,6 +31,7 @@ import { obfuscateEmail, obfuscateEmails } from './email-obfuscation.js';
 import { contentFieldLabel } from './content-fields.js';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const TEA_STEEP_MS = 4 * 60 * 1000 + 18 * 1000;
+const PATIENCE = 'Slow down. The pronouns are not going anywhere.';
 export function teaIsSteeped(startedAt, now = Date.now()) {
   const started = Number(startedAt);
   return Number.isFinite(started) && started > 0 && now - started >= TEA_STEEP_MS;
@@ -58,9 +59,23 @@ export function createApp() {
   app.use((req, res, next) => {
     res.append('Link', '</humans.txt>; rel="author"');
     res.setHeader('X-Nanashi', 'was-here');
+    res.setHeader('X-Powered-By', 'caffeine-and-spite');
     if (/\bcurl\//i.test(req.get('user-agent') || '')) res.setHeader('X-Curl', 'excellent-choice');
+    if (/\b(lynx|w3m|links|elinks)\b/i.test(req.get('user-agent') || '')) res.setHeader('X-Text-Browser', 'respect');
     if (req.get('dnt') === '1') res.setHeader('X-Tracking', 'was-never-here');
     if (req.get('sec-gpc') === '1') res.setHeader('X-Privacy-Preference', 'acknowledged');
+    const status = res.status.bind(res);
+    res.status = (code) => {
+      if (code === 429) res.setHeader('X-Patience', 'required');
+      return status(code);
+    };
+    const render = res.render.bind(res);
+    res.render = (view, data, callback) => {
+      if (res.statusCode === 429 && view === 'error' && data && typeof data.message === 'string') {
+        return render(view, { ...data, message: `${data.message} ${PATIENCE}` }, callback);
+      }
+      return render(view, data, callback);
+    };
     next();
   });
   app.options('/teapot', (req, res) => {
@@ -87,6 +102,27 @@ export function createApp() {
     res.cookie('np_tea_started', String(now), { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 1000, path: '/' });
     res.type('text/plain').status(418).send("I'm a teapot. It/its, thanks.\n");
   });
+  app.get('/coffee', (req, res) => {
+    res.setHeader('X-Tea-Made-By', 'NamelessNanashi');
+    res.append('Link', '</teapot>; rel="related"');
+    res.type('text/plain').status(418).send('Wrong appliance. Other direction.\n');
+  });
+  app.get('/status', (req, res) => {
+    res.type('text/plain').send('Somehow still running.\n');
+  });
+  app.get('/.well-known/security.txt', (req, res) => {
+    const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+    res.type('text/plain').send([
+      `Contact: ${config.BASE_URL}/contact`,
+      `Expires: ${expires}`,
+      'Preferred-Languages: en',
+      `Canonical: ${config.BASE_URL}/.well-known/security.txt`,
+      '',
+      '# Report it properly and it gets fixed properly.',
+      '# Nanashi reads these. Eventually.',
+      '',
+    ].join('\n'));
+  });
   app.get('/humans.txt', (req, res) => {
     res.type('text/plain').send('/* HUMANS */\nHuman: NamelessNanashi\nSite: NamelessPronouns\n\nThanks for remembering the humans behind NamelessPronouns.\n');
   });
@@ -109,6 +145,7 @@ export function createApp() {
     res.setHeader('X-Nothing', 'successfully-returned');
     res.setHeader('X-Nothing-By', 'NamelessNanashi');
     res.setHeader('X-Head', 'nothing-to-see');
+    res.setHeader('X-Nothing-Speed', 'optimal');
     res.status(204).end();
   });
   app.get('/nothing', (req, res) => {

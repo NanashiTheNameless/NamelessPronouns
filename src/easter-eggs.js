@@ -50,11 +50,6 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Adds \"Collector.\" beneath the flags"
   },
   {
-    "name": "Ultimate collector",
-    "activation": "View a profile with exactly 42 flags",
-    "effect": "Replaces \"Collector.\" with \"The answer, apparently.\""
-  },
-  {
     "name": "No-script message",
     "activation": "Disable JavaScript",
     "effect": "Shows \"No script? No problem. You are still a person.\""
@@ -128,6 +123,21 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Lucky color",
     "activation": "Enter #777777 in a custom color field",
     "effect": "Says \"Seven. Naturally.\""
+  },
+  {
+    "name": "Decoded color",
+    "activation": "Enter #dec0de in a custom color field",
+    "effect": "Says \"Decoded.\""
+  },
+  {
+    "name": "Wingdings",
+    "activation": "Enter Wingdings as the custom font",
+    "effect": "Says \"We cannot read that either.\""
+  },
+  {
+    "name": "Helvetica",
+    "activation": "Enter Helvetica as the custom font",
+    "effect": "Says \"There is a documentary about this.\""
   },
   {
     "name": "Alphabetical color",
@@ -270,6 +280,51 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Shows a profile that never quite finishes introducing itself, with on/and/on pronouns"
   },
   {
+    "name": "Staff profile",
+    "activation": "Visit /u/staff",
+    "effect": "Shows Staff as a collective noun wearing a badge, with we/us listed jokingly"
+  },
+  {
+    "name": "Owner profile",
+    "activation": "Visit /u/owner",
+    "effect": "Shows the Owner role rather than the person holding it, status probably debugging"
+  },
+  {
+    "name": "Nanashi shortcut",
+    "activation": "Visit /u/nanashi",
+    "effect": "Redirects to the Owner's own profile at /u/NamelessNanashi"
+  },
+  {
+    "name": "Titles are not people",
+    "activation": "Visit /u/admin, /u/administrator, /u/moderator, or /u/support",
+    "effect": "Returns HTTP 404 with \"Titles are not people.\""
+  },
+  {
+    "name": "Recursive 404",
+    "activation": "Visit /u/404",
+    "effect": "Returns HTTP 404 with \"Recursion detected.\""
+  },
+  {
+    "name": "Nobody print line",
+    "activation": "Print /u/nobody",
+    "effect": "Adds \"Nobody printed this.\" only to the printed page"
+  },
+  {
+    "name": "Confident no",
+    "activation": "View a profile whose pronoun sets are all marked \"Nope\", with at least two sets",
+    "effect": "Adds \"A confident no. Respected.\" beneath the pronouns"
+  },
+  {
+    "name": "Entirely jokingly",
+    "activation": "View a profile whose pronoun sets are all marked \"Jokingly\", with at least two sets",
+    "effect": "Adds \"Nothing here is serious. Including this line.\" beneath the pronouns"
+  },
+  {
+    "name": "Teapot adjacent",
+    "activation": "Inspect the headers of a profile that lists it/its",
+    "effect": "Adds X-Teapot-Adjacent: yes"
+  },
+  {
     "name": "Infinity encore",
     "activation": "Remain on /u/infinity for 60 seconds",
     "effect": "Says \"Still going.\""
@@ -287,7 +342,7 @@ export const EASTER_EGGS = Object.freeze([
   {
     "name": "Footer persistence",
     "activation": "Click NamelessNanashi in the footer seven times",
-    "effect": "Temporarily changes it to \"Still NamelessNanashi\" and shows a \"NamelessNanashi remains operational.\" toast"
+    "effect": "Temporarily changes the line to \"Still Operated by NamelessNanashi.\" and shows a \"NamelessNanashi keeps working on this site.\" toast"
   },
   {
     "name": "Leap-day visitor",
@@ -308,6 +363,66 @@ export const EASTER_EGGS = Object.freeze([
     "name": "April first",
     "activation": "Visit on April 1",
     "effect": "Adds \"Everything here is true, except False.\" to the footer"
+  },
+  {
+    "name": "Late-night visit",
+    "activation": "Open any page between 02:00 and 04:00 by the device clock",
+    "effect": "Shows a \"Go to sleep. The profile will still be here tomorrow.\" toast, once per browser session"
+  },
+  {
+    "name": "Day of Visibility",
+    "activation": "Visit on March 31",
+    "effect": "Adds \"Transgender Day of Visibility. You are seen, and you are welcome here.\" to the footer"
+  },
+  {
+    "name": "Day of Remembrance",
+    "activation": "Visit on November 20",
+    "effect": "Adds \"Transgender Day of Remembrance. We remember the names, and the people who chose them.\" to the footer, written plainly rather than as a joke"
+  },
+  {
+    "name": "Placeholder prose",
+    "activation": "Type lorem ipsum into a profile bio or notes field",
+    "effect": "Says \"Placeholder detected. You are allowed to be real.\""
+  },
+  {
+    "name": "Classic password",
+    "activation": "Submit password1234 as a new password",
+    "effect": "Adds \"Bold, classic, and already in every list.\" to the common-password refusal"
+  },
+  {
+    "name": "Battery staple",
+    "activation": "Submit correcthorsebatterystaple as a new password",
+    "effect": "Adds \"xkcd approved. Also in the list now.\" to the common-password refusal"
+  },
+  {
+    "name": "Nobody signs up",
+    "activation": "Request an account using nobody@example.com",
+    "effect": "Answers \"Nobody already has a profile. See /u/nobody.\""
+  },
+  {
+    "name": "Patient rate limit",
+    "activation": "Reach any rate limit",
+    "effect": "Adds X-Patience: required to every 429, and ends the message with \"Slow down. The pronouns are not going anywhere.\" on the ones that render an error page"
+  },
+  {
+    "name": "Admin Nanashi",
+    "activation": "Enter nanashi in the admin account lookup",
+    "effect": "Responds \"That account is looking back.\""
+  },
+  {
+    "name": "Admin placeholders",
+    "activation": "Enter null or undefined in the admin account lookup",
+    "effect": "Responds \"Both already have profiles. See /u/null and /u/undefined.\""
+  },
+  {
+    "name": "Quiet queue",
+    "activation": "Open the content flag reviews with none pending",
+    "effect": "Adds \"Nothing to moderate. Suspicious.\""
+  },
+  {
+    "name": "Export ownership",
+    "activation": "Download your account data",
+    "effect": "The export metadata records owned_by: you"
   },
   {
     "name": "Owner profile title",
@@ -438,6 +553,46 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Nothing encore",
     "activation": "Visit /nothing?again",
     "effect": "Returns nothing again with X-Nothing-Again: yes"
+  },
+  {
+    "name": "Coffee endpoint",
+    "activation": "Visit /coffee",
+    "effect": "Returns HTTP 418 with \"Wrong appliance. Other direction.\" and a Link header pointing at /teapot"
+  },
+  {
+    "name": "Status endpoint",
+    "activation": "Visit /status",
+    "effect": "Returns \"Somehow still running.\""
+  },
+  {
+    "name": "Security contact",
+    "activation": "Visit /.well-known/security.txt",
+    "effect": "Returns a real RFC 9116 contact file ending with \"Nanashi reads these. Eventually.\""
+  },
+  {
+    "name": "Fast nothing",
+    "activation": "Send HEAD /nothing",
+    "effect": "Adds X-Nothing-Speed: optimal"
+  },
+  {
+    "name": "Powered by",
+    "activation": "Inspect any response's headers",
+    "effect": "Adds X-Powered-By: caffeine-and-spite"
+  },
+  {
+    "name": "Text browser respect",
+    "activation": "Request any page using Lynx, w3m, Links, or ELinks",
+    "effect": "Adds X-Text-Browser: respect"
+  },
+  {
+    "name": "Console pronouns",
+    "activation": "Run NamelessNanashi.pronouns in the console",
+    "effect": "Returns they/them"
+  },
+  {
+    "name": "Console help",
+    "activation": "Run NamelessNanashi.help() in the console",
+    "effect": "Returns \"Shift+? was right there.\""
   },
   {
     "name": "Humans file",

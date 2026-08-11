@@ -22,6 +22,7 @@
     <h2>Requested reviews</h2>
     <% if (reviews.length === 0) { %>
       <p>No pending content flag reviews.</p>
+      <p class="fineprint">Nothing to moderate. Suspicious.</p>
     <% } else { %>
       <ul>
         <% reviews.forEach(function (review) { %>

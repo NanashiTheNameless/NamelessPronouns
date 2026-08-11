@@ -117,9 +117,10 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.equal(result.retroTheme, '1998', 'the unlocked theme can be selected and applied');
     assert.equal(result.shortcutsOpened, true, 'Shift+? opens the keyboard shortcuts panel');
     assert.equal(result.shortcutInception, 'You are already here.');
-    assert.deepEqual(result.ownerBusinessCard, { role: 'Owner', status: 'probably debugging' });
+    assert.deepEqual(result.ownerBusinessCard, { role: 'Owner', status: 'probably debugging', pronouns: 'they/them' });
     assert.equal(result.ownerBusinessCardText, '[Owner probably debugging]');
     assert.equal(result.ownerFix, 'Have you tried turning it off and on again?');
+    assert.equal(result.ownerHelp, 'Shift+? was right there.');
     assert.equal(result.backupBackup, 'Backup of backup complete.');
     assert.match(result.ownerSequence, /Owner located.*3-5 business eternities/);
     assert.equal(result.ownerSequenceToast.visible, true);
@@ -130,9 +131,9 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.deepEqual(result.helpToast, {
       message: 'Shift+? was right there.', visible: true, topLayer: true,
     });
-    assert.equal(result.footerPersistence, 'Still NamelessNanashi');
+    assert.equal(result.footerPersistence, 'Still Operated by NamelessNanashi.');
     assert.deepEqual(result.footerPersistenceToast, {
-      message: 'NamelessNanashi remains operational.', visible: true, topLayer: true,
+      message: 'NamelessNanashi keeps working on this site.', visible: true, topLayer: true,
     });
     assert.equal(result.ownerHeadingEncore, 'Yes, this is the Owner.');
     assert.deepEqual(result.ownerHeadingToast, {
@@ -169,7 +170,7 @@ test('the footer offers the panel and the head applies it early', async () => {
   assert.match(head, /<script src="\/static\/js\/accessibility\.js"><\/script>/);
   assert.match(footer, /data-konami-theme hidden[^>]*><input[^>]+value="1998"/);
   assert.match(footer, /data-shortcuts-panel/);
-  assert.match(footer, /<button type="button" class="owner-signature" data-owner-signature>NamelessNanashi<\/button>/);
+  assert.match(footer, /<span data-owner-prefix>Operated by<\/span> <button type="button" class="owner-signature" data-owner-signature>NamelessNanashi<\/button>/);
   assert.doesNotMatch(footer, /<a[^>]+data-owner-signature/);
   assert.match(footer, /<kbd>Shift<\/kbd> \+ <kbd>\?<\/kbd>/);
   for (const shortcut of ['Tab', 'Enter', 'Space', 'Arrow keys', 'Escape']) {
@@ -196,7 +197,8 @@ test('the accessibility script contains the local-only keyboard and input eggs',
   assert.match(script, /Still default\. NamelessNanashi would be proud\./);
   assert.match(script, /window\.NamelessNanashi = Object\.freeze/);
   assert.match(script, /Owner located\. Please allow 3-5 business eternities/);
-  assert.match(script, /Still NamelessNanashi/);
+  assert.match(script, /Still Operated by/);
+  assert.match(script, /NamelessNanashi keeps working on this site\./);
   assert.match(script, /Yes, this is the Owner\./);
   assert.match(script, /still wrote this bit/);
   assert.match(script, /Preserved by NamelessNanashi/);
@@ -225,6 +227,14 @@ test('the accessibility script contains the local-only keyboard and input eggs',
   assert.match(script, /Approximately 3\.14 people are reading this\./);
   assert.match(script, /Everything here is true, except False\./);
   assert.match(script, /Not found, but properly steeped\./);
+  assert.match(script, /#dec0de/);
+  assert.match(script, /We cannot read that either\./);
+  assert.match(script, /There is a documentary about this\./);
+  assert.match(script, /Go to sleep\. The profile will still be here tomorrow\./);
+  assert.match(script, /Transgender Day of Visibility\. You are seen, and you are welcome here\./);
+  assert.match(script, /Transgender Day of Remembrance\. We remember the names, and the people who chose them\./);
+  assert.match(script, /pronouns: 'they\/them'/);
+  assert.match(script, /help\(\) \{ return 'Shift\+\? was right there\.'; \}/);
 });
 test('the panel offers arbitrary colors, an arbitrary font, and settings transfer', async () => {
   const footer = await readFile(new URL('../views/partials/site-footer.ejs', import.meta.url), 'utf8');

@@ -7,7 +7,7 @@ import * as V from '../validation.js';
 import { avatarUrl } from '../avatar.js';
 import { flagLabel, pronounsPageFlagUrl } from '../pronouns-page-import.js';
 import { pronounPreferenceLabel } from '../pronoun-preferences.js';
-import { opinionLabel } from '../opinions.js';
+import { opinionView } from '../opinions.js';
 import { fullMarkdownAllowed, roleAtLeast, staffRoleDescription, staffRoleLabel } from '../middleware/staff.js';
 import { renderProfileMarkdown } from '../markdown.js';
 import { collectCodeUsage, collectEmbeddedOrigins, withScriptNonce } from '../html-sanitize.js';
@@ -160,6 +160,22 @@ export const PLACEHOLDER_PROFILES = Object.freeze({
     pronouns: [{ short: 'void/void', opinion: 'yes' }, { short: 'it/its', opinion: 'okay' }],
     words: [{ heading: 'I am', words: [{ value: 'empty', opinion: 'close' }, { value: 'a database value', opinion: 'nope' }] }],
   },
+  staff: {
+    displayName: 'Staff',
+    bio: 'A collective noun wearing a badge.\n\n**Status:** on shift, technically.',
+    notes: '- Staff is several people and one shared inbox.\n- The individual members are elsewhere, being people.',
+    names: [{ value: 'Staff', opinion: 'yes' }, { value: 'The Team', opinion: 'okay' }],
+    pronouns: [{ short: 'they/them', opinion: 'yes' }, { short: 'we/us', opinion: 'jokingly' }],
+    words: [{ heading: 'We are', words: [{ value: 'on duty', opinion: 'yes' }, { value: 'one person', opinion: 'nope' }] }],
+  },
+  owner: {
+    displayName: 'Owner',
+    bio: 'The role that keeps the lights on. The person holding it is somewhere else, being a person.\n\n**Status:** probably debugging.',
+    notes: '- This is the job, not the human.\n- The human wrote this bit and then denied it.',
+    names: [{ value: 'Owner', opinion: 'yes' }, { value: 'The Management', opinion: 'jokingly' }],
+    pronouns: [{ short: 'they/them', opinion: 'yes' }, { short: 'it/its', opinion: 'okay' }],
+    words: [{ heading: 'I am', words: [{ value: 'responsible', opinion: 'yes' }, { value: 'available', opinion: 'nope' }] }],
+  },
   infinity: {
     displayName: 'Infinity',
     bio: 'I started introducing myself once. I am not finished yet.\n\n**Status:** continuing indefinitely.',
@@ -171,6 +187,16 @@ export const PLACEHOLDER_PROFILES = Object.freeze({
 });
 function noStore(res) {
   res.setHeader('Cache-Control', 'private, no-store');
+}
+export function pronounOpinionEgg(opinions) {
+  const keys = opinions.filter(Boolean);
+  if (keys.length < 2) return null;
+  if (keys.every((key) => key === 'nope')) return 'A confident no. Respected.';
+  if (keys.every((key) => key === 'jokingly')) return 'Nothing here is serious. Including this line.';
+  return null;
+}
+function teapotAdjacent(res, pairs) {
+  if (pairs.some((pair) => pair.toLowerCase() === 'it/its')) res.setHeader('X-Teapot-Adjacent', 'yes');
 }
 function previewReason(profile, user) {
   if (!user) return null;
@@ -188,6 +214,7 @@ async function placeholderProfile(res, username) {
   const placeholder = PLACEHOLDER_PROFILES[username];
   const profile = { id: 'placeholder', display_name: placeholder.displayName, description: '', notes: '' };
   res.setHeader('X-Pronouns', placeholder.pronounsHeader || placeholder.pronouns[0].short);
+  teapotAdjacent(res, placeholder.pronouns.map((row) => row.short));
   return res.render('profile', {
     title: `${placeholder.displayName} (@${username})`,
     preview: null,
@@ -199,11 +226,12 @@ async function placeholderProfile(res, username) {
     staffBadgeLine: null,
     ownerEgg: false,
     avatar: avatarUrl({ id: `placeholder:${username}` }),
-    names: placeholder.names.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),
-    pronouns: placeholder.pronouns.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),
+    names: placeholder.names.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
+    pronouns: placeholder.pronouns.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
+    pronounOpinionEgg: pronounOpinionEgg(placeholder.pronouns.map((row) => row.opinion)),
     words: placeholder.words.map((group) => ({
       ...group,
-      words: group.words.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),
+      words: group.words.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
     })),
     links: [],
     flags: [],
@@ -211,9 +239,23 @@ async function placeholderProfile(res, username) {
   });
 }
 export const staticProfileRouter = express.Router();
+const TITLE_ONLY_USERNAMES = new Set(['admin', 'administrator', 'moderator', 'support']);
+const OWNER_USERNAME = 'NamelessNanashi';
 staticProfileRouter.use(publicPageHeaders);
 staticProfileRouter.get('/u/:username', async (req, res, next) => {
   const requested = String(req.params.username || '').toLowerCase();
+  if (requested === '404') {
+    noStore(res);
+    return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Recursion detected.' });
+  }
+  if (requested === 'nanashi') {
+    noStore(res);
+    return res.redirect(302, `/u/${OWNER_USERNAME}`);
+  }
+  if (TITLE_ONLY_USERNAMES.has(requested)) {
+    noStore(res);
+    return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Titles are not people.' });
+  }
   if (!Object.hasOwn(PLACEHOLDER_PROFILES, requested)) return next();
   noStore(res);
   if (req.params.username !== requested) return res.redirect(301, `/u/${requested}`);
@@ -312,6 +354,7 @@ router.get('/u/:username', async (req, res) => {
   if (pronouns.rows[0]) {
     res.setHeader('X-Pronouns', `${pronouns.rows[0].subject}/${pronouns.rows[0].object}`);
   }
+  teapotAdjacent(res, pronouns.rows.map((row) => `${row.subject}/${row.object}`));
   if (profile.staff_role === 'owner') res.setHeader('X-Owner-Status', 'probably-debugging');
   res.render('profile', {
     title: `${profile.display_name} (@${profile.username_display})`,
@@ -324,11 +367,12 @@ router.get('/u/:username', async (req, res) => {
     staffBadgeLine: staffRoleDescription(profile.staff_role),
     ownerEgg: profile.staff_role === 'owner',
     avatar: avatarUrl({ id: profile.owner_id, email: profile.owner_email, avatar_source: profile.avatar_source, avatar_data_uri: profile.avatar_data_uri }),
-    names: names.rows.map((row) => ({ value: row.value, opinion: opinionLabel(row.opinion) })),
-    pronouns: pronouns.rows.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),
+    names: names.rows.map((row) => ({ value: row.value, opinion: opinionView(row.opinion) })),
+    pronouns: pronouns.rows.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
+    pronounOpinionEgg: pronounOpinionEgg(pronouns.rows.map((row) => row.opinion)),
     words: groupProfileWords(wordGroups.rows, words.rows).map((group) => ({
       heading: group.heading,
-      words: group.words.map((word) => ({ value: word.value, opinion: opinionLabel(word.opinion) })),
+      words: group.words.map((word) => ({ value: word.value, opinion: opinionView(word.opinion) })),
     })),
     links: links.rows,
     flags: flags.rows.map((row) => ({
@@ -338,7 +382,7 @@ router.get('/u/:username', async (req, res) => {
     })),
     pronounPreferences: pronounPreferences.rows.map((row) => ({
       label: pronounPreferenceLabel(row.preference_key),
-      opinion: opinionLabel(row.opinion),
+      opinion: opinionView(row.opinion),
     })),
   });
 });

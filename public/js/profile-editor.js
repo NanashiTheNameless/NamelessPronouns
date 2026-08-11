@@ -172,8 +172,14 @@ document.addEventListener('click', (event) => {
   }
 });
 
+const PLACEHOLDER_PROSE = /lorem\s+ipsum/i;
+let placeholderAnnounced = false;
 document.addEventListener('input', (event) => {
   if (event.target.matches('[data-character-constraint]')) updateCharacterConstraint(event.target);
+  if (!placeholderAnnounced && event.target.matches('textarea') && PLACEHOLDER_PROSE.test(event.target.value)) {
+    placeholderAnnounced = true;
+    window.npAccessibility?.announceEaster?.('Placeholder detected. You are allowed to be real.');
+  }
 });
 renumberWordGroups();
 updateRepeaters();

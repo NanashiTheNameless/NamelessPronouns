@@ -252,3 +252,12 @@ test('policy versions are source-controlled and included in acceptance records',
   assert.equal(acceptance.terms, TERMS_VERSION);
   assert.equal(acceptance.privacy, PRIVACY_VERSION);
 });
+test('the pronoun opinion egg needs at least two sets that agree', async () => {
+  const { pronounOpinionEgg } = await import('../src/routes/public-profile.js');
+  assert.equal(pronounOpinionEgg(['nope', 'nope']), 'A confident no. Respected.');
+  assert.equal(pronounOpinionEgg(['jokingly', 'jokingly', 'jokingly']), 'Nothing here is serious. Including this line.');
+  assert.equal(pronounOpinionEgg(['nope']), null, 'a single refusal is a statement, not a joke');
+  assert.equal(pronounOpinionEgg(['jokingly']), null);
+  assert.equal(pronounOpinionEgg(['nope', 'yes']), null);
+  assert.equal(pronounOpinionEgg([]), null);
+});

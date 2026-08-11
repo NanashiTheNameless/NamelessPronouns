@@ -510,12 +510,34 @@ button[data-remove] {
   flex-wrap: wrap;
 }
 .opinion {
-  padding: 0.1rem 0.55rem;
-  color: var(--muted);
+  flex: 0 0 auto;
+  min-width: 8.5rem;
+  padding: 0.2rem 0.8rem;
+  color: var(--text);
   background: var(--surface-strong);
-  border: 1px solid var(--border);
+  border: 2px solid currentColor;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-align: center;
+}
+.opinion-value {
+  font-size: 1.05rem;
+}
+.opinion[data-opinion="yes"] {
+  color: var(--success);
+  background: var(--success-soft);
+}
+.opinion[data-opinion="nope"] {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+.opinion[data-opinion="close"] {
+  color: var(--link);
+}
+.opinion[data-opinion="jokingly"] {
+  color: var(--link);
+  border-style: dashed;
 }
 .word-group h3 {
   margin: 1rem 0 0.4rem;

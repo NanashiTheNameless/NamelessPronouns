@@ -15,6 +15,14 @@ import { createBan, targetHash } from '../bans.js';
 import { roleAtLeast } from '../middleware/staff.js';
 import { EASTER_EGGS } from '../easter-eggs.js';
 const router = express.Router();
+const LOOKUP_EGGS = new Map([
+  ['sudo', 'Nice try. This is not a shell.'],
+  ['root', 'Wrong tree.'],
+  ['select *', 'Please step away from the database.'],
+  ['nanashi', 'That account is looking back.'],
+  ['null', 'Both already have profiles. See /u/null and /u/undefined.'],
+  ['undefined', 'Both already have profiles. See /u/null and /u/undefined.'],
+]);
 router.get('/admin', requireStaff('support'), async (req, res) => {
   const pending = await db.query(
     `SELECT id, email, requested_profile_username, requested_display_name, requested_at
@@ -22,11 +30,7 @@ router.get('/admin', requireStaff('support'), async (req, res) => {
   );
   let searched = null;
   const email = typeof req.query.email === 'string' ? req.query.email.trim().toLowerCase() : '';
-  const lookupMessage = {
-    sudo: 'Nice try. This is not a shell.',
-    root: 'Wrong tree.',
-    'select *': 'Please step away from the database.',
-  }[email] || '';
+  const lookupMessage = LOOKUP_EGGS.get(email) || '';
   if (email && !lookupMessage) {
     const { rows } = await db.query(
       'SELECT id, email, signup_status, staff_role, twofa_method FROM users WHERE email = ?',

@@ -82,6 +82,44 @@ test('the public text-file and teapot eggs bypass consent', async () => {
   assert.equal(steeped.headers.get('x-tea-steeped'), 'precisely');
   assert.equal(await steeped.text(), 'Properly steeped. It/its, thanks.\n');
 });
+test('the appliance, status, and security endpoints answer before consent', async () => {
+  const coffee = await fetch(`${base}/coffee`);
+  assert.equal(coffee.status, 418);
+  assert.equal(await coffee.text(), 'Wrong appliance. Other direction.\n');
+  assert.match(coffee.headers.get('link') || '', /<\/teapot>; rel="related"/);
+  const status = await fetch(`${base}/status`);
+  assert.equal(status.status, 200);
+  assert.equal(await status.text(), 'Somehow still running.\n');
+  const security = await fetch(`${base}/.well-known/security.txt`);
+  assert.equal(security.status, 200);
+  const securityText = await security.text();
+  assert.match(securityText, /^Contact: https?:\/\/\S+\/contact$/m);
+  assert.match(securityText, /^Expires: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/m);
+  assert.match(securityText, /Nanashi reads these\. Eventually\./);
+  const fastNothing = await fetch(`${base}/nothing`, { method: 'HEAD' });
+  assert.equal(fastNothing.headers.get('x-nothing-speed'), 'optimal');
+  assert.equal(status.headers.get('x-powered-by'), 'caffeine-and-spite');
+  const textBrowser = await fetch(`${base}/status`, { headers: { 'user-agent': 'Lynx/2.9.2 libwww-FM/2.14' } });
+  assert.equal(textBrowser.headers.get('x-text-browser'), 'respect');
+  assert.equal(status.headers.get('x-text-browser'), null);
+});
+test('reserved title and recursive usernames refuse politely', async () => {
+  for (const username of ['admin', 'administrator', 'moderator', 'support']) {
+    const res = await fetch(`${base}/u/${username}`);
+    assert.equal(res.status, 404, username);
+    assert.match(await res.text(), /Titles are not people\./, username);
+  }
+  const recursive = await fetch(`${base}/u/404`);
+  assert.equal(recursive.status, 404);
+  assert.match(await recursive.text(), /Recursion detected\./);
+});
+test('/u/nanashi hands visitors to the Owner profile', async () => {
+  for (const path of ['/u/nanashi', '/u/Nanashi']) {
+    const res = await fetch(`${base}${path}`, { redirect: 'manual' });
+    assert.equal(res.status, 302, path);
+    assert.equal(res.headers.get('location'), '/u/NamelessNanashi', path);
+  }
+});
 test('reserved Easter egg profiles bypass consent and database-backed sessions', async () => {
   const staleSession = signValue(config.COOKIE_SECRET, 'stale-session-that-would-query-the-database');
   for (const [username, heading, pronouns] of [
@@ -93,6 +131,8 @@ test('reserved Easter egg profiles bypass consent and database-backed sessions',
     ['something', 'Something', 'some/thing'],
     ['unknown', 'Unknown', 'who/knows'],
     ['else', 'Else', 'other/wise'],
+    ['staff', 'Staff', 'they/them'],
+    ['owner', 'Owner', 'they/them'],
   ]) {
     const res = await fetch(`${base}/u/${username}`, { headers: { cookie: `np_sid=${staleSession}` } });
     assert.equal(res.status, 200, username);
@@ -100,6 +140,36 @@ test('reserved Easter egg profiles bypass consent and database-backed sessions',
     const html = await res.text();
     assert.match(html, new RegExp(`<h1>${heading}<\\/h1>`), username);
     assert.match(html, /data-profile-avatar/, username);
+  }
+  const teapotAdjacent = await fetch(`${base}/u/owner`);
+  assert.equal(teapotAdjacent.headers.get('x-teapot-adjacent'), 'yes');
+  const notAdjacent = await fetch(`${base}/u/everyone`);
+  assert.equal(notAdjacent.headers.get('x-teapot-adjacent'), null);
+  const nobody = await fetch(`${base}/u/nobody`);
+  assert.match(await nobody.text(), /Nobody printed this\./);
+});
+test('every documented endpoint egg answers with the status it claims', async () => {
+  const { EASTER_EGGS } = await import('../src/easter-eggs.js');
+  const gated = /^\/(admin|dashboard|account|profiles|static|login|signup|consent)/;
+  let checked = 0;
+  for (const egg of EASTER_EGGS) {
+    const path = /(?:Visit|Send (?:HEAD|OPTIONS)) (\/[A-Za-z0-9._?=&/-]*)/.exec(egg.activation)?.[1];
+    if (!path || gated.test(path)) continue;
+    const method = egg.activation.startsWith('Send ') ? egg.activation.split(' ')[1] : 'GET';
+    const res = await fetch(`${base}${path.replace(/[.,]$/, '')}`, { method, redirect: 'manual' });
+    assert.ok(res.status < 500, `${egg.name}: ${path} answers without a server error (${res.status})`);
+    const documented = /HTTP (\d{3})/.exec(egg.effect)?.[1];
+    if (documented) assert.equal(String(res.status), documented, `${egg.name}: ${path} returns the documented status`);
+    checked += 1;
+  }
+  assert.ok(checked > 30, `the documented endpoints are all exercised (saw ${checked})`);
+});
+test('every Easter egg username is reserved against real signups', async () => {
+  const { PLACEHOLDER_PROFILES } = await import('../src/routes/public-profile.js');
+  const { RESERVED_USERNAMES } = await import('../src/validation.js');
+  for (const username of [...Object.keys(PLACEHOLDER_PROFILES), 'admin', 'administrator',
+    'moderator', 'support', '404', 'me', 'self', 'nanashi']) {
+    assert.ok(RESERVED_USERNAMES.has(username), `${username} is reserved`);
   }
 });
 test('GET / is gated: redirects to /consent before acceptance', async () => {
@@ -129,7 +199,7 @@ test('GET /consent renders with baseline security headers and RUM allowance', as
   assert.match(csp, /base-uri 'none'/);
   assert.match(csp, /static\.cloudflareinsights\.com/);
   assert.equal(res.headers.get('referrer-policy'), 'strict-origin-when-cross-origin');
-  assert.equal(res.headers.get('x-powered-by'), null);
+  assert.equal(res.headers.get('x-powered-by'), 'caffeine-and-spite');
   const html = await res.text();
   assert.match(html, /Cloudflare/);
   assert.match(html, /name="policies"/);

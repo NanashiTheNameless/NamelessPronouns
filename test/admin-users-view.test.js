@@ -280,7 +280,11 @@ test('every staff role can open the complete Easter egg catalog', async () => {
   }, { async: true });
   assert.equal(new Set(EASTER_EGGS.map((egg) => egg.name)).size, EASTER_EGGS.length);
   assert.equal((html.match(/<tr>/g) || []).length, EASTER_EGGS.length + 1);
-  for (const phrase of ['All 112 documented Easter eggs', 'Empty-state optimism', 'Staff egg catalog',
+  for (const phrase of [`All ${EASTER_EGGS.length} documented Easter eggs`, 'Empty-state optimism', 'Staff egg catalog',
+    'Staff profile', 'Visit /u/staff', 'Owner profile', 'Visit /u/owner',
+    'Nanashi shortcut', 'Visit /u/nanashi', 'Titles are not people', 'Recursive 404',
+    'Coffee endpoint', 'Status endpoint', 'Security contact', 'Patient rate limit',
+    'Day of Remembrance', 'Day of Visibility', 'Console pronouns',
     'Null profile', 'Visit /u/null', 'Undefined profile', 'Visit /u/undefined',
     'Anonymous profile', 'Visit /u/anonymous', 'True profile', 'Visit /u/true',
     'False profile', 'Visit /u/false', 'Admin root', 'Enter root in the admin account lookup',
