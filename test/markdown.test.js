@@ -28,7 +28,8 @@ test('markdown: renders headings, lists, quotes and paragraphs', async () => {
 });
 test('markdown: never emits caller HTML or non-HTTPS links', async () => {
   assert.equal(await renderProfileMarkdown('<script>alert(1)</script>'), '<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>');
-  assert.equal(await renderProfileMarkdown('<script>alert(1)</script>', { full: true }), '');
+  assert.equal(await renderProfileMarkdown('<script>alert(1)</script>', { full: true }), '<script>alert(1)</script>',
+    'the full level runs code; only the CSP decides how it is admitted');
   assert.equal(
     await renderProfileMarkdown('`<b>x</b>`', { full: true }),
     '<p><code>&lt;b&gt;x&lt;/b&gt;</code></p>',
@@ -179,7 +180,7 @@ test('markdown: the full level accepts hidden link targets and any HTTPS image',
   assert.equal(await renderProfileMarkdown('[here](<https://example.com>)'), '<p>[here](&lt;https://example.com&gt;)</p>',
     'the limited level still refuses hyperlinks');
 });
-test('markdown: the full level keeps safe HTML and drops anything executable', async () => {
+test('markdown: the full level keeps HTML, including code, and still blocks restyling', async () => {
   const full = { full: true };
   assert.equal(
     await renderProfileMarkdown('<div><p>Hi <em>there</em></p></div>', full),
@@ -189,8 +190,11 @@ test('markdown: the full level keeps safe HTML and drops anything executable', a
     await renderProfileMarkdown('<iframe src="https://www.youtube.com/embed/abc" allowfullscreen></iframe>', full),
     '<iframe src="https://www.youtube.com/embed/abc" allowfullscreen referrerpolicy="no-referrer" loading="lazy"></iframe>',
   );
-  assert.equal(await renderProfileMarkdown('before <script>alert(1)</script> after', full), '<p>before  after</p>');
-  assert.equal(await renderProfileMarkdown('<p onclick="alert(1)">x</p>', full), '<p>x</p>');
+  assert.equal(await renderProfileMarkdown('before <script>alert(1)</script> after', full),
+    '<p>before <script>alert(1)</script> after</p>');
+  assert.equal(await renderProfileMarkdown('<p onclick="alert(1)">x</p>', full), '<p onclick="alert(1)">x</p>');
+  assert.equal(await renderProfileMarkdown('<p style="color:red">x</p>', full), '<p>x</p>', 'restyling stays out');
+  assert.equal(await renderProfileMarkdown('<style>body{display:none}</style>x', full), '<p>x</p>');
   assert.equal(await renderProfileMarkdown('mixed <strong>raw **and** markdown</strong>', full),
     '<p>mixed <strong>raw <strong>and</strong> markdown</strong></p>');
   assert.equal(await renderProfileMarkdown('<div>x</div>'), '<p>&lt;div&gt;x&lt;/div&gt;</p>',

@@ -12,7 +12,7 @@ test('sanitizer keeps ordinary markup', () => {
   assert.equal(sanitizeHtml('<details open><summary>More</summary><p>body</p></details>'),
     '<details open><summary>More</summary><p>body</p></details>');
 });
-test('sanitizer removes everything that could execute', () => {
+test('sanitizer removes everything that could execute unless code is permitted', () => {
   assert.equal(sanitizeHtml('<script>alert(1)</script>ok'), 'ok');
   assert.equal(sanitizeHtml('<p onclick="alert(1)">text</p>'), '<p>text</p>');
   assert.equal(sanitizeHtml('<a href="javascript:alert(1)">x</a>'), 'x');
@@ -24,6 +24,26 @@ test('sanitizer removes everything that could execute', () => {
   assert.equal(sanitizeHtml('<object data="https://x.example/f.swf"></object>'), '');
   assert.equal(sanitizeHtml('<svg><use href="#x"/></svg>'), '');
   assert.equal(sanitizeHtml('<p style="position:fixed;inset:0">covered</p>'), '<p>covered</p>');
+});
+test('code is kept only when the caller permits it', () => {
+  const code = { allowCode: true };
+  assert.equal(sanitizeHtml('<script>if (a < b) go("x")</script>', code), '<script>if (a < b) go("x")</script>',
+    'script bodies are passed through untouched, not escaped');
+  assert.equal(sanitizeHtml('<button onclick="go()">g</button>', code), '<button onclick="go()">g</button>');
+  assert.equal(sanitizeHtml('<a href="javascript:go()">r</a>', code),
+    '<a href="javascript:go()" rel="noopener noreferrer nofollow">r</a>');
+  assert.equal(sanitizeHtml('<form action="https://f.example/s" method="post"><input name="q"><button>go</button></form>', code),
+    '<form action="https://f.example/s" method="post"><input name="q"><button>go</button></form>');
+  assert.equal(sanitizeHtml('<object data="https://o.example/a.pdf" type="application/pdf"></object>', code),
+    '<object data="https://o.example/a.pdf" type="application/pdf"></object>');
+  assert.equal(sanitizeHtml('<embed src="https://o.example/a.swf">', code), '<embed src="https://o.example/a.swf">');
+  assert.equal(sanitizeHtml('<style>body{display:none}</style>ok', code), 'ok', 'restyling the site stays out at every level');
+  assert.equal(sanitizeHtml('<p style="color:red">x</p>', code), '<p>x</p>');
+  assert.equal(sanitizeHtml('<a href="vbscript:x">y</a>', code), 'y', 'only javascript, https, and site paths are addresses');
+  assert.equal(sanitizeTag('<script>', code), '<script>');
+  assert.equal(sanitizeTag('<script>'), '', 'the strict mode still refuses it');
+  assert.equal(stripDangerousElements('a<script>go()</script>b', { allowCode: true }), 'a<script>go()</script>b');
+  assert.equal(stripDangerousElements('a<script>go()</script>b'), 'ab');
 });
 test('sanitizer allows remote media over HTTPS only', () => {
   assert.equal(sanitizeHtml('<img src="https://cdn.example/a.png" alt="a">'),

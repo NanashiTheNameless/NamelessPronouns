@@ -299,8 +299,13 @@ test('profile editor offers tall Markdown-aware prose fields with a cheatsheet',
   assert.match(adminHtml, /Table, with/);
   assert.match(adminHtml, /<dd>Hyperlink, HTTPS only<\/dd>/);
   assert.match(adminHtml, /HTML tags/, 'Administrators may write HTML');
-  assert.match(adminHtml, /Scripts and anything that runs code/, 'but never anything that executes');
-  assert.match(adminHtml, /tells that site the viewer's address/, 'embedding is flagged as a viewer-privacy choice');
+  assert.match(adminHtml, /Kept and working, including form controls/, 'code is available at this level');
+  assert.match(adminHtml, /Code you write here runs in the browser of everyone who opens the page/);
+  assert.match(adminHtml, /prefer <code>script<\/code> blocks and <code>addEventListener<\/code>/);
+  assert.match(adminHtml, /Worth knowing: anything a viewer's browser loads from another site/,
+    'embedding carries a note rather than sitting in the unsupported list');
+  const unsupported = /<h2 class="markdown-help-subhead">Not supported<\/h2>([\s\S]*?)<\/ul>/.exec(adminHtml)[1];
+  assert.doesNotMatch(unsupported, /tells that site the viewer's address/, 'a note is not a restriction');
   assert.doesNotMatch(adminHtml, /Numbered lists and nested lists<\/li>/);
   assert.match(html, /Raw HTML - tags are shown as text/, 'everyone else still gets escaped HTML');
   assert.match(html, /id="description-characters" role="status" aria-live="polite" data-character-report/,

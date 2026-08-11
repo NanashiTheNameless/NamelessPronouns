@@ -29,6 +29,8 @@
         <div><dt><code>text[^1]</code> and <code>[^1]: the note</code></dt><dd>Footnote, collected at the end with a link back</dd></div>
         <div><dt>Headings</dt><dd>Each one gets a link you can copy to point at that section</dd></div>
         <div><dt>HTML tags</dt><dd>Ordinary markup is kept: text, lists, tables, <code>details</code>, <code>img</code>, <code>video</code>, <code>audio</code>, and <code>iframe</code> embeds over HTTPS</dd></div>
+        <div><dt><code>script</code>, <code>object</code>, <code>embed</code>, <code>form</code></dt><dd>Kept and working, including form controls</dd></div>
+        <div><dt>Event handlers and <code>javascript:</code> addresses</dt><dd>Kept, so <code>onclick</code> and similar run in the viewer's browser</dd></div>
       <% } %>
     </dl>
     <h2 class="markdown-help-subhead">Not supported</h2>
@@ -42,13 +44,15 @@
         <li>Headings deeper than <code>###</code></li>
         <li>Raw HTML - tags are shown as text</li>
       <% } else { %>
-        <li>Scripts and anything that runs code: <code>script</code>, <code>object</code>, <code>embed</code>, <code>form</code>, event handlers such as <code>onclick</code>, and <code>javascript:</code> addresses are removed</li>
         <li>Inline <code>style</code> attributes and <code>style</code> blocks, so a profile cannot restyle the site</li>
         <li>Addresses that are not HTTPS or a path on this site</li>
       <% } %>
       <li>Emoji, accented letters, and other non-ASCII characters, including styled "fake font" letters</li>
-      <% if (full) { %><li class="fineprint">Anything a viewer's browser loads from another site, such as an embedded video, tells that site the viewer's address. Keep that in mind before embedding.</li><% } %>
     </ul>
     <p class="fineprint">Email addresses you write are automatically hidden behind a click-to-reveal widget.</p>
+    <% if (full) { %>
+      <p class="fineprint">Worth knowing: anything a viewer's browser loads from another site, such as an embedded video, tells that site the viewer's address. Only the hosts your own content refers to are allowed to load on your page.</p>
+      <p class="fineprint">Code you write here runs in the browser of everyone who opens the page. A page whose only code is in <code>script</code> blocks keeps the stricter signed-script policy; using an event handler or a <code>javascript:</code> address relaxes it for that page, so prefer <code>script</code> blocks and <code>addEventListener</code> where you can.</p>
+    <% } %>
   </div>
 </details>

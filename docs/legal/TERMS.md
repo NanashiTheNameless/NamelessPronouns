@@ -93,12 +93,18 @@ through the Links section of the profile editor, which requires validated HTTPS
 URLs. Submitting a hyperlink in a prose field without that permission is
 rejected.
 
-No account may submit anything that executes. Scripts, event-handler
-attributes, `javascript:` addresses, plugins, forms, and inline or embedded CSS
-are removed before a profile is shown, and the content security policy blocks
-script execution from any other origin. A profile page permits loading only the
-specific HTTPS hosts that its own content refers to; every other page permits
-none at all. Addresses that are neither HTTPS nor a
+Administrator and Owner accounts may also submit code that runs in a viewer's
+browser: `script` blocks, event-handler attributes such as `onclick`,
+`javascript:` addresses, plugin objects, and forms. Every other account cannot;
+for those accounts scripts, handlers, `javascript:` addresses, plugins, and
+forms are removed before a profile is shown. Styling is refused at every level,
+so no profile can restyle the site.
+
+A profile page permits loading and running only what its own content refers to:
+the specific HTTPS hosts it names, and code only when that profile contains it.
+Every other page permits none at all. A page whose code lives entirely in
+`script` blocks keeps the stricter signed-script policy; a page that uses an
+event handler or a `javascript:` address relaxes that policy for itself. Addresses that are neither HTTPS nor a
 path on this site are refused. For accounts without the wider Markdown set,
 HTML tags are shown as text instead of being interpreted.
 

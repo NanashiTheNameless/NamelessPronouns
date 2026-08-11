@@ -112,5 +112,8 @@ test('notes headings nest under the Notes section, and prose links stay distinct
   assert.match(html, /<h2 id="notes-h">Notes<\/h2>\s*<div class="profile-prose"><h3>Notes heading<\/h3>/);
   const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
   assert.match(css, /\.profile-prose a\s*\{[^}]*color:\s*var\(--link\)/s, 'prose links carry a color cue as well as an underline');
+  assert.match(css, /\.profile-prose \{[^}]*border: 1px solid var\(--border\)/s, 'the bio and notes sit in a visible box');
+  assert.match(css, /\.profile-prose \{[^}]*background: var\(--surface-strong\)/s);
+  assert.match(css, /\.profile-prose \{[^}]*padding: 1rem 1\.15rem/s, 'with room between the border and the text');
   assert.match(css, /\.profile-prose \.md-underline\s*\{/, 'author underline is styled apart from links');
 });

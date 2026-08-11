@@ -1,5 +1,5 @@
 import { escapeHtml } from './util/html.js';
-import { BLOCK_TAGS, HTML_TAG_TOKEN, sanitizeTag, stripDangerousElements } from './html-sanitize.js';
+import { BLOCK_TAGS, HTML_TAG_TOKEN, sanitizeHtml, sanitizeTag, stripDangerousElements } from './html-sanitize.js';
 const HEADING = /^(#{1,6})[^\S\n]+(.*)$/;
 const BULLET_ITEM = /^([-*+])[^\S\n]+(.*)$/;
 const ORDERED_ITEM = /^(\d{1,9})[.)][^\S\n]+(.*)$/;
@@ -120,7 +120,7 @@ async function renderInline(text, options) {
       const token = HTML_TAG_TOKEN.exec(rest);
       if (token) {
         await flush();
-        output += sanitizeTag(token[0]);
+        output += sanitizeTag(token[0], { allowCode: options.full });
         index += token[0].length;
         continue;
       }
@@ -236,6 +236,17 @@ function parseBlocks(lines, full) {
       const { collected, cursor } = collectWhile(lines, index + 1, (next) => !FENCE.test(next.trim()));
       blocks.push({ type: 'code', language, lines: dedent(collected, indentOf(line)) });
       index = cursor + 1;
+      continue;
+    }
+    if (full && /^<script\b/i.test(body)) {
+      const collected = [line];
+      let cursor = index + 1;
+      while (cursor < lines.length && !/<\/script\s*>/i.test(collected[collected.length - 1])) {
+        collected.push(lines[cursor]);
+        cursor += 1;
+      }
+      blocks.push({ type: 'rawcode', lines: collected });
+      index = cursor;
       continue;
     }
     const htmlTag = htmlBlockAt(line, full);
@@ -356,6 +367,10 @@ async function renderBlocks(blocks, options, { tight = false } = {}) {
         + ` <a class="md-anchor" href="#${slug}" aria-label="Link to this heading">#</a></${tag}>`);
       continue;
     }
+    if (block.type === 'rawcode') {
+      html.push(sanitizeHtml(block.lines.join('\n'), { allowCode: true }));
+      continue;
+    }
     if (block.type === 'html') {
       const lines = [];
       for (const line of block.lines) lines.push(await renderInline(line, options));
@@ -429,7 +444,7 @@ async function renderFootnotes(footnotes, options) {
   return `<section class="md-footnotes" aria-label="Footnotes"><ol>${items.join('')}</ol></section>`;
 }
 export async function renderProfileMarkdown(text, { full = false, headingOffset = 0, inlineText = escapeOnly } = {}) {
-  const source = full ? stripDangerousElements(text) : String(text ?? '');
+  const source = full ? stripDangerousElements(text, { allowCode: true }) : String(text ?? '');
   const lines = source.replace(/\r\n?/g, '\n').split('\n');
   const footnotes = { order: [], definitions: new Map() };
   const body = [];

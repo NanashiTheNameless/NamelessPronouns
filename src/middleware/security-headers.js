@@ -28,19 +28,29 @@ function originList(origins) {
     .sort()
     .slice(0, ORIGIN_LIMIT);
 }
-function cspFor(res, { rum = false, embedded = {} } = {}) {
+function cspFor(res, { rum = false, embedded = {}, code = null } = {}) {
   const nonce = nonceFor(res);
   const images = originList(embedded.images);
   const media = originList(embedded.media);
   const frames = originList(embedded.frames);
+  const objects = originList(embedded.objects);
+  const forms = originList(embedded.forms);
+  const scripts = originList(embedded.scripts);
   return BASE_CSP.map((directive) => {
     if (directive.startsWith('script-src')) {
-      return `${directive} 'nonce-${nonce}'${rum ? ` ${RUM_SCRIPT}` : ''}`;
+      const sources = [directive];
+      if (code === 'inline') sources.push("'unsafe-inline'");
+      else sources.push(`'nonce-${nonce}'`);
+      if (scripts.length) sources.push(scripts.join(' '));
+      if (rum) sources.push(RUM_SCRIPT);
+      return sources.join(' ');
     }
     if (rum && directive.startsWith('connect-src')) return `${directive} ${RUM_CONNECT}`;
     if (images.length && directive.startsWith('img-src')) return `${directive} ${images.join(' ')}`;
     if (media.length && directive.startsWith('media-src')) return `${directive} ${media.join(' ')}`;
     if (frames.length && directive.startsWith('frame-src')) return `frame-src ${frames.join(' ')}`;
+    if (objects.length && directive.startsWith('object-src')) return `object-src ${objects.join(' ')}`;
+    if (forms.length && directive.startsWith('form-action')) return `${directive} ${forms.join(' ')}`;
     return directive;
   }).join('; ');
 }
@@ -67,16 +77,18 @@ export function publicPageHeaders(req, res, next) {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   next();
 }
-export function allowEmbeddedOrigins(res, embedded, { permitted = false } = {}) {
-  if (permitted !== true) return false;
-  const images = originList(embedded?.images);
-  const media = originList(embedded?.media);
-  const frames = originList(embedded?.frames);
-  if (!images.length && !media.length && !frames.length) return false;
+export function allowProfileContent(res, embedded, usage, { permitted = false } = {}) {
+  if (permitted !== true) return null;
+  const buckets = ['images', 'media', 'frames', 'objects', 'forms', 'scripts'];
+  const allowed = Object.fromEntries(buckets.map((bucket) => [bucket, originList(embedded?.[bucket])]));
+  const code = usage?.handlers ? 'inline' : (usage?.scripts ? 'nonce' : null);
+  const hasOrigins = buckets.some((bucket) => allowed[bucket].length);
+  if (!hasOrigins && !code) return null;
   res.setHeader('Content-Security-Policy', cspFor(res, {
     rum: res.locals.publicPage === true,
-    embedded: { images, media, frames },
+    embedded: allowed,
+    code,
   }));
-  return true;
+  return code;
 }
 export { cspFor };

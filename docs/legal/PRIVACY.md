@@ -101,8 +101,12 @@ ignore them, and archives may still copy or retain whatever they can reach.
 Unpublishing removes the profile from NamelessPronouns but cannot remove copies
 controlled by others.
 
-A profile may contain content embedded from another site when an Administrator
-or Owner has added it, such as a picture, a video, or a frame. Your browser
+A profile written by an Administrator or Owner may contain code that runs in
+your browser when you open the page, and content embedded from another site,
+such as a picture, a video, or a frame. Code in a profile runs with the same
+access as any other script on this site: it can read and change that page and
+can send requests, so it could collect what you do on it. No other account can
+put code into a profile. Your browser
 requests that content directly, so the other site receives your IP address, user
 agent, and the fact that you loaded the page. Each page permits only the hosts
 its own content refers to, so no other outside host can be contacted from it. Those requests are not controlled

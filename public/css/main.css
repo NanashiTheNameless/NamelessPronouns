@@ -932,6 +932,12 @@ altcha-widget.email-obfuscation .email-reveal:hover,
   margin-left: 1.1rem;
   padding: 0.15rem 0;
 }
+.profile-prose {
+  padding: 1rem 1.15rem;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+}
 .profile-prose > :first-child {
   margin-top: 0;
 }
@@ -1047,7 +1053,7 @@ altcha-widget.email-obfuscation .email-reveal:hover,
   text-decoration: none;
 }
 .profile-bio {
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.4rem;
 }
 @media (max-width: 38rem) {
   .markdown-help-list > div {

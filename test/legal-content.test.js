@@ -17,8 +17,11 @@ test('the Terms describe the Markdown that profile prose actually accepts', asyn
     'the blanket ban on Markdown is gone now that Markdown is supported',
   );
   assert.match(text, /ordinary HTML markup including embedded video, audio, and HTTPS frames/);
-  assert.match(text, /No account may submit anything that executes/);
-  assert.match(text, /permits loading only the\s+specific HTTPS hosts that its own content refers to/);
+  assert.match(text, /Administrator and Owner accounts may also submit code that runs in a viewer's\s+browser/);
+  assert.match(text, /Every other account cannot/);
+  assert.match(text, /Styling is refused at every level/);
+  assert.match(text, /permits loading and running only what its own content refers to/);
+  assert.match(text, /keeps the stricter signed-script policy/);
   assert.match(text, /reveals\s+the viewer's address and request details to the site being embedded/);
 });
 test('both documents say who can open an unpublished profile', async () => {
@@ -45,7 +48,8 @@ test('the Privacy Policy covers the accessibility settings kept in the browser',
 });
 test('the Privacy Policy warns that embedded content reaches other sites', async () => {
   const text = await privacy();
-  assert.match(text, /A profile may contain content embedded from another site/);
+  assert.match(text, /may contain code that runs in\s+your browser when you open the page/);
+  assert.match(text, /No other account can\s+put code into a profile/);
   assert.match(text, /the other site receives your IP address, user\s+agent/);
   assert.match(text, /Nothing\s+else on the service loads third-party content into your browser/);
   assert.match(text, /Each page permits only the hosts\s+its own content refers to/);
@@ -57,7 +61,7 @@ test('both documents say that every page asks not to be indexed', async () => {
 });
 test('the accepted policy versions moved past the pre-Markdown release', async () => {
   assert.equal(TERMS_VERSION, PRIVACY_VERSION, 'both documents are accepted as one version pair');
-  for (const superseded of ['2026-08-10.1', '2026-08-10.2']) {
+  for (const superseded of ['2026-08-10.1', '2026-08-10.2', '2026-08-10.3']) {
     assert.notEqual(TERMS_VERSION, superseded, 'a material change requires renewed acceptance');
   }
   assert.match(TERMS_VERSION, /^\d{4}-\d{2}-\d{2}\.\d+$/);
