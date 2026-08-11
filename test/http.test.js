@@ -245,7 +245,7 @@ test('CSP names no remote origin until a page actually embeds one', async () => 
 test('site text colors stay white across semantic states', async () => {
   const res = await fetch(`${base}/static/css/main.css`);
   assert.equal(res.status, 200);
-  assert.equal(res.headers.get('cache-control'), 'public, max-age=3600');
+  assert.equal(res.headers.get('cache-control'), 'public, no-cache');
   const css = await res.text();
   for (const variable of ['text', 'muted', 'danger', 'success']) {
     assert.match(css, new RegExp(`--${variable}: #ffffff`));
@@ -257,7 +257,7 @@ test('site text colors stay white across semantic states', async () => {
   assert.match(cssText, /\/static\/css\/main\.css/);
   assert.match(css, /\[data-illegal-characters\]/);
   const js = await fetch(`${base}/static/js/profile-editor.js`);
-  assert.equal(js.headers.get('cache-control'), 'public, max-age=3600');
+  assert.equal(js.headers.get('cache-control'), 'public, no-cache');
 });
 test('generated password index is static but not year-long immutable', async (t) => {
   const res = await fetch(`${base}/static/password-wordlists/manifest.json`);

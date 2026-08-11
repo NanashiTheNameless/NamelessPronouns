@@ -81,7 +81,7 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.match(result.badImport.message, /not valid settings text/);
     assert.equal(result.badImport.inlineBg, '#204020', 'a failed import changes nothing');
     assert.deepEqual(result.timeMachine, {
-      message: 'Settings recovered from 1998.', theme: '1998', unlocked: 'unlocked', revealed: true,
+      message: '1998 theme unlocked.', theme: null, unlocked: 'unlocked', revealed: true,
     });
     const exported = JSON.parse(result.custom.exported);
     assert.equal(exported.version, 1);

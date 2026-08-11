@@ -185,7 +185,7 @@ function importSettings(text) {
     return { ok: false, message: 'Settings text must be a single block of settings.' };
   }
   const from1998 = Number(parsed.version) === 1998;
-  const theme = from1998 ? '1998' : (THEMES.includes(parsed.theme) ? parsed.theme : 'default');
+  const theme = THEMES.includes(parsed.theme) ? parsed.theme : 'default';
   const font = FONTS.includes(parsed.font) ? parsed.font : 'default';
   const colors = validColors(parsed.colors);
   const family = validFamily(parsed.fontFamily);
@@ -204,9 +204,10 @@ function importSettings(text) {
   applyAll();
   return {
     ok: true,
+    unlocked1998: from1998,
     dropped,
     message: from1998
-      ? 'Settings recovered from 1998.'
+      ? '1998 theme unlocked.'
       : dropped.length
       ? `Settings applied. Ignored what could not be read: ${dropped.join(', ')}.`
       : 'Settings applied.',
@@ -377,6 +378,7 @@ function wirePanel() {
     const result = importSettings(transfer ? transfer.value : '');
     say(status, result.message);
     sync();
+    if (result.unlocked1998 && konamiTheme) konamiTheme.hidden = false;
   });
   dialog.querySelector('[data-accessibility-reset]')?.addEventListener('click', () => {
     copyCount = 0;

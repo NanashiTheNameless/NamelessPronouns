@@ -156,8 +156,8 @@ export const EASTER_EGGS = Object.freeze([
   },
   {
     "name": "Settings time machine",
-    "activation": "Import accessibility settings with \"version\": 1998",
-    "effect": "Unlocks and applies the 1998 theme"
+    "activation": "Import an accessibility settings object with \"version\": 1998, even if its theme is \"default\"",
+    "effect": "Unlocks the 1998 theme in that browser until its site data is cleared, while continuing to use the theme selected by the imported settings"
   },
   {
     "name": "Theme tourist",
@@ -276,12 +276,12 @@ export const EASTER_EGGS = Object.freeze([
   },
   {
     "name": "Profile deja vu",
-    "activation": "Visit the same reserved profile seven times in one browser session",
+    "activation": "Visit the same profile seven times in one browser session",
     "effect": "Says \"You two have met before.\""
   },
   {
     "name": "Avatar inspection",
-    "activation": "Activate a reserved profile's avatar seven times",
+    "activation": "Activate any profile's avatar seven times without reloading",
     "effect": "Briefly mirrors it and says \"Identity check inconclusive.\""
   },
   {
@@ -372,7 +372,7 @@ export const EASTER_EGGS = Object.freeze([
   {
     "name": "Konami theme",
     "activation": "Enter Up Up Down Down Left Right Left Right B A outside a text field",
-    "effect": "Permanently unlocks the accessible \"1998\" theme and shows a toast"
+    "effect": "Unlocks the accessible \"1998\" theme in that browser until its site data is cleared, and shows a toast"
   },
   {
     "name": "Konami encore",
@@ -396,8 +396,8 @@ export const EASTER_EGGS = Object.freeze([
   },
   {
     "name": "Persistent 404 recovery",
-    "activation": "Return home from /404 three times",
-    "effect": "Says \"The missing page was safely returned. Repeatedly.\" only after the third return"
+    "activation": "Return home from /404 three times in the same browser within one hour",
+    "effect": "Counts returns in localStorage and says \"The missing page was safely returned. Repeatedly.\" only after the third return"
   },
   {
     "name": "Teapot",
@@ -416,7 +416,7 @@ export const EASTER_EGGS = Object.freeze([
   },
   {
     "name": "Patient teapot",
-    "activation": "Revisit /teapot after at least 4 minutes and 18 seconds",
+    "activation": "Revisit /teapot in the same browser between 4 minutes 18 seconds and one hour later",
     "effect": "Returns \"Properly steeped\" with X-Tea-Steeped: precisely"
   },
   {
@@ -531,12 +531,12 @@ export const EASTER_EGGS = Object.freeze([
   },
   {
     "name": "View-source note",
-    "activation": "View any page's source",
+    "activation": "View any HTML page's source",
     "effect": "Reveals <!-- You found the source. It uses it/its. -->"
   },
   {
     "name": "Owner source signature",
-    "activation": "View page source",
+    "activation": "View any HTML page's source",
     "effect": "Reveals a reluctant signature from NamelessNanashi"
   },
   {
