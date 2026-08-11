@@ -3,6 +3,7 @@ import { setConsentReturn } from '../consent-return.js';
 const EXEMPT_EXACT = new Set([
   '/consent', '/terms', '/privacy', '/legal-requests', '/contact', '/acknowledgements',
   '/recover', '/altcha/challenge', '/teapot', '/humans.txt', '/robots.txt',
+  '/.well-known/nameless', '/404', '/nothing',
 ]);
 const EXEMPT_PREFIX = ['/static/'];
 const SENSITIVE_RETURN_PREFIX = ['/account/export/download/'];

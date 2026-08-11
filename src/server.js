@@ -40,14 +40,37 @@ export function createApp() {
   app.set('views', path.join(root, 'views'));
   app.disable('x-powered-by');
   app.use(securityHeaders);
+  app.use((req, res, next) => {
+    res.append('Link', '</humans.txt>; rel="author"');
+    res.setHeader('X-Nanashi', 'was-here');
+    next();
+  });
+  app.head('/teapot', (req, res) => {
+    res.setHeader('X-Tea', 'omitted');
+    res.setHeader('X-Tea-Made-By', 'NamelessNanashi');
+    res.status(418).end();
+  });
   app.get('/teapot', (req, res) => {
+    res.setHeader('X-Tea-Made-By', 'NamelessNanashi');
     res.type('text/plain').status(418).send("I'm a teapot. It/its, thanks.\n");
   });
   app.get('/humans.txt', (req, res) => {
-    res.type('text/plain').send('/* HUMANS */\nHuman: NamelessNanashi\nSite: NamelessPronouns\n\nThanks for remembering the humans behind Nameless.\n');
+    res.type('text/plain').send('/* HUMANS */\nHuman: NamelessNanashi\nSite: NamelessPronouns\n\nThanks for remembering the humans behind NamelessPronouns.\n');
   });
   app.get('/robots.txt', (req, res) => {
-    res.type('text/plain').send('# Crawl if you like. You may not remember this place.\nUser-agent: *\nAllow: /\n');
+    res.type('text/plain').send('# Crawl if you like. You may not remember this place.\n# Nanashi was here. The crawler saw nothing.\nUser-agent: *\nAllow: /\n');
+  });
+  app.get('/.well-known/nameless', (req, res) => {
+    res.json({ name: null, pronouns: 'any/all', owner: 'NamelessNanashi' });
+  });
+  app.get('/nothing', (req, res) => {
+    res.setHeader('X-Nothing', 'successfully-returned');
+    res.setHeader('X-Nothing-By', 'NamelessNanashi');
+    res.status(204).end();
+  });
+  app.get('/404', (req, res) => {
+    const ownerMessage = Object.hasOwn(req.query, 'owner') ? ' If found, return this page to NamelessNanashi.' : '';
+    res.status(404).render('error', { title: 'Found it', status: 404, message: `Congratulations. You found it.${ownerMessage}` });
   });
   app.get('/healthz', async (req, res) => {
     try {

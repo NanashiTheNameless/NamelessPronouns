@@ -22,6 +22,8 @@
   </script>
 </head>
 <body>
+  <h1 data-owner-heading>Owner Example</h1>
+  <span data-owner-badge>Owner</span><span data-owner-tooltip>wrote this bit</span>
   <footer-slot></footer-slot>
   <output id="browser-result">pending</output>
   <script>
@@ -47,6 +49,7 @@
     const openedState = dialog.open;
     const openedWithStoredChecked = dialog.querySelector('input[name="accessibility_theme"]:checked').value;
     const konamiInitiallyHidden = dialog.querySelector('[data-konami-theme]').hidden;
+    const ownerBusinessCard = { ...window.NamelessNanashi };
 
     pick('accessibility_theme', 'light');
     pick('accessibility_font', 'sans');
@@ -75,9 +78,18 @@
     const colorQuip = status();
     typeInto('[name="accessibility_color_bg"]', '#102030');
     typeInto('[name="accessibility_color_text"]', '#f0f4ff');
+    typeInto('[name="accessibility_color_bg"]', '#000000');
+    typeInto('[name="accessibility_color_text"]', '#ffffff');
+    const monochromeQuip = status();
+    typeInto('[name="accessibility_color_text"]', '#000000');
+    const stealthQuip = status();
+    typeInto('[name="accessibility_color_bg"]', '#102030');
+    typeInto('[name="accessibility_color_text"]', '#f0f4ff');
     typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
     typeInto('[name="accessibility_font_family"]', 'Comic Sans MS');
     const fontQuip = status();
+    typeInto('[name="accessibility_font_family"]', '0xProto');
+    const defaultFontQuip = status();
     typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
     const custom = {
       inlineBg: inline('--bg'),
@@ -104,6 +116,8 @@
 
     typeInto('[name="accessibility_color_bg"]', 'not-a-color');
     const rejected = { message: status(), inlineBg: inline('--bg') };
+    typeInto('[name="accessibility_color_bg"]', '#decade');
+    const decade = { message: status(), inlineBg: inline('--bg') };
     typeInto('[name="accessibility_color_bg"]', '#102030');
 
     typeInto('[name="accessibility_font_family"]', 'url(https://evil.example/f.woff)');
@@ -142,6 +156,8 @@
       storedFamily: localStorage.getItem('np-accessibility-font-family'),
       colorsHidden: colorsHidden(),
     };
+    clickAction('reset');
+    const doubleReset = status();
 
     clickAction('close');
     const closedState = dialog.open;
@@ -153,6 +169,10 @@
       unlocked: dialog.querySelector('[data-konami-theme]').hidden === false,
       stored: localStorage.getItem('np-accessibility-konami'),
     };
+    for (const key of ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a']) {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    }
+    const konamiEncore = status();
     open.click();
     pick('accessibility_theme', '1998');
     const retroTheme = root.getAttribute('data-theme');
@@ -160,7 +180,20 @@
     document.dispatchEvent(new KeyboardEvent('keydown', { key: '?', shiftKey: true, bubbles: true }));
     const shortcuts = document.querySelector('[data-shortcuts-panel]');
     const shortcutsOpened = shortcuts.open;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '?', shiftKey: true, bubbles: true }));
+    const shortcutInception = shortcuts.querySelector('h2').textContent;
     shortcuts.querySelector('[data-shortcuts-close]').click();
+    for (const key of [...'nanashi']) document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    const ownerSequence = document.querySelector('[data-easter-status]').textContent;
+    const ownerSignature = document.querySelector('[data-owner-signature]');
+    for (let index = 0; index < 5; index += 1) ownerSignature.click();
+    const footerPersistence = ownerSignature.textContent;
+    const ownerHeading = document.querySelector('[data-owner-heading]');
+    for (let index = 0; index < 3; index += 1) ownerHeading.click();
+    const ownerHeadingEncore = ownerHeading.textContent;
+    const ownerBadge = document.querySelector('[data-owner-badge]');
+    for (let index = 0; index < 5; index += 1) ownerBadge.dispatchEvent(new MouseEvent('mouseenter'));
+    const ownerBadgeEncore = ownerBadge.nextElementSibling.textContent;
     document.getElementById('browser-result').textContent = JSON.stringify({
       early: window.earlyApply,
       seededFont,
@@ -175,15 +208,27 @@
       sectionsShown,
       custom,
       rejected,
+      decade,
       rejectedFamily,
       imported,
       badImport,
       reset,
+      doubleReset,
       colorQuip,
+      monochromeQuip,
+      stealthQuip,
       fontQuip,
+      defaultFontQuip,
       konami,
+      konamiEncore,
       retroTheme,
       shortcutsOpened,
+      shortcutInception,
+      ownerBusinessCard,
+      ownerSequence,
+      footerPersistence,
+      ownerHeadingEncore,
+      ownerBadgeEncore,
     });
   });
   </script>

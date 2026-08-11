@@ -14,7 +14,57 @@ import { collectCodeUsage, collectEmbeddedOrigins, withScriptNonce } from '../ht
 import { obfuscateEmails } from '../email-obfuscation.js';
 import { groupProfileWords, PROFILE_WORD_GROUPS_SQL, PROFILE_WORDS_SQL } from '../profile-words.js';
 const router = express.Router();
-const PLACEHOLDER_USERNAMES = new Set(['null', 'undefined', 'anonymous']);
+export const PLACEHOLDER_PROFILES = Object.freeze({
+  null: {
+    displayName: 'Null',
+    bio: 'No value was provided, so I brought my own.\n\n**Status:** intentionally empty.',
+    notes: '- Please do not compare me loosely.\n- I have boundaries.',
+    names: [{ value: 'Null', opinion: 'yes' }, { value: 'Nothing', opinion: 'jokingly' }],
+    pronouns: [{ short: 'null/null', opinion: 'yes' }, { short: 'it/its', opinion: 'okay' }],
+    words: [{ heading: 'I am a', words: [{ value: 'placeholder', opinion: 'yes' }, { value: 'database value', opinion: 'nope' }] }],
+  },
+  undefined: {
+    displayName: 'Undefined',
+    bio: 'Nobody assigned me a value. I showed up anyway.\n\n**Status:** still loading. Probably.',
+    notes: '- Expected: something.\n- Actual: vibes.\n- Check the caller before blaming the callee.',
+    names: [{ value: 'Undefined', opinion: 'yes' }, { value: 'Pending', opinion: 'jokingly' }],
+    pronouns: [{ short: 'not/set', opinion: 'jokingly' }, { short: 'they/them', opinion: 'okay' }],
+    words: [{ heading: 'I am a', words: [{ value: 'work in progress', opinion: 'yes' }, { value: 'runtime error', opinion: 'close' }] }],
+  },
+  anonymous: {
+    displayName: 'Anonymous',
+    bio: 'I would tell you who I am, but that would rather defeat the point.\n\n**Status:** redacted by me.',
+    notes: '- This profile was written by someone. Allegedly.\n- Citation needed.',
+    names: [{ value: 'Anonymous', opinion: 'yes' }, { value: 'Someone', opinion: 'close' }],
+    pronouns: [{ short: 'they/them', opinion: 'yes' }, { short: 'who/whom', opinion: 'jokingly' }],
+    words: [{ heading: 'I am a', words: [{ value: 'person', opinion: 'okay' }, { value: 'reliable source', opinion: 'nope' }] }],
+  },
+  everyone: {
+    displayName: 'Everyone',
+    bio: 'Yes, this includes you.\n\nPlease form an orderly plural.',
+    notes: '- Everyone agrees with this note.\n- Nobody was available for comment.',
+    names: [{ value: 'Everyone', opinion: 'yes' }, { value: 'All of you', opinion: 'okay' }],
+    pronouns: [{ short: 'they/them', opinion: 'yes' }, { short: 'we/us', opinion: 'okay' }, { short: 'you/all', opinion: 'jokingly' }],
+    words: [{ heading: 'We are', words: [{ value: 'legion', opinion: 'nope' }, { value: 'all here', opinion: 'yes' }] }],
+  },
+  nobody: {
+    displayName: 'Nobody',
+    bio: 'Nobody was here. Nobody saw anything.\n\nThat is the story, and Nobody is sticking to it.',
+    notes: '- Nobody asked. This is technically true.\n- If found, return to nowhere.',
+    names: [{ value: 'Nobody', opinion: 'yes' }, { value: 'Who', opinion: 'jokingly' }],
+    pronouns: [{ short: 'no/pronouns', opinion: 'nope' }, { short: 'who/whom', opinion: 'jokingly' }],
+    pronounsHeader: 'none',
+    words: [{ heading: 'I am', words: [{ value: 'here', opinion: 'nope' }, { value: 'missing', opinion: 'yes' }] }],
+  },
+  epoch: {
+    displayName: 'Epoch',
+    bio: 'I have been waiting since 1970-01-01T00:00:00Z.\n\nEverything was simpler when the timestamp was zero.',
+    notes: '- I remember everything after zero.\n- Dates before me are someone else\'s timezone problem.',
+    names: [{ value: 'Epoch', opinion: 'yes' }, { value: 'Zero', opinion: 'jokingly' }],
+    pronouns: [{ short: 'time/time', opinion: 'yes' }, { short: 'then/now', opinion: 'jokingly' }],
+    words: [{ heading: 'I am a', words: [{ value: 'timestamp', opinion: 'yes' }, { value: 'timeless', opinion: 'nope' }] }],
+  },
+});
 router.use(publicPageHeaders);
 function noStore(res) {
   res.setHeader('Cache-Control', 'private, no-store');
@@ -31,22 +81,27 @@ function parseUsername(input) {
     return null;
   }
 }
-function placeholderProfile(res, username) {
-  const profile = { id: 'placeholder', display_name: 'Nameless', description: '', notes: '' };
-  res.setHeader('X-Pronouns', 'any/all');
+async function placeholderProfile(res, username) {
+  const placeholder = PLACEHOLDER_PROFILES[username];
+  const profile = { id: 'placeholder', display_name: placeholder.displayName, description: '', notes: '' };
+  res.setHeader('X-Pronouns', placeholder.pronounsHeader || placeholder.pronouns[0].short);
   return res.render('profile', {
-    title: `Nameless (@${username})`,
+    title: `${placeholder.displayName} (@${username})`,
     preview: null,
-    descriptionHtml: '<p>I am the placeholder you were looking for.</p>',
-    notesHtml: '',
+    descriptionHtml: await renderProfileMarkdown(placeholder.bio, { full: false }),
+    notesHtml: await renderProfileMarkdown(placeholder.notes, { full: false, headingOffset: 1 }),
     username,
     profile,
     staffBadge: null,
     staffBadgeLine: null,
+    ownerEgg: false,
     avatar: avatarUrl({ id: `placeholder:${username}` }),
-    names: [],
-    pronouns: [{ short: 'any/all', opinion: 'Yes' }],
-    words: [],
+    names: placeholder.names.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),
+    pronouns: placeholder.pronouns.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),
+    words: placeholder.words.map((group) => ({
+      ...group,
+      words: group.words.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),
+    })),
     links: [],
     flags: [],
     pronounPreferences: [],
@@ -73,7 +128,7 @@ router.get('/u/me', async (req, res) => {
 router.get('/u/:username', async (req, res) => {
   noStore(res);
   const requested = String(req.params.username || '').toLowerCase();
-  if (PLACEHOLDER_USERNAMES.has(requested)) {
+  if (Object.hasOwn(PLACEHOLDER_PROFILES, requested)) {
     const ban = await matchViewingBan({ userId: req.user?.id, email: req.user?.email, ip: clientIp(req) });
     if (ban) return res.status(403).render('profile-unavailable', { title: 'Unavailable' });
     if (req.params.username !== requested) return res.redirect(301, `/u/${requested}`);
@@ -146,6 +201,7 @@ router.get('/u/:username', async (req, res) => {
     profile,
     staffBadge: staffRoleLabel(profile.staff_role),
     staffBadgeLine: staffRoleDescription(profile.staff_role),
+    ownerEgg: profile.staff_role === 'owner',
     avatar: avatarUrl({ id: profile.owner_id, email: profile.owner_email, avatar_source: profile.avatar_source, avatar_data_uri: profile.avatar_data_uri }),
     names: names.rows.map((row) => ({ value: row.value, opinion: opinionLabel(row.opinion) })),
     pronouns: pronouns.rows.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),

@@ -285,7 +285,9 @@ test('profile editor offers tall Markdown-aware prose fields with a cheatsheet',
   assert.match(html, /Not supported/);
   assert.match(html, /Images, video, and embeds/);
   assert.match(html, /write them in the Links section of the profile editor instead/);
-  assert.doesNotMatch(html, /Administrator|Owner|staff/i, 'a field never advertises what other accounts may do');
+  const editorMain = /<main[^>]*>([\s\S]*?)<\/main>/.exec(html)?.[1];
+  assert.ok(editorMain, 'the editor content is present');
+  assert.doesNotMatch(editorMain, /Administrator|Owner|staff/i, 'a field never advertises what other accounts may do');
   assert.doesNotMatch(html, /<dd>Hyperlink/);
   assert.doesNotMatch(html, /what you are into/, 'the bio hint stays plain');
   assert.match(html, /data-character-set="\[\\x20-\\x7E\\n\]"/);

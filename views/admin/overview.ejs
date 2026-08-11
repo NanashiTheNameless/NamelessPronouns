@@ -6,6 +6,9 @@
   <main class="container">
     <p class="eyebrow">Staff tools</p>
     <h1>Administration</h1>
+    <% if (typeof user !== 'undefined' && user && user.staff_role === 'owner') { %>
+      <p>Welcome back. Everything is somehow still running.</p>
+    <% } %>
     <% if (canReport || canApprove) { %>
       <nav class="admin-tools-grid" aria-label="Administration tools">
         <% if (canReport) { %><a class="button secondary" href="/admin/reports">Operational reports</a><% } %>

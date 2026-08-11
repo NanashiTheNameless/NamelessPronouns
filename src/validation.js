@@ -4,7 +4,7 @@ const RESERVED_USERNAMES = new Set([
   'about', 'contact', 'terms', 'privacy', 'legal', 'login', 'logout', 'signup', 'register',
   'account', 'dashboard', 'settings', 'profiles', 'profile', 'workspaces', 'workspace',
   'u', 'user', 'users', 'api', 'static', 'assets', 'healthz', 'readyz', 'consent', 'recover',
-  'verify-email', 'null', 'undefined', 'anonymous', 'me',
+  'verify-email', 'null', 'undefined', 'anonymous', 'everyone', 'nobody', 'epoch', 'me',
 ]);
 export class ValidationError extends Error {}
 const DISPLAY_CHARACTER = /[A-Za-z0-9 -]/;

@@ -21,6 +21,9 @@ const COLORS = Object.freeze({
 });
 const COLOR_KEYS = Object.keys(COLORS);
 
+console.info('NamelessPronouns, Achievement Get: Read the console!');
+window.NamelessNanashi = Object.freeze({ role: 'Owner', status: 'probably debugging' });
+
 function readRaw(key) {
   try {
     return localStorage.getItem(key);
@@ -160,6 +163,7 @@ function wirePanel() {
   const status = dialog.querySelector('[data-accessibility-status]');
   const warning = dialog.querySelector('[data-accessibility-contrast]');
   const konamiTheme = dialog.querySelector('[data-konami-theme]');
+  let resetCount = 0;
   if (konamiTheme && readRaw(KONAMI_KEY) === 'unlocked') konamiTheme.hidden = false;
   const check = (name, value) => {
     const radio = form.querySelector(`input[name="${name}"][value="${value}"]`);
@@ -212,6 +216,7 @@ function wirePanel() {
     dialog.showModal();
   });
   form.addEventListener('change', (event) => {
+    resetCount = 0;
     const field = event.target;
     if (field.name === 'accessibility_theme' && THEMES.includes(field.value)) write(THEME_KEY, field.value);
     if (field.name === 'accessibility_font' && FONTS.includes(field.value)) write(FONT_KEY, field.value);
@@ -219,6 +224,7 @@ function wirePanel() {
     sync();
   });
   form.addEventListener('input', (event) => {
+    resetCount = 0;
     const field = event.target;
     const pickedKey = field.dataset?.colorPicker;
     if (pickedKey && COLOR_KEYS.includes(pickedKey)) {
@@ -242,8 +248,16 @@ function wirePanel() {
         '#bada55': 'That color has excellent credentials.',
         '#0ff1ce': 'Office hours are over.',
         '#facade': 'The facade is holding up.',
+        '#decade': 'A decade fits neatly into six hex digits.',
       };
-      say(status, quips[value.toLowerCase()] || '');
+      const paired = colors.bg && colors.text;
+      const paletteQuip = paired && colors.bg === colors.text
+        ? 'Stealth mode enabled. Readability was not invited.'
+        : paired && new Set([colors.bg, colors.text]).size === 2
+          && [colors.bg, colors.text].every((color) => ['#000000', '#ffffff'].includes(color))
+          ? 'You have chosen sides.'
+          : '';
+      say(status, paletteQuip || quips[value.toLowerCase()] || '');
       applyAll();
       syncPicker(colorKey, colors[colorKey]);
       if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
@@ -255,9 +269,11 @@ function wirePanel() {
         return say(status, 'A font family may contain only letters, numbers, spaces, commas, quotes, and hyphens.');
       }
       write(FAMILY_KEY, family || null);
-      say(status, family.toLowerCase() === 'comic sans ms'
-        ? 'Bold choice. Genuinely: it helps some dyslexic readers.'
-        : '');
+      const fontQuips = {
+        'comic sans ms': 'Bold choice. Genuinely: it helps some dyslexic readers.',
+        '0xproto': 'You came all this way to choose the default. Respect.',
+      };
+      say(status, fontQuips[family.toLowerCase()] || '');
       applyAll();
       if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
     }
@@ -274,17 +290,19 @@ function wirePanel() {
     }
   });
   dialog.querySelector('[data-accessibility-import]')?.addEventListener('click', () => {
+    resetCount = 0;
     const result = importSettings(transfer ? transfer.value : '');
     say(status, result.message);
     sync();
   });
   dialog.querySelector('[data-accessibility-reset]')?.addEventListener('click', () => {
+    resetCount += 1;
     write(THEME_KEY, null);
     write(FONT_KEY, null);
     write(COLORS_KEY, null);
     write(FAMILY_KEY, null);
     applyAll();
-    say(status, 'Everything is back to the site defaults.');
+    say(status, resetCount > 1 ? 'Still default. NamelessNanashi would be proud.' : 'Everything is back to the site defaults.');
     sync();
   });
   dialog.querySelector('[data-accessibility-close]')?.addEventListener('click', () => dialog.close());
@@ -296,25 +314,80 @@ function wireKeyboardEggs() {
   const accessibility = document.querySelector('[data-accessibility-panel]');
   const konamiTheme = document.querySelector('[data-konami-theme]');
   const status = document.querySelector('[data-accessibility-status]');
+  const easterStatus = document.querySelector('[data-easter-status]');
+  const ownerSignature = document.querySelector('[data-owner-signature]');
+  const ownerHeading = document.querySelector('[data-owner-heading]');
+  const ownerBadge = document.querySelector('[data-owner-badge]');
+  const shortcutsHeading = shortcuts?.querySelector('h2');
   const sequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
   let position = 0;
+  let nanashiPosition = 0;
+  let headingTimer;
+  let ownerTimer;
+  const nanashiSequence = [...'nanashi'];
+  const announce = (message) => {
+    if (easterStatus) easterStatus.textContent = message;
+  };
+  let signatureClicks = 0;
+  ownerSignature?.addEventListener('click', (event) => {
+    event.preventDefault();
+    signatureClicks += 1;
+    if (signatureClicks < 5) return;
+    signatureClicks = 0;
+    ownerSignature.textContent = 'Still NamelessNanashi';
+    clearTimeout(ownerTimer);
+    ownerTimer = setTimeout(() => { ownerSignature.textContent = 'NamelessNanashi'; }, 1500);
+  });
+  let headingClicks = 0;
+  ownerHeading?.addEventListener('click', () => {
+    headingClicks += 1;
+    if (headingClicks < 3) return;
+    headingClicks = 0;
+    const original = ownerHeading.textContent;
+    ownerHeading.textContent = 'Yes, this is the Owner.';
+    setTimeout(() => { ownerHeading.textContent = original; }, 1500);
+  });
+  let badgeVisits = 0;
+  const visitOwnerBadge = () => {
+    badgeVisits += 1;
+    if (badgeVisits >= 5) {
+      const tooltip = ownerBadge?.nextElementSibling;
+      if (tooltip) tooltip.textContent = 'still wrote this bit';
+    }
+  };
+  ownerBadge?.addEventListener('mouseenter', visitOwnerBadge);
+  ownerBadge?.addEventListener('focus', visitOwnerBadge);
   shortcuts?.querySelector('[data-shortcuts-close]')?.addEventListener('click', () => shortcuts.close());
   document.addEventListener('keydown', (event) => {
     const editable = event.target instanceof HTMLElement
       && (event.target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName));
     if (!editable && event.shiftKey && event.key === '?' && shortcuts && typeof shortcuts.showModal === 'function') {
       event.preventDefault();
-      if (!shortcuts.open && !document.querySelector('dialog[open]')) shortcuts.showModal();
+      if (shortcuts.open && shortcutsHeading) {
+        shortcutsHeading.textContent = 'You are already here.';
+        clearTimeout(headingTimer);
+        headingTimer = setTimeout(() => { shortcutsHeading.textContent = 'Keyboard shortcuts'; }, 1500);
+      } else if (!document.querySelector('dialog[open]')) shortcuts.showModal();
       return;
     }
     if (editable || event.repeat) return;
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    nanashiPosition = key === nanashiSequence[nanashiPosition]
+      ? nanashiPosition + 1
+      : (key === nanashiSequence[0] ? 1 : 0);
+    if (nanashiPosition === nanashiSequence.length) {
+      nanashiPosition = 0;
+      announce('Owner located. Please allow 3-5 business eternities for a response.');
+    }
     position = key === sequence[position] ? position + 1 : (key === sequence[0] ? 1 : 0);
     if (position !== sequence.length) return;
     position = 0;
+    const alreadyUnlocked = readRaw(KONAMI_KEY) === 'unlocked';
     write(KONAMI_KEY, 'unlocked');
     if (konamiTheme) konamiTheme.hidden = false;
-    if (status) status.textContent = '1998 theme unlocked. Some things do improve with age.';
+    if (status) status.textContent = alreadyUnlocked
+      ? 'Achievement already achieved.'
+      : '1998 theme unlocked. Some things do improve with age. Preserved by NamelessNanashi.';
     if (accessibility?.open) konamiTheme?.querySelector('input')?.focus();
   });
 }

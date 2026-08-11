@@ -5,6 +5,8 @@ import ejs from 'ejs';
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { renderProfileMarkdown } from '../src/markdown.js';
+import { PLACEHOLDER_PROFILES } from '../src/routes/public-profile.js';
+import { isOpinion, opinionLabel } from '../src/opinions.js';
 
 test('public profiles show enabled pronoun preferences and local flags', async () => {
   const html = await ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
@@ -36,21 +38,25 @@ test('public profiles show enabled pronoun preferences and local flags', async (
   assert.match(html, /class="identity-flags"/);
   assert.doesNotMatch(html, /src="https:\/\//);
   assert.doesNotMatch(html, /data-copy|>Copy<|copy\.js/);
+  assert.match(html, /<p class="print-easter-egg">This profile escaped the internet\.<\/p>/);
   const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
   assert.match(css, /\.identity-flags\s*\{[^}]*justify-content:\s*center/s);
   assert.match(css, /\.identity-flags li\s*\{[^}]*text-align:\s*center/s);
   assert.match(css, /\.opinion\s*\{[^}]*border-radius:\s*999px/s);
+  assert.match(css, /\.print-easter-egg\s*\{[^}]*display:\s*none/s);
+  assert.match(css, /@media print\s*\{[^}]*\.print-easter-egg\s*\{[^}]*display:\s*block/s);
   assert.doesNotMatch(html, /staff-badge/, 'a non-staff profile shows no rank badge');
 });
 
 test('a public profile shows the account staff rank as a badge', async () => {
-  const render = (staffBadge, staffBadgeLine) => ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
+  const render = (staffBadge, staffBadgeLine, ownerEgg = false) => ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
     title: 'Example',
     profile: { display_name: 'Example', description: '', notes: '' },
     username: 'example',
     avatar: '/static/avatar.svg',
     staffBadge,
     staffBadgeLine,
+    ownerEgg,
     names: [], pronouns: [], words: [], links: [], flags: [], pronounPreferences: [],
     descriptionHtml: '', notesHtml: '',
     obfuscateEmails: async (value) => value,
@@ -59,6 +65,10 @@ test('a public profile shows the account staff rank as a badge', async () => {
   assert.match(staff, /class="status-badge staff-badge"[^>]*tabindex="0"[^>]*>Administrator<\/span>/);
   assert.match(staff, /role="tooltip">keeps the lights on<\/span>/);
   assert.doesNotMatch(await render(null), /staff-badge/);
+  const owner = await render('Owner', 'wrote this bit', true);
+  assert.match(owner, /<h1 data-owner-heading>Example<\/h1>/);
+  assert.match(owner, /data-owner-badge/);
+  assert.match(owner, /Approved for escape by NamelessNanashi/);
 });
 
 test('a profile with eleven flags earns the collector caption', async () => {
@@ -69,6 +79,45 @@ test('a profile with eleven flags earns the collector caption', async () => {
     pronounPreferences: [], descriptionHtml: '', notesHtml: '',
   }, { async: true });
   assert.match(html, /class="fineprint flag-collector">Collector\.<\/p>/);
+});
+
+test('reserved profiles each have distinct bios, notes, pronouns, and personality', async () => {
+  const seenBios = new Set();
+  const seenNotes = new Set();
+  for (const [username, placeholder] of Object.entries(PLACEHOLDER_PROFILES)) {
+    assert.ok(placeholder.bio && placeholder.notes, `${username} has both prose sections`);
+    assert.ok(placeholder.pronouns.length >= 2, `${username} has more than a token pronoun row`);
+    assert.ok(placeholder.names.length >= 2, `${username} has joke names`);
+    assert.ok(placeholder.words[0]?.words.length >= 2, `${username} has word preferences`);
+    const opinionRows = [
+      ...placeholder.names,
+      ...placeholder.pronouns,
+      ...placeholder.words.flatMap((group) => group.words),
+    ];
+    for (const row of opinionRows) assert.equal(isOpinion(row.opinion), true, `${username} uses valid opinion ${row.opinion}`);
+    assert.equal(seenBios.has(placeholder.bio), false, `${username} has a unique bio`);
+    assert.equal(seenNotes.has(placeholder.notes), false, `${username} has unique notes`);
+    seenBios.add(placeholder.bio);
+    seenNotes.add(placeholder.notes);
+    const html = await ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
+      title: placeholder.displayName,
+      profile: { display_name: placeholder.displayName },
+      username,
+      avatar: '/static/avatar.svg',
+      names: placeholder.names.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),
+      pronouns: placeholder.pronouns.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),
+      words: placeholder.words.map((group) => ({
+        ...group,
+        words: group.words.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),
+      })),
+      links: [], flags: [], pronounPreferences: [],
+      descriptionHtml: await renderProfileMarkdown(placeholder.bio, { full: false }),
+      notesHtml: await renderProfileMarkdown(placeholder.notes, { full: false, headingOffset: 1 }),
+    }, { async: true });
+    assert.match(html, new RegExp(`<h1>${placeholder.displayName}<\\/h1>`));
+    assert.match(html, /<h2 id="notes-h">Notes<\/h2>/);
+    for (const pronoun of placeholder.pronouns) assert.match(html, new RegExp(`>${pronoun.short.replace('/', '\\/')}<`));
+  }
 });
 
 test('public profiles render the bio and notes as limited Markdown', async () => {
@@ -129,4 +178,8 @@ test('notes headings nest under the Notes section, and prose links stay distinct
   assert.match(css, /\.profile-prose \{[^}]*background: var\(--surface-strong\)/s);
   assert.match(css, /\.profile-prose \{[^}]*padding: 1rem 1\.15rem/s, 'with room between the border and the text');
   assert.match(css, /\.profile-prose \.md-underline\s*\{/, 'author underline is styled apart from links');
+  assert.match(css, /\.profile-heading\s*\{[^}]*gap:\s*clamp\(1rem, 2\.5vw, 1\.5rem\)[^}]*margin-bottom:\s*clamp\(1rem, 2\.5vw, 1\.5rem\)/s,
+    'the avatar and identity block leave responsive space before the bio');
+  assert.match(css, /@media \(max-width: 38rem\)[\s\S]*?\.avatar-large\s*\{[^}]*width:\s*5rem[^}]*height:\s*5rem/s,
+    'the avatar and gap compact on narrow screens');
 });

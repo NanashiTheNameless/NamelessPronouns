@@ -12,9 +12,9 @@
     <% } %>
     <div class="profile-heading">
       <img class="avatar avatar-large" src="<%= avatar %>" alt="" width="96" height="96">
-      <div><h1><%= profile.display_name %></h1>
+      <div><h1<% if (locals.ownerEgg) { %> data-owner-heading<% } %>><%= profile.display_name %></h1>
     <p class="username">@<%= username %><% if (locals.staffBadge) { %>
-      <span class="staff-badge-wrap"><span class="status-badge staff-badge" tabindex="0" aria-describedby="staff-badge-description"><%= locals.staffBadge %></span><span class="staff-badge-description" id="staff-badge-description" role="tooltip"><%= locals.staffBadgeLine %></span></span><% } %></p>
+      <span class="staff-badge-wrap"><span class="status-badge staff-badge" tabindex="0" aria-describedby="staff-badge-description"<% if (locals.ownerEgg) { %> data-owner-badge<% } %>><%= locals.staffBadge %></span><span class="staff-badge-description" id="staff-badge-description" role="tooltip"><%= locals.staffBadgeLine %></span></span><% } %></p>
       </div>
     </div>
     <% if (locals.descriptionHtml) { %><div class="profile-prose profile-bio"><%- locals.descriptionHtml %></div><% } %>
@@ -86,6 +86,8 @@
         </ul>
       </section>
     <% } %>
+    <p class="print-easter-egg">This profile escaped the internet.</p>
+    <% if (locals.ownerEgg) { %><p class="print-easter-egg">Approved for escape by NamelessNanashi.</p><% } %>
   </main>
   <%- await include('partials/site-footer') %>
 </body>

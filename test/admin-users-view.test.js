@@ -274,3 +274,11 @@ test('the admin lookup has an answer for sudo', async () => {
   assert.match(html, /Nice try\. This is not a shell\./);
   assert.doesNotMatch(html, /No account with that exact email/);
 });
+test('the Owner receives the owner-only admin greeting', async () => {
+  const html = await ejs.renderFile(fileURLToPath(new URL('../views/admin/overview.ejs', import.meta.url)), {
+    title: 'Administration', canReport: true, canApprove: true,
+    pending: [], searched: null, email: '', lookupMessage: '',
+    csrfToken: 'csrf', user: { staff_role: 'owner' }, obfuscateEmail: async () => '',
+  }, { async: true });
+  assert.match(html, /Welcome back\. Everything is somehow still running\./);
+});
