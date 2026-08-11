@@ -280,10 +280,17 @@ test('every staff role can open the complete Easter egg catalog', async () => {
   }, { async: true });
   assert.equal(new Set(EASTER_EGGS.map((egg) => egg.name)).size, EASTER_EGGS.length);
   assert.equal((html.match(/<tr>/g) || []).length, EASTER_EGGS.length + 1);
-  for (const phrase of ['All 78 documented Easter eggs', 'Empty-state optimism', 'Staff egg catalog',
-    'An easter egg collector, Apparently.', 'NamelessNanashi.fix()', 'X-Curl: excellent-choice']) {
+  for (const phrase of ['All 80 documented Easter eggs', 'Empty-state optimism', 'Staff egg catalog',
+    'Null profile', 'Visit /u/null', 'Undefined profile', 'Visit /u/undefined',
+    'Anonymous profile', 'Visit /u/anonymous', 'True profile', 'Visit /u/true',
+    'False profile', 'Visit /u/false', 'An easter egg collector, Apparently.',
+    'NamelessNanashi.fix()', 'X-Curl: excellent-choice']) {
     assert.match(html, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
+  assert.equal(EASTER_EGGS.some((egg) => egg.name === 'Placeholder profiles'), false);
+  assert.equal(EASTER_EGGS.some((egg) => egg.name === 'Boolean profiles'), false);
+  assert.equal(EASTER_EGGS.some((egg) => egg.name === 'Well-known Owner'), false);
+  assert.equal(EASTER_EGGS.filter((egg) => egg.activation === 'Visit /.well-known/nameless').length, 1);
   const route = await readFile(new URL('../src/routes/admin.js', import.meta.url), 'utf8');
   assert.match(route, /router\.get\('\/admin\/easter-eggs', requireStaff\('support'\)/);
 });

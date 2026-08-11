@@ -160,9 +160,19 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Adds approval for its escape by NamelessNanashi"
   },
   {
-    "name": "Placeholder profiles",
-    "activation": "Visit /u/null, /u/undefined, or /u/anonymous",
-    "effect": "Shows a unique, fully written joke profile for each reserved value"
+    "name": "Null profile",
+    "activation": "Visit /u/null",
+    "effect": "Shows Null's fully written joke profile about intentionally having no value"
+  },
+  {
+    "name": "Undefined profile",
+    "activation": "Visit /u/undefined",
+    "effect": "Shows Undefined's fully written joke profile about never being assigned a value"
+  },
+  {
+    "name": "Anonymous profile",
+    "activation": "Visit /u/anonymous",
+    "effect": "Shows Anonymous's fully written, deliberately unidentifiable joke profile"
   },
   {
     "name": "Everyone profile",
@@ -190,9 +200,14 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Insists there is no place like 127.0.0.1"
   },
   {
-    "name": "Boolean profiles",
-    "activation": "Visit /u/true or /u/false",
-    "effect": "Shows two profiles that disagree about everything"
+    "name": "True profile",
+    "activation": "Visit /u/true",
+    "effect": "Shows True's fully written joke profile agreeing with itself"
+  },
+  {
+    "name": "False profile",
+    "activation": "Visit /u/false",
+    "effect": "Shows False's fully written joke profile disputing its own claims"
   },
   {
     "name": "Root profile",
@@ -313,11 +328,6 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Well-known identity",
     "activation": "Visit /.well-known/nameless",
     "effect": "Returns JSON containing name: null, pronouns: any/all, and owner: NamelessNanashi"
-  },
-  {
-    "name": "Well-known Owner",
-    "activation": "Visit /.well-known/nameless",
-    "effect": "Identifies the Owner exactly as NamelessNanashi"
   },
   {
     "name": "Headless tea",
