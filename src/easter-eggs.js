@@ -235,6 +235,16 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Responds \"Nice try. This is not a shell.\""
   },
   {
+    "name": "Admin root",
+    "activation": "Enter root in the admin account lookup",
+    "effect": "Responds \"Wrong tree.\""
+  },
+  {
+    "name": "Admin SQL",
+    "activation": "Enter select * in the admin account lookup",
+    "effect": "Responds \"Please step away from the database.\""
+  },
+  {
     "name": "Shortcut inception",
     "activation": "Press Shift + ? while the shortcuts panel is open",
     "effect": "Temporarily changes its heading to \"You are already here.\""
