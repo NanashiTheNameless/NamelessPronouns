@@ -5,6 +5,12 @@ const LABELS = Object.freeze({
   administrator: 'Administrator',
   owner: 'Owner',
 });
+const DESCRIPTIONS = Object.freeze({
+  support: 'fixes things quietly',
+  moderator: 'reads everything',
+  administrator: 'keeps the lights on',
+  owner: 'wrote this bit',
+});
 export function roleAtLeast(role, min) {
   return ORDER.indexOf(role) >= ORDER.indexOf(min);
 }
@@ -13,6 +19,9 @@ export function fullMarkdownAllowed(role) {
 }
 export function staffRoleLabel(role) {
   return LABELS[role] || null;
+}
+export function staffRoleDescription(role) {
+  return DESCRIPTIONS[role] || null;
 }
 export function requireStaff(minRole) {
   return (req, res, next) => {

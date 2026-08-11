@@ -87,6 +87,11 @@ test('accessibility settings apply before paint, persist locally, and reset', as
       inlineBg: '', inlineFont: '', storedColors: null, storedFamily: null,
       colorsHidden: true,
     }, 'reset clears the attributes, the inline colors, and everything stored, and hides the color fields');
+    assert.match(result.colorQuip, /Coffee detected/);
+    assert.match(result.fontQuip, /helps some dyslexic readers/);
+    assert.deepEqual(result.konami, { initiallyHidden: true, unlocked: true, stored: 'unlocked' });
+    assert.equal(result.retroTheme, '1998', 'the unlocked theme can be selected and applied');
+    assert.equal(result.shortcutsOpened, true, 'Shift+? opens the keyboard shortcuts panel');
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
@@ -97,14 +102,25 @@ test('the footer offers the panel and the head applies it early', async () => {
   assert.match(footer, /<button type="button"[^>]*data-accessibility-open hidden>Accessibility<\/button>/);
   assert.match(footer, /<dialog class="accessibility-panel" aria-labelledby="accessibility-h" data-accessibility-panel>/);
   assert.match(footer, /kept in this browser only/);
-  for (const value of ['default', 'light', 'contrast', 'contrast-light']) {
+  for (const value of ['default', 'light', 'contrast', 'contrast-light', '1998']) {
     assert.match(footer, new RegExp(`name="accessibility_theme" value="${value}"`));
   }
   for (const value of ['default', 'sans', 'serif', 'mono']) {
     assert.match(footer, new RegExp(`name="accessibility_font" value="${value}"`));
   }
   assert.match(head, /<script src="\/static\/js\/accessibility\.js"><\/script>/);
+  assert.match(footer, /data-konami-theme hidden[^>]*><input[^>]+value="1998"/);
+  assert.match(footer, /data-shortcuts-panel/);
+  assert.match(footer, /<kbd>Shift<\/kbd> \+ <kbd>\?<\/kbd>/);
   assert.ok(head.indexOf('accessibility.js') > head.indexOf('main.css'), 'the stylesheet loads first');
+});
+
+test('the accessibility script contains the local-only keyboard and input eggs', async () => {
+  const script = await readFile(new URL('../public/js/accessibility.js', import.meta.url), 'utf8');
+  assert.match(script, /ArrowUp.*ArrowUp.*ArrowDown.*ArrowDown.*ArrowLeft.*ArrowRight.*ArrowLeft.*ArrowRight.*'b'.*'a'/s);
+  assert.match(script, /np-accessibility-konami/);
+  for (const code of ['#c0ffee', '#bada55', '#0ff1ce', '#facade']) assert.match(script, new RegExp(code));
+  assert.match(script, /Bold choice\. Genuinely: it helps some dyslexic readers\./);
 });
 test('the panel offers arbitrary colors, an arbitrary font, and settings transfer', async () => {
   const footer = await readFile(new URL('../views/partials/site-footer.ejs', import.meta.url), 'utf8');
@@ -142,7 +158,7 @@ test('every theme redefines the whole palette, and fonts stay first-party', asyn
   const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
   const tokens = [...(/:root \{([^}]*)\}/.exec(css)[1]).matchAll(/(--[a-z-]+):/g)].map((match) => match[1]);
   assert.ok(tokens.includes('--font-body') && tokens.includes('--link'), 'the base palette carries the new tokens');
-  for (const theme of ['light', 'contrast', 'contrast-light']) {
+  for (const theme of ['light', 'contrast', 'contrast-light', '1998']) {
     const block = new RegExp(`:root\\[data-theme="${theme}"\\] \\{([^}]*)\\}`).exec(css);
     assert.ok(block, `${theme} defines a palette`);
     for (const token of tokens.filter((name) => name !== '--font-body')) {

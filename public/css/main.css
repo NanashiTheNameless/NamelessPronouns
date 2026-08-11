@@ -225,6 +225,29 @@ h2 {
   border-radius: 999px;
   font-size: 0.82rem;
 }
+.staff-badge-wrap {
+  position: relative;
+  display: inline-block;
+}
+.staff-badge-description {
+  position: absolute;
+  z-index: 2;
+  bottom: calc(100% + 0.4rem);
+  left: 50%;
+  display: none;
+  width: max-content;
+  max-width: min(18rem, 80vw);
+  padding: 0.4rem 0.55rem;
+  color: var(--text);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  transform: translateX(-50%);
+}
+.staff-badge-wrap:hover .staff-badge-description,
+.staff-badge:focus-visible + .staff-badge-description {
+  display: block;
+}
 .status-deleting {
   color: var(--danger);
   background: var(--danger-soft);
@@ -526,6 +549,9 @@ button[data-remove] {
   height: 4rem;
   object-fit: cover;
   border-radius: 0.25rem;
+}
+.flag-collector {
+  text-align: center;
 }
 legend {
   padding: 0 0.4rem;
@@ -1133,6 +1159,27 @@ altcha-widget.email-obfuscation .email-reveal:hover,
   --focus: #00007a;
   --shadow: none;
 }
+:root[data-theme="1998"] {
+  color-scheme: light;
+  --on-accent: #ffffff;
+  --link: #0000ee;
+  --bg: #009999;
+  --surface: #c0c0c0;
+  --surface-strong: #ffffff;
+  --text: #000000;
+  --muted: #333333;
+  --border: #000000;
+  --accent: #000080;
+  --accent-hover: #00005f;
+  --accent-soft: #c0c0c0;
+  --danger: #800000;
+  --danger-soft: #ffffff;
+  --success: #006400;
+  --success-soft: #ffffff;
+  --placeholder: #555555;
+  --focus: #000080;
+  --shadow: none;
+}
 :root[data-theme="contrast"] button,
 :root[data-theme="contrast"] .button,
 :root[data-theme="contrast-light"] button,
@@ -1169,6 +1216,16 @@ altcha-widget.email-obfuscation .email-reveal:hover,
 }
 .accessibility-panel form {
   margin: 1rem 0 0;
+}
+.shortcuts-panel button {
+  margin-top: 1rem;
+}
+.shortcuts-list kbd {
+  padding: 0.1rem 0.3rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  font: inherit;
 }
 .accessibility-panel fieldset {
   display: grid;

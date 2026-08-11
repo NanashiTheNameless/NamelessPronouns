@@ -40,6 +40,15 @@ export function createApp() {
   app.set('views', path.join(root, 'views'));
   app.disable('x-powered-by');
   app.use(securityHeaders);
+  app.get('/teapot', (req, res) => {
+    res.type('text/plain').status(418).send("I'm a teapot. It/its, thanks.\n");
+  });
+  app.get('/humans.txt', (req, res) => {
+    res.type('text/plain').send('/* HUMANS */\nHuman: NamelessNanashi\nSite: NamelessPronouns\n\nThanks for remembering the humans behind Nameless.\n');
+  });
+  app.get('/robots.txt', (req, res) => {
+    res.type('text/plain').send('# Crawl if you like. You may not remember this place.\nUser-agent: *\nAllow: /\n');
+  });
   app.get('/healthz', async (req, res) => {
     try {
       await db.ping();

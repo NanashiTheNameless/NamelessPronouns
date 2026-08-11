@@ -27,10 +27,11 @@
     <section aria-labelledby="lookup-h">
       <h2 id="lookup-h">Account lookup (exact email)</h2>
       <form method="get" action="/admin">
-        <input name="email" type="email" value="<%= email %>" aria-label="Email" placeholder="The exact address on the account">
+        <input name="email" type="text" inputmode="email" value="<%= email %>" aria-label="Email" placeholder="The exact address on the account">
         <button type="submit">Search</button>
       </form>
-      <% if (email && !searched) { %><p>No account with that exact email.</p><% } %>
+      <% if (locals.lookupMessage) { %><p><%= locals.lookupMessage %></p>
+      <% } else if (email && !searched) { %><p>No account with that exact email.</p><% } %>
       <% if (searched) { %>
         <p><%- await obfuscateEmail(searched.email) %> | <%= searched.signup_status %>, role <%= searched.staff_role %>, 2FA <%= searched.twofa_method %>. <a href="/admin/accounts/<%= searched.id %>">Open account</a></p>
       <% } %>

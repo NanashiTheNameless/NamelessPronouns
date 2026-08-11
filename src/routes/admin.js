@@ -21,7 +21,8 @@ router.get('/admin', requireStaff('support'), async (req, res) => {
   );
   let searched = null;
   const email = typeof req.query.email === 'string' ? req.query.email.trim().toLowerCase() : '';
-  if (email) {
+  const lookupMessage = email === 'sudo' ? 'Nice try. This is not a shell.' : '';
+  if (email && !lookupMessage) {
     const { rows } = await db.query(
       'SELECT id, email, signup_status, staff_role, twofa_method FROM users WHERE email = ?',
       [email],
@@ -35,6 +36,7 @@ router.get('/admin', requireStaff('support'), async (req, res) => {
     pending: pending.rows,
     searched,
     email,
+    lookupMessage,
   });
 });
 router.get('/admin/content-flags', requireStaff('administrator'), requireFreshAuth(), async (req, res) => {

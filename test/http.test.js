@@ -8,6 +8,17 @@ const server = app.listen(0);
 await new Promise((r) => server.once('listening', r));
 const base = `http://127.0.0.1:${server.address().port}`;
 after(() => server.close());
+test('the public text-file and teapot eggs bypass consent', async () => {
+  const teapot = await fetch(`${base}/teapot`);
+  assert.equal(teapot.status, 418);
+  assert.equal(await teapot.text(), "I'm a teapot. It/its, thanks.\n");
+  const humans = await fetch(`${base}/humans.txt`);
+  assert.equal(humans.status, 200);
+  assert.match(await humans.text(), /humans behind Nameless/);
+  const robots = await fetch(`${base}/robots.txt`);
+  assert.equal(robots.status, 200);
+  assert.equal(await robots.text(), '# Crawl if you like. You may not remember this place.\nUser-agent: *\nAllow: /\n');
+});
 test('GET / is gated: redirects to /consent before acceptance', async () => {
   const res = await fetch(`${base}/`, { redirect: 'manual' });
   assert.equal(res.status, 302);

@@ -264,3 +264,13 @@ test('admin tools use a responsive action grid', async () => {
   assert.match(css, /\.admin-tools-grid\s*\{[^}]*display:\s*grid/s);
   assert.match(css, /grid-template-columns:\s*repeat\(auto-fit/s);
 });
+test('the admin lookup has an answer for sudo', async () => {
+  const html = await ejs.renderFile(fileURLToPath(new URL('../views/admin/overview.ejs', import.meta.url)), {
+    title: 'Administration', canReport: false, canApprove: false,
+    pending: [], searched: null, email: 'sudo', lookupMessage: 'Nice try. This is not a shell.',
+    csrfToken: 'csrf', user: null, obfuscateEmail: async () => '',
+  }, { async: true });
+  assert.match(html, /inputmode="email" value="sudo"/);
+  assert.match(html, /Nice try\. This is not a shell\./);
+  assert.doesNotMatch(html, /No account with that exact email/);
+});

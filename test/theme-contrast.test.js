@@ -37,7 +37,7 @@ const PAIRS = [
 test('the themes offered in the accessibility panel all meet WCAG contrast', async () => {
   const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
   const base = paletteOf(css, ':root');
-  for (const theme of ['light', 'contrast', 'contrast-light']) {
+  for (const theme of ['light', 'contrast', 'contrast-light', '1998']) {
     const palette = { ...base, ...paletteOf(css, `:root[data-theme="${theme}"]`) };
     for (const [foreground, background, needed] of PAIRS) {
       const ratio = contrast(palette[foreground], palette[background]);

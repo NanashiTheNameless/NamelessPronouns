@@ -8,12 +8,13 @@ import { avatarUrl } from '../avatar.js';
 import { flagLabel, pronounsPageFlagUrl } from '../pronouns-page-import.js';
 import { pronounPreferenceLabel } from '../pronoun-preferences.js';
 import { opinionLabel } from '../opinions.js';
-import { fullMarkdownAllowed, roleAtLeast, staffRoleLabel } from '../middleware/staff.js';
+import { fullMarkdownAllowed, roleAtLeast, staffRoleDescription, staffRoleLabel } from '../middleware/staff.js';
 import { renderProfileMarkdown } from '../markdown.js';
 import { collectCodeUsage, collectEmbeddedOrigins, withScriptNonce } from '../html-sanitize.js';
 import { obfuscateEmails } from '../email-obfuscation.js';
 import { groupProfileWords, PROFILE_WORD_GROUPS_SQL, PROFILE_WORDS_SQL } from '../profile-words.js';
 const router = express.Router();
+const PLACEHOLDER_USERNAMES = new Set(['null', 'undefined', 'anonymous']);
 router.use(publicPageHeaders);
 function noStore(res) {
   res.setHeader('Cache-Control', 'private, no-store');
@@ -30,14 +31,54 @@ function parseUsername(input) {
     return null;
   }
 }
+function placeholderProfile(res, username) {
+  const profile = { id: 'placeholder', display_name: 'Nameless', description: '', notes: '' };
+  res.setHeader('X-Pronouns', 'any/all');
+  return res.render('profile', {
+    title: `Nameless (@${username})`,
+    preview: null,
+    descriptionHtml: '<p>I am the placeholder you were looking for.</p>',
+    notesHtml: '',
+    username,
+    profile,
+    staffBadge: null,
+    staffBadgeLine: null,
+    avatar: avatarUrl({ id: `placeholder:${username}` }),
+    names: [],
+    pronouns: [{ short: 'any/all', opinion: 'Yes' }],
+    words: [],
+    links: [],
+    flags: [],
+    pronounPreferences: [],
+  });
+}
 router.get(['/user/:username', '/@:username'], (req, res) => {
   noStore(res);
   const parsed = parseUsername(req.params.username);
   if (!parsed) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
   res.redirect(301, `/u/${encodeURIComponent(parsed.display)}`);
 });
+router.get('/u/me', async (req, res) => {
+  noStore(res);
+  if (!req.user) return res.redirect('/login');
+  const { rows } = await db.query(
+    `SELECT p.username_display FROM profiles p
+       JOIN workspaces w ON w.id = p.workspace_id
+      WHERE w.owner_user_id = ? ORDER BY p.created_at LIMIT 1`,
+    [req.user.id],
+  );
+  if (!rows[0]) return res.redirect('/dashboard');
+  return res.redirect(`/u/${encodeURIComponent(rows[0].username_display)}`);
+});
 router.get('/u/:username', async (req, res) => {
   noStore(res);
+  const requested = String(req.params.username || '').toLowerCase();
+  if (PLACEHOLDER_USERNAMES.has(requested)) {
+    const ban = await matchViewingBan({ userId: req.user?.id, email: req.user?.email, ip: clientIp(req) });
+    if (ban) return res.status(403).render('profile-unavailable', { title: 'Unavailable' });
+    if (req.params.username !== requested) return res.redirect(301, `/u/${requested}`);
+    return placeholderProfile(res, requested);
+  }
   const parsed = parseUsername(req.params.username);
   if (!parsed) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
   const ban = await matchViewingBan({ userId: req.user?.id, email: req.user?.email, ip: clientIp(req) });
@@ -93,6 +134,9 @@ router.get('/u/:username', async (req, res) => {
     descriptionHtml = withScriptNonce(descriptionHtml, res.locals.cspNonce);
     notesHtml = withScriptNonce(notesHtml, res.locals.cspNonce);
   }
+  if (pronouns.rows[0]) {
+    res.setHeader('X-Pronouns', `${pronouns.rows[0].subject}/${pronouns.rows[0].object}`);
+  }
   res.render('profile', {
     title: `${profile.display_name} (@${profile.username_display})`,
     preview,
@@ -101,6 +145,7 @@ router.get('/u/:username', async (req, res) => {
     username: profile.username_display,
     profile,
     staffBadge: staffRoleLabel(profile.staff_role),
+    staffBadgeLine: staffRoleDescription(profile.staff_role),
     avatar: avatarUrl({ id: profile.owner_id, email: profile.owner_email, avatar_source: profile.avatar_source, avatar_data_uri: profile.avatar_data_uri }),
     names: names.rows.map((row) => ({ value: row.value, opinion: opinionLabel(row.opinion) })),
     pronouns: pronouns.rows.map((row) => ({ ...row, opinion: opinionLabel(row.opinion) })),

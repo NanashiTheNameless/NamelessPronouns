@@ -19,6 +19,7 @@
       <label class="choice"><input type="radio" name="accessibility_theme" value="light"><span>Light</span></label>
       <label class="choice"><input type="radio" name="accessibility_theme" value="contrast"><span>High contrast, dark</span></label>
       <label class="choice"><input type="radio" name="accessibility_theme" value="contrast-light"><span>High contrast, light</span></label>
+      <label class="choice" data-konami-theme hidden><input type="radio" name="accessibility_theme" value="1998"><span>1998</span></label>
       <label class="choice"><input type="radio" name="accessibility_theme" value="custom"><span>Arbitrary theme, your own colors</span></label>
     </fieldset>
     <fieldset data-accessibility-colors hidden>
@@ -88,6 +89,15 @@
       <button type="button" data-accessibility-close>Done</button>
     </div>
   </form>
+</dialog>
+<dialog class="accessibility-panel shortcuts-panel" aria-labelledby="shortcuts-h" data-shortcuts-panel>
+  <h2 id="shortcuts-h">Keyboard shortcuts</h2>
+  <dl class="details shortcuts-list">
+    <div><dt><kbd>Shift</kbd> + <kbd>?</kbd></dt><dd>Open this list</dd></div>
+    <div><dt><kbd>Escape</kbd></dt><dd>Close an open panel</dd></div>
+    <div><dt>Konami code</dt><dd><kbd>Up</kbd> <kbd>Up</kbd> <kbd>Down</kbd> <kbd>Down</kbd> <kbd>Left</kbd> <kbd>Right</kbd> <kbd>Left</kbd> <kbd>Right</kbd> <kbd>B</kbd> <kbd>A</kbd></dd></div>
+  </dl>
+  <button type="button" data-shortcuts-close>Done</button>
 </dialog>
 <script type="module" src="/static/js/email-obfuscation.js"></script>
 <script src="/static/js/field-messages.js"></script>

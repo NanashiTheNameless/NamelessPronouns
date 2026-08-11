@@ -44,18 +44,31 @@ test('public profiles show enabled pronoun preferences and local flags', async (
 });
 
 test('a public profile shows the account staff rank as a badge', async () => {
-  const render = (staffBadge) => ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
+  const render = (staffBadge, staffBadgeLine) => ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
     title: 'Example',
     profile: { display_name: 'Example', description: '', notes: '' },
     username: 'example',
     avatar: '/static/avatar.svg',
     staffBadge,
+    staffBadgeLine,
     names: [], pronouns: [], words: [], links: [], flags: [], pronounPreferences: [],
     descriptionHtml: '', notesHtml: '',
     obfuscateEmails: async (value) => value,
   }, { async: true });
-  assert.match(await render('Administrator'), /<span class="status-badge staff-badge">Administrator<\/span>/);
+  const staff = await render('Administrator', 'keeps the lights on');
+  assert.match(staff, /class="status-badge staff-badge"[^>]*tabindex="0"[^>]*>Administrator<\/span>/);
+  assert.match(staff, /role="tooltip">keeps the lights on<\/span>/);
   assert.doesNotMatch(await render(null), /staff-badge/);
+});
+
+test('a profile with eleven flags earns the collector caption', async () => {
+  const html = await ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
+    title: 'Collector', profile: { display_name: 'Collector' }, username: 'collector',
+    avatar: '/static/avatar.svg', names: [], pronouns: [], words: [], links: [],
+    flags: Array.from({ length: 11 }, (_, index) => ({ label: `Flag ${index}`, imageUrl: `/flag-${index}.png` })),
+    pronounPreferences: [], descriptionHtml: '', notesHtml: '',
+  }, { async: true });
+  assert.match(html, /class="fineprint flag-collector">Collector\.<\/p>/);
 });
 
 test('public profiles render the bio and notes as limited Markdown', async () => {

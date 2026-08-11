@@ -1,6 +1,9 @@
 import { hasAccepted } from '../policy.js';
 import { setConsentReturn } from '../consent-return.js';
-const EXEMPT_EXACT = new Set(['/consent', '/terms', '/privacy', '/legal-requests', '/contact', '/acknowledgements', '/recover', '/altcha/challenge']);
+const EXEMPT_EXACT = new Set([
+  '/consent', '/terms', '/privacy', '/legal-requests', '/contact', '/acknowledgements',
+  '/recover', '/altcha/challenge', '/teapot', '/humans.txt', '/robots.txt',
+]);
 const EXEMPT_PREFIX = ['/static/'];
 const SENSITIVE_RETURN_PREFIX = ['/account/export/download/'];
 function isExempt(path) {

@@ -2,7 +2,8 @@ const THEME_KEY = 'np-accessibility-theme';
 const FONT_KEY = 'np-accessibility-font';
 const COLORS_KEY = 'np-accessibility-colors';
 const FAMILY_KEY = 'np-accessibility-font-family';
-const THEMES = ['default', 'light', 'contrast', 'contrast-light', 'custom'];
+const KONAMI_KEY = 'np-accessibility-konami';
+const THEMES = ['default', 'light', 'contrast', 'contrast-light', '1998', 'custom'];
 const FONTS = ['default', 'sans', 'serif', 'mono', 'custom'];
 const HEX = /^#[0-9a-f]{6}$/i;
 const FAMILY = /^[A-Za-z0-9 ,'"-]{1,120}$/;
@@ -158,6 +159,8 @@ function wirePanel() {
   const transfer = dialog.querySelector('[data-accessibility-transfer]');
   const status = dialog.querySelector('[data-accessibility-status]');
   const warning = dialog.querySelector('[data-accessibility-contrast]');
+  const konamiTheme = dialog.querySelector('[data-konami-theme]');
+  if (konamiTheme && readRaw(KONAMI_KEY) === 'unlocked') konamiTheme.hidden = false;
   const check = (name, value) => {
     const radio = form.querySelector(`input[name="${name}"][value="${value}"]`);
     if (radio) radio.checked = true;
@@ -234,7 +237,13 @@ function wirePanel() {
       else if (HEX.test(value)) colors[colorKey] = value.toLowerCase();
       else return say(status, `${field.dataset.colorLabel || 'That color'} needs an HTML color code such as #1a2b3c.`);
       write(COLORS_KEY, Object.keys(colors).length ? JSON.stringify(colors) : null);
-      say(status, '');
+      const quips = {
+        '#c0ffee': 'Coffee detected. No beans were harmed.',
+        '#bada55': 'That color has excellent credentials.',
+        '#0ff1ce': 'Office hours are over.',
+        '#facade': 'The facade is holding up.',
+      };
+      say(status, quips[value.toLowerCase()] || '');
       applyAll();
       syncPicker(colorKey, colors[colorKey]);
       if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
@@ -246,7 +255,9 @@ function wirePanel() {
         return say(status, 'A font family may contain only letters, numbers, spaces, commas, quotes, and hyphens.');
       }
       write(FAMILY_KEY, family || null);
-      say(status, '');
+      say(status, family.toLowerCase() === 'comic sans ms'
+        ? 'Bold choice. Genuinely: it helps some dyslexic readers.'
+        : '');
       applyAll();
       if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
     }
@@ -280,6 +291,38 @@ function wirePanel() {
   sync();
 }
 
+function wireKeyboardEggs() {
+  const shortcuts = document.querySelector('[data-shortcuts-panel]');
+  const accessibility = document.querySelector('[data-accessibility-panel]');
+  const konamiTheme = document.querySelector('[data-konami-theme]');
+  const status = document.querySelector('[data-accessibility-status]');
+  const sequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  let position = 0;
+  shortcuts?.querySelector('[data-shortcuts-close]')?.addEventListener('click', () => shortcuts.close());
+  document.addEventListener('keydown', (event) => {
+    const editable = event.target instanceof HTMLElement
+      && (event.target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName));
+    if (!editable && event.shiftKey && event.key === '?' && shortcuts && typeof shortcuts.showModal === 'function') {
+      event.preventDefault();
+      if (!shortcuts.open && !document.querySelector('dialog[open]')) shortcuts.showModal();
+      return;
+    }
+    if (editable || event.repeat) return;
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    position = key === sequence[position] ? position + 1 : (key === sequence[0] ? 1 : 0);
+    if (position !== sequence.length) return;
+    position = 0;
+    write(KONAMI_KEY, 'unlocked');
+    if (konamiTheme) konamiTheme.hidden = false;
+    if (status) status.textContent = '1998 theme unlocked. Some things do improve with age.';
+    if (accessibility?.open) konamiTheme?.querySelector('input')?.focus();
+  });
+}
+
 window.npAccessibility = { exportSettings, importSettings, contrastRatio, applyAll };
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wirePanel);
-else wirePanel();
+function wire() {
+  wirePanel();
+  wireKeyboardEggs();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+else wire();
