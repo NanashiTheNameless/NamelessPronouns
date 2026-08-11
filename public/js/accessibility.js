@@ -178,6 +178,16 @@ function wirePanel() {
     dialog.querySelectorAll('[data-accessibility-colors]').forEach((node) => { node.hidden = theme !== 'custom'; });
     dialog.querySelectorAll('[data-accessibility-family]').forEach((node) => { node.hidden = font !== 'custom'; });
   };
+  const syncPicker = (key, value) => {
+    const picker = form.querySelector(`[data-color-picker="${key}"]`);
+    if (!picker) return;
+    if (value && HEX.test(value)) {
+      picker.value = value;
+      return;
+    }
+    const active = getComputedStyle(document.documentElement).getPropertyValue(COLORS[key]).trim();
+    picker.value = HEX.test(active) ? active : '#000000';
+  };
   const sync = () => {
     check('accessibility_theme', choice(THEME_KEY, THEMES));
     check('accessibility_font', choice(FONT_KEY, FONTS));
@@ -185,6 +195,7 @@ function wirePanel() {
     for (const key of COLOR_KEYS) {
       const field = form.querySelector(`[name="accessibility_color_${key}"]`);
       if (field) field.value = colors[key] || '';
+      syncPicker(key, colors[key]);
     }
     const family = form.querySelector('[name="accessibility_font_family"]');
     if (family) family.value = validFamily(readRaw(FAMILY_KEY));
@@ -206,6 +217,15 @@ function wirePanel() {
   });
   form.addEventListener('input', (event) => {
     const field = event.target;
+    const pickedKey = field.dataset?.colorPicker;
+    if (pickedKey && COLOR_KEYS.includes(pickedKey)) {
+      const target = form.querySelector(`[name="accessibility_color_${pickedKey}"]`);
+      if (target) {
+        target.value = field.value.toLowerCase();
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      return;
+    }
     const colorKey = /^accessibility_color_(\w+)$/.exec(field.name || '')?.[1];
     if (colorKey && COLOR_KEYS.includes(colorKey)) {
       const colors = storedColors();
@@ -216,6 +236,7 @@ function wirePanel() {
       write(COLORS_KEY, Object.keys(colors).length ? JSON.stringify(colors) : null);
       say(status, '');
       applyAll();
+      syncPicker(colorKey, colors[colorKey]);
       if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
       return reportContrast();
     }

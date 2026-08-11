@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 const viewsDir = fileURLToPath(new URL('../views', import.meta.url));
 const FIELD = /<(input|textarea)\b(?:<%.*?%>|[^>])*>/g;
-const SKIPPED_TYPES = ['type="hidden"', 'type="checkbox"', 'type="radio"', 'type="file"'];
+const SKIPPED_TYPES = ['type="hidden"', 'type="checkbox"', 'type="radio"', 'type="file"', 'type="color"'];
 async function viewFiles(dir = viewsDir) {
   const entries = await readdir(dir, { withFileTypes: true });
   const files = [];

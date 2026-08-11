@@ -38,6 +38,8 @@
       field.dispatchEvent(new Event('input', { bubbles: true }));
     };
     const clickAction = (action) => dialog.querySelector(`[data-accessibility-${action}]`).click();
+    const colorsHidden = () => dialog.querySelector('[data-accessibility-colors]').hidden
+      && getComputedStyle(dialog.querySelector('[data-accessibility-colors]')).display === 'none';
 
     const seededFont = getComputedStyle(document.body).fontFamily;
     const buttonHidden = open.hidden;
@@ -53,7 +55,13 @@
       stored: [localStorage.getItem('np-accessibility-theme'), localStorage.getItem('np-accessibility-font')],
       background: getComputedStyle(document.body).backgroundColor,
       color: getComputedStyle(document.body).color,
+      colorsHidden: colorsHidden(),
     };
+
+    pick('accessibility_theme', 'contrast');
+    const contrastDark = { theme: root.getAttribute('data-theme'), accent: getComputedStyle(root).getPropertyValue('--accent').trim(), colorsHidden: colorsHidden() };
+    pick('accessibility_theme', 'contrast-light');
+    const contrastLight = { theme: root.getAttribute('data-theme'), accent: getComputedStyle(root).getPropertyValue('--accent').trim(), colorsHidden: colorsHidden() };
 
     pick('accessibility_theme', 'custom');
     pick('accessibility_font', 'custom');
@@ -73,6 +81,18 @@
       fontFamily: getComputedStyle(document.body).fontFamily,
       contrastNote: dialog.querySelector('[data-accessibility-contrast]').textContent,
       exported: dialog.querySelector('[data-accessibility-transfer]').value,
+    };
+
+    const picker = dialog.querySelector('[data-color-picker="accent"]');
+    picker.value = '#3311aa';
+    picker.dispatchEvent(new Event('input', { bubbles: true }));
+    const picked = {
+      inlineAccent: inline('--accent'),
+      textField: dialog.querySelector('[name="accessibility_color_accent"]').value,
+      pickerAfterTyping: (() => {
+        typeInto('[name="accessibility_color_accent"]', '#204020');
+        return dialog.querySelector('[data-color-picker="accent"]').value;
+      })(),
     };
 
     typeInto('[name="accessibility_color_bg"]', 'not-a-color');
@@ -113,6 +133,7 @@
       inlineFont: inline('--font-body'),
       storedColors: localStorage.getItem('np-accessibility-colors'),
       storedFamily: localStorage.getItem('np-accessibility-font-family'),
+      colorsHidden: colorsHidden(),
     };
 
     clickAction('close');
@@ -125,6 +146,9 @@
       closedState,
       openedWithStoredChecked,
       light,
+      picked,
+      contrastDark,
+      contrastLight,
       sectionsShown,
       custom,
       rejected,

@@ -22,12 +22,10 @@
 :root {
   color-scheme: dark;
   --font-body: "0xProto", monospace;
-  --glow-a: rgba(229, 27, 35, 0.17);
-  --glow-b: rgba(125, 8, 13, 0.14);
   --on-accent: #ffffff;
   --link: #ff9aa0;
   --bg: #16161c;
-  --surface: rgba(29, 29, 37, 0.95);
+  --surface: #1d1d25;
   --surface-strong: #24242e;
   --text: #ffffff;
   --muted: #ffffff;
@@ -41,10 +39,13 @@
   --success-soft: #17392b;
   --placeholder: #b8b3bf;
   --focus: #ff6469;
-  --shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+  --shadow: none;
 }
 * {
   box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
 }
 html {
   min-height: 100%;
@@ -55,10 +56,7 @@ body {
   padding: clamp(1rem, 4vw, 3.5rem) 1rem;
   font: 1rem/1.6 var(--font-body);
   color: var(--text);
-  background:
-    radial-gradient(circle at 15% 0%, var(--glow-a), transparent 34rem),
-    radial-gradient(circle at 90% 90%, var(--glow-b), transparent 30rem),
-    var(--bg);
+  background: var(--bg);
 }
 .site-header {
   width: min(100%, 80rem);
@@ -73,8 +71,6 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 1rem;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(16px);
 }
 .site-nav .brand {
   padding: 0.4rem 0.55rem;
@@ -92,7 +88,7 @@ body {
   justify-content: flex-end;
 }
 .site-nav .nav-cta {
-  color: #ffffff;
+  color: var(--on-accent);
   background: var(--accent);
 }
 .nav-logout {
@@ -119,8 +115,6 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 1.5rem;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(16px);
 }
 .container + .site-footer,
 .site-footer {
@@ -351,7 +345,6 @@ textarea[data-illegal-characters] {
   color: var(--text);
   background: var(--danger-soft);
   border-color: var(--accent-hover);
-  box-shadow: 0 0 0 4px rgba(229, 27, 35, 0.25);
 }
 input:user-invalid,
 textarea:user-invalid,
@@ -359,7 +352,6 @@ select:user-invalid {
   color: var(--text);
   background: var(--danger-soft);
   border-color: var(--accent-hover);
-  box-shadow: 0 0 0 4px rgba(229, 27, 35, 0.25);
 }
 textarea {
   min-height: 7rem;
@@ -548,11 +540,10 @@ button,
   background: var(--accent);
   border: 0;
   border-radius: 0.78rem;
-  box-shadow: 0 8px 20px rgba(229, 27, 35, 0.25);
   font: inherit;
   font-weight: 750;
   cursor: pointer;
-  transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease;
+  transition: transform 150ms ease, background 150ms ease;
 }
 .button {
   display: inline-flex;
@@ -564,20 +555,29 @@ button.secondary,
 .button.secondary {
   color: var(--text);
   background: var(--accent-soft);
-  box-shadow: none;
 }
 button:hover,
 .button:hover {
   color: var(--on-accent);
   background: var(--accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 11px 24px rgba(229, 27, 35, 0.34);
 }
 button.secondary:hover,
 .button.secondary:hover {
   color: var(--text);
   background: var(--border);
-  box-shadow: none;
+}
+a.button,
+a.button:visited,
+a.button:hover,
+a.button:active {
+  color: var(--on-accent);
+}
+a.button.secondary,
+a.button.secondary:visited,
+a.button.secondary:hover,
+a.button.secondary:active {
+  color: var(--text);
 }
 .flag-picker {
   position: relative;
@@ -812,12 +812,11 @@ altcha-widget[theme="business"] {
 }
 altcha-widget[theme="business"] .altcha-main,
 altcha-widget[theme="business"] .altcha-popover {
-  background: linear-gradient(180deg, #202027 0%, #16161c 100%);
+  background: #1b1b21;
   border: 1px solid #543039;
 }
 altcha-widget[theme="business"] .altcha-button {
   border-radius: 8px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
 altcha-widget[theme="business"] .altcha-checkbox input,
 altcha-widget[theme="business"] .altcha-input {
@@ -1020,12 +1019,10 @@ altcha-widget.email-obfuscation .email-reveal:hover {
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --glow-a: rgba(229, 27, 35, 0.09);
-  --glow-b: rgba(125, 8, 13, 0.07);
   --on-accent: #ffffff;
   --link: #9c0f16;
   --bg: #f3f1f6;
-  --surface: rgba(255, 255, 255, 0.97);
+  --surface: #ffffff;
   --surface-strong: #ffffff;
   --text: #16161c;
   --muted: #3b3641;
@@ -1039,12 +1036,10 @@ altcha-widget.email-obfuscation .email-reveal:hover {
   --success-soft: #dcf1e6;
   --placeholder: #55505c;
   --focus: #86000a;
-  --shadow: 0 20px 55px rgba(22, 22, 28, 0.16);
+  --shadow: none;
 }
 :root[data-theme="contrast"] {
   color-scheme: dark;
-  --glow-a: transparent;
-  --glow-b: transparent;
   --on-accent: #000000;
   --link: #ffd400;
   --bg: #000000;
@@ -1066,8 +1061,6 @@ altcha-widget.email-obfuscation .email-reveal:hover {
 }
 :root[data-theme="contrast-light"] {
   color-scheme: light;
-  --glow-a: transparent;
-  --glow-b: transparent;
   --on-accent: #ffffff;
   --link: #00007a;
   --bg: #ffffff;
@@ -1087,13 +1080,6 @@ altcha-widget.email-obfuscation .email-reveal:hover {
   --focus: #00007a;
   --shadow: none;
 }
-:root[data-theme="contrast"] .site-nav,
-:root[data-theme="contrast"] .panel,
-:root[data-theme="contrast-light"] .site-nav,
-:root[data-theme="contrast-light"] .panel {
-  box-shadow: none;
-  backdrop-filter: none;
-}
 :root[data-theme="contrast"] button,
 :root[data-theme="contrast"] .button,
 :root[data-theme="contrast-light"] button,
@@ -1102,9 +1088,22 @@ altcha-widget.email-obfuscation .email-reveal:hover {
   box-shadow: none;
 }
 :root[data-theme="contrast"] button.secondary,
-:root[data-theme="contrast-light"] button.secondary {
+:root[data-theme="contrast"] .button.secondary,
+:root[data-theme="contrast-light"] button.secondary,
+:root[data-theme="contrast-light"] .button.secondary,
+:root[data-theme="custom"] button.secondary,
+:root[data-theme="custom"] .button.secondary {
   color: var(--text);
   background: var(--surface-strong);
+}
+:root[data-theme="contrast"] button.secondary:hover,
+:root[data-theme="contrast"] a.button.secondary:hover,
+:root[data-theme="contrast-light"] button.secondary:hover,
+:root[data-theme="contrast-light"] a.button.secondary:hover,
+:root[data-theme="custom"] button.secondary:hover,
+:root[data-theme="custom"] a.button.secondary:hover {
+  color: var(--on-accent);
+  background: var(--accent);
 }
 .accessibility-panel {
   width: min(32rem, calc(100vw - 2rem));
@@ -1118,7 +1117,7 @@ altcha-widget.email-obfuscation .email-reveal:hover {
   box-shadow: var(--shadow);
 }
 .accessibility-panel::backdrop {
-  background: rgba(0, 0, 0, 0.62);
+  background: var(--bg);
 }
 .accessibility-panel h2 {
   margin: 0 0 0.5rem;
@@ -1144,8 +1143,23 @@ altcha-widget.email-obfuscation .email-reveal:hover {
   font-size: 0.9rem;
   font-weight: 700;
 }
-.accessibility-colors input {
+.accessibility-color-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.accessibility-colors input[type="text"] {
   min-height: 2.5rem;
+}
+.accessibility-colors input[type="color"] {
+  width: 3rem;
+  min-height: 2.5rem;
+  flex: 0 0 auto;
+  padding: 0.15rem;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  cursor: pointer;
 }
 :root[data-theme="custom"] {
   --surface: var(--surface-strong);
@@ -1154,14 +1168,7 @@ altcha-widget.email-obfuscation .email-reveal:hover {
   --danger-soft: var(--surface-strong);
   --success: var(--text);
   --success-soft: var(--surface-strong);
-  --glow-a: transparent;
-  --glow-b: transparent;
   --shadow: none;
-}
-:root[data-theme="custom"] .site-nav,
-:root[data-theme="custom"] .panel {
-  box-shadow: none;
-  backdrop-filter: none;
 }
 :root[data-theme="custom"] button,
 :root[data-theme="custom"] .button {

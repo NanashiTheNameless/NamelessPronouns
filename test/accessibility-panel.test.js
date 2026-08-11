@@ -51,6 +51,9 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.deepEqual(result.light.stored, ['light', 'sans'], 'choices are stored client side');
     assert.equal(result.light.background.startsWith('rgb'), true);
     assert.notEqual(result.light.background, result.light.color, 'the light theme still paints text against a background');
+    assert.equal(result.light.colorsHidden, true, 'a preset theme hides the custom color fields');
+    assert.deepEqual(result.contrastDark, { theme: 'contrast', accent: '#ffd400', colorsHidden: true });
+    assert.deepEqual(result.contrastLight, { theme: 'contrast-light', accent: '#00007a', colorsHidden: true });
     assert.deepEqual(result.sectionsShown, { colors: true, family: true },
       'choosing the arbitrary options reveals their fields');
     assert.equal(result.custom.inlineBg, '#102030');
@@ -60,6 +63,9 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.equal(result.custom.background, 'rgb(16, 32, 48)', 'the custom color actually paints the page');
     assert.match(result.custom.fontFamily, /Georgia/);
     assert.match(result.custom.contrastNote, /1[45]\.\d to 1, which meets the 4\.5 to 1 guideline/);
+    assert.equal(result.picked.inlineAccent, '#3311aa', 'the color picker writes straight through to the page');
+    assert.equal(result.picked.textField, '#3311aa', 'and fills the hex field beside it');
+    assert.equal(result.picked.pickerAfterTyping, '#204020', 'typing a hex code moves the picker swatch too');
     assert.match(result.rejected.message, /needs an HTML color code such as #1a2b3c/);
     assert.equal(result.rejected.inlineBg, '#102030', 'a malformed color never reaches the page');
     assert.match(result.rejectedFamily.message, /only letters, numbers, spaces, commas, quotes, and hyphens/);
@@ -79,7 +85,8 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.deepEqual(result.reset, {
       theme: null, font: null, stored: [null, null], checked: 'default',
       inlineBg: '', inlineFont: '', storedColors: null, storedFamily: null,
-    }, 'reset clears the attributes, the inline colors, and everything stored');
+      colorsHidden: true,
+    }, 'reset clears the attributes, the inline colors, and everything stored, and hides the color fields');
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
@@ -109,6 +116,11 @@ test('the panel offers arbitrary colors, an arbitrary font, and settings transfe
     assert.match(field[0], /pattern="#\[0-9A-Fa-f\]\{6\}"/, `${key} accepts only an HTML color code`);
     assert.match(field[0], /placeholder="[^"]+"/, `${key} explains itself`);
   }
+  for (const key of ['bg', 'surface', 'text', 'muted', 'border', 'accent', 'accentText', 'link', 'focus', 'placeholder']) {
+    const picker = new RegExp(`<input type="color" data-color-picker="${key}" aria-label="[^"]+">`).exec(footer);
+    assert.ok(picker, `${key} offers the browser color picker`);
+    assert.match(picker[0], /aria-label="Pick the [a-z ]{4,}"/, `${key} names its picker for screen readers`);
+  }
   assert.match(footer, /<input id="accessibility-font-family" name="accessibility_font_family"[^>]*maxlength="120"/);
   assert.match(footer, /Only fonts already on your device can be used/);
   assert.match(footer, /<textarea id="accessibility-transfer"[^>]*data-accessibility-transfer/);
@@ -124,7 +136,7 @@ test('the custom theme derives the rest of its palette from the colors the user 
   for (const token of ['--surface', '--accent-soft', '--danger', '--danger-soft', '--success', '--success-soft']) {
     assert.match(block[1], new RegExp(`${token}:\\s*var\\(--`), `${token} follows a color the user set`);
   }
-  assert.match(block[1], /--glow-a:\s*transparent/, 'the brand glow is dropped so a custom background stays flat');
+  assert.match(block[1], /--shadow:\s*none/, 'a custom background stays flat');
 });
 test('every theme redefines the whole palette, and fonts stay first-party', async () => {
   const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
@@ -144,4 +156,21 @@ test('every theme redefines the whole palette, and fonts stay first-party', asyn
     assert.doesNotMatch(block[1], /url\(|https?:/, 'font overrides never fetch a remote file');
   }
   assert.doesNotMatch(css, /@import|src:\s*url\(https?:/, 'no stylesheet or font is loaded from another origin');
+});
+
+test('links styled as buttons take the button label color, and buttons carry no glow', async () => {
+  const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
+  const genericLinks = css.indexOf('a,\na:visited,\na:hover,\na:active {');
+  const linkButtons = css.indexOf('a.button,\na.button:visited,\na.button:hover,\na.button:active {');
+  assert.ok(genericLinks !== -1 && linkButtons !== -1, 'both rules exist');
+  assert.ok(linkButtons > genericLinks, 'the button rule wins over the generic link color');
+  assert.match(css.slice(linkButtons), /^a\.button,\na\.button:visited,\na\.button:hover,\na\.button:active \{\n  color: var\(--on-accent\);/);
+  assert.match(css, /a\.button\.secondary,[\s\S]*?color: var\(--text\);/);
+  const primary = /\nbutton,\n\.button \{([^}]*)\}/.exec(css)[1];
+  assert.doesNotMatch(primary, /box-shadow/, 'no underglow behind a button');
+  const hover = /\nbutton:hover,\n\.button:hover \{([^}]*)\}/.exec(css)[1];
+  assert.doesNotMatch(hover, /box-shadow/, 'and none on hover');
+  assert.doesNotMatch(css, /box-shadow: 0 8px 20px|box-shadow: 0 11px 24px/, 'the old button glows are gone');
+  assert.match(css, /a:focus-visible,\nbutton:focus-visible,[\s\S]*?outline: 3px solid var\(--focus\)/, 'focus outlines stay');
+  assert.match(css, /\[hidden\] \{\n  display: none !important;\n\}/, 'the hidden attribute beats layout display rules');
 });
