@@ -30,6 +30,11 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Says \"Full keyboard lap completed.\""
   },
   {
+    "name": "Backward keyboard lap",
+    "activation": "Use Shift+Tab to visit every interactive element and return to the first",
+    "effect": "Says \"Keyboard lap completed in reverse.\""
+  },
+  {
     "name": "Staff badge descriptions",
     "activation": "Hover over or keyboard-focus a staff badge",
     "effect": "Shows: Support \"fixes things quietly\"; Moderator \"reads everything\"; Administrator \"keeps the lights on\"; Owner \"wrote this bit\""
@@ -185,14 +190,44 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Shows Anonymous's fully written, deliberately unidentifiable joke profile"
   },
   {
+    "name": "Someone profile",
+    "activation": "Visit /u/someone",
+    "effect": "Shows Someone insisting they were definitely here while witnesses disagree"
+  },
+  {
+    "name": "Something profile",
+    "activation": "Visit /u/something",
+    "effect": "Shows Something formally disputing the claim that the site contains Nothing"
+  },
+  {
+    "name": "Unknown profile",
+    "activation": "Visit /u/unknown",
+    "effect": "Shows a complete profile whose identity remains under investigation"
+  },
+  {
+    "name": "Else profile",
+    "activation": "Visit /u/else",
+    "effect": "Shows a profile that appears because every prior condition was false"
+  },
+  {
     "name": "Everyone profile",
     "activation": "Visit /u/everyone",
     "effect": "Shows a collective profile with they/them, we/us, and you/all jokes"
   },
   {
+    "name": "Everything profile",
+    "activation": "Visit /u/everything",
+    "effect": "Shows a fully written profile containing all of the above and several things not invented yet"
+  },
+  {
     "name": "Nobody profile",
     "activation": "Visit /u/nobody",
     "effect": "Shows Nobody's suspiciously detailed profile and deliberately unhelpful pronouns"
+  },
+  {
+    "name": "Nothing profile",
+    "activation": "Visit /u/nothing",
+    "effect": "Shows Nothing's conspicuously present profile and complicates several definitions"
   },
   {
     "name": "Epoch profile",
@@ -235,6 +270,11 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Shows a profile that never quite finishes introducing itself, with on/and/on pronouns"
   },
   {
+    "name": "Infinity encore",
+    "activation": "Remain on /u/infinity for 60 seconds",
+    "effect": "Says \"Still going.\""
+  },
+  {
     "name": "Profile deja vu",
     "activation": "Visit the same reserved profile seven times in one browser session",
     "effect": "Says \"You two have met before.\""
@@ -258,6 +298,16 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Epoch birthday",
     "activation": "Visit on January 1",
     "effect": "Adds \"Epoch says happy birthday.\" to the footer"
+  },
+  {
+    "name": "Pi Day",
+    "activation": "Visit on March 14",
+    "effect": "Adds \"Approximately 3.14 people are reading this.\" to the footer"
+  },
+  {
+    "name": "April first",
+    "activation": "Visit on April 1",
+    "effect": "Adds \"Everything here is true, except False.\" to the footer"
   },
   {
     "name": "Owner profile title",
@@ -310,6 +360,16 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Shows a \"Shift+? was right there.\" toast"
   },
   {
+    "name": "Pronouns sequence",
+    "activation": "Type pronouns outside a text field",
+    "effect": "Says \"Correct. You found the subject.\""
+  },
+  {
+    "name": "XYZZY",
+    "activation": "Type xyzzy outside a text field",
+    "effect": "Says \"Nothing happens. Documented.\""
+  },
+  {
     "name": "Konami theme",
     "activation": "Enter Up Up Down Down Left Right Left Right B A outside a text field",
     "effect": "Permanently unlocks the accessible \"1998\" theme and shows a toast"
@@ -350,6 +410,11 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Returns HTTP 406 with \"Wrong appliance.\""
   },
   {
+    "name": "Teapot options",
+    "activation": "Send OPTIONS /teapot",
+    "effect": "Returns Allow: GET, HEAD, OPTIONS and X-Brew: not-standardized"
+  },
+  {
     "name": "Patient teapot",
     "activation": "Revisit /teapot after at least 4 minutes and 18 seconds",
     "effect": "Returns \"Properly steeped\" with X-Tea-Steeped: precisely"
@@ -358,6 +423,11 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Nothing endpoint",
     "activation": "Visit /nothing",
     "effect": "Returns HTTP 204 No Content with X-Nothing: successfully-returned"
+  },
+  {
+    "name": "Headless nothing",
+    "activation": "Send HEAD /nothing",
+    "effect": "Returns an empty response with X-Head: nothing-to-see"
   },
   {
     "name": "Something in nothing",
@@ -378,6 +448,16 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Pronouns file",
     "activation": "Visit /pronouns.txt",
     "effect": "Returns a plain-text identity card ending with \"This file uses it/its.\""
+  },
+  {
+    "name": "Ads file",
+    "activation": "Visit /ads.txt",
+    "effect": "Returns \"No advertisements are available. Yet is not implied.\""
+  },
+  {
+    "name": "No algorithm",
+    "activation": "Visit /algorithm",
+    "effect": "Returns HTTP 404 with \"No algorithm lives here. You choose what to read.\""
   },
   {
     "name": "Robots comment",
@@ -418,6 +498,21 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Curl acknowledgement",
     "activation": "Request any page using curl",
     "effect": "Adds X-Curl: excellent-choice without logging the request"
+  },
+  {
+    "name": "Do Not Track",
+    "activation": "Send DNT: 1",
+    "effect": "Adds X-Tracking: was-never-here"
+  },
+  {
+    "name": "Global privacy",
+    "activation": "Send Sec-GPC: 1",
+    "effect": "Adds X-Privacy-Preference: acknowledged"
+  },
+  {
+    "name": "Error dimensions",
+    "activation": "Resize the viewport to exactly 404 by 418 pixels",
+    "effect": "Says \"Not found, but properly steeped.\""
   },
   {
     "name": "Owner status header",

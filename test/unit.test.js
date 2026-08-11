@@ -213,6 +213,12 @@ test('validation: username rules and reserved names', () => {
   assert.throws(() => V.username('root'), V.ValidationError);
   assert.throws(() => V.username('void'), V.ValidationError);
   assert.throws(() => V.username('infinity'), V.ValidationError);
+  assert.throws(() => V.username('everything'), V.ValidationError);
+  assert.throws(() => V.username('nothing'), V.ValidationError);
+  assert.throws(() => V.username('someone'), V.ValidationError);
+  assert.throws(() => V.username('something'), V.ValidationError);
+  assert.throws(() => V.username('unknown'), V.ValidationError);
+  assert.throws(() => V.username('else'), V.ValidationError);
 });
 test('validation: httpsUrl rejects non-HTTPS, credentials, and bad ports', () => {
   assert.equal(V.httpsUrl('https://example.com/x'), 'https://example.com/x');

@@ -280,12 +280,18 @@ test('every staff role can open the complete Easter egg catalog', async () => {
   }, { async: true });
   assert.equal(new Set(EASTER_EGGS.map((egg) => egg.name)).size, EASTER_EGGS.length);
   assert.equal((html.match(/<tr>/g) || []).length, EASTER_EGGS.length + 1);
-  for (const phrase of ['All 93 documented Easter eggs', 'Empty-state optimism', 'Staff egg catalog',
+  for (const phrase of ['All 112 documented Easter eggs', 'Empty-state optimism', 'Staff egg catalog',
     'Null profile', 'Visit /u/null', 'Undefined profile', 'Visit /u/undefined',
     'Anonymous profile', 'Visit /u/anonymous', 'True profile', 'Visit /u/true',
     'False profile', 'Visit /u/false', 'Admin root', 'Enter root in the admin account lookup',
     'Admin SQL', 'Enter select * in the admin account lookup', 'An easter egg collector, Apparently.',
     'Void profile', 'Visit /u/void', 'Infinity profile', 'Visit /u/infinity',
+    'Everything profile', 'Visit /u/everything', 'Nothing profile', 'Visit /u/nothing',
+    'Someone profile', 'Visit /u/someone', 'Something profile', 'Visit /u/something',
+    'Unknown profile', 'Visit /u/unknown', 'Else profile', 'Visit /u/else',
+    'No algorithm', 'Ads file', 'Do Not Track', 'Global privacy', 'Headless nothing',
+    'Teapot options', 'Backward keyboard lap', 'Infinity encore', 'Pronouns sequence', 'XYZZY',
+    'Pi Day', 'April first', 'Error dimensions',
     'Persistent 404 recovery', 'Return home from /404 three times', 'Patient teapot',
     'Pronouns file', 'Keyboard lap', 'Theme tourist', 'Profile deja vu', 'Avatar inspection',
     'Leap-day visitor', 'Epoch birthday', 'NamelessNanashi.fix()', 'X-Curl: excellent-choice']) {

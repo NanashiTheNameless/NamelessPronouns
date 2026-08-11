@@ -218,6 +218,13 @@ test('the accessibility script contains the local-only keyboard and input eggs',
   assert.match(script, /Full keyboard lap completed\./);
   assert.match(script, /This message appears approximately once every four years\./);
   assert.match(script, /Epoch says happy birthday\./);
+  assert.match(script, /Keyboard lap completed in reverse\./);
+  assert.match(script, /Still going\./);
+  assert.match(script, /Correct\. You found the subject\./);
+  assert.match(script, /Nothing happens\. Documented\./);
+  assert.match(script, /Approximately 3\.14 people are reading this\./);
+  assert.match(script, /Everything here is true, except False\./);
+  assert.match(script, /Not found, but properly steeped\./);
 });
 test('the panel offers arbitrary colors, an arbitrary font, and settings transfer', async () => {
   const footer = await readFile(new URL('../views/partials/site-footer.ejs', import.meta.url), 'utf8');

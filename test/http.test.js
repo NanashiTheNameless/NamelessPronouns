@@ -18,6 +18,9 @@ test('the public text-file and teapot eggs bypass consent', async () => {
   assert.equal(await teapot.text(), "I'm a teapot. It/its, thanks.\n");
   const curl = await fetch(`${base}/teapot`, { headers: { 'user-agent': 'curl/8.16.0' } });
   assert.equal(curl.headers.get('x-curl'), 'excellent-choice');
+  const privacyHeaders = await fetch(`${base}/teapot`, { headers: { dnt: '1', 'sec-gpc': '1' } });
+  assert.equal(privacyHeaders.headers.get('x-tracking'), 'was-never-here');
+  assert.equal(privacyHeaders.headers.get('x-privacy-preference'), 'acknowledged');
   const coffee = await fetch(`${base}/teapot?coffee`);
   assert.equal(coffee.status, 406);
   assert.equal(await coffee.text(), 'Wrong appliance.\n');
@@ -36,7 +39,7 @@ test('the public text-file and teapot eggs bypass consent', async () => {
   assert.equal(intentional.status, 404);
   const intentionalHtml = await intentional.text();
   assert.match(intentionalHtml, /Congratulations\. You found it\./);
-  assert.match(intentionalHtml, /data-404-return/);
+  assert.match(intentionalHtml, /href="\/" data-404-return/);
   const owner404 = await fetch(`${base}/404?owner`);
   assert.equal(owner404.status, 404);
   assert.match(await owner404.text(), /return this page to NamelessNanashi/);
@@ -46,6 +49,10 @@ test('the public text-file and teapot eggs bypass consent', async () => {
   assert.equal(head.headers.get('x-tea-made-by'), 'NamelessNanashi');
   assert.equal(await head.text(), '');
   assert.match(head.headers.get('link') || '', /<\/humans\.txt>; rel="author"/);
+  const options = await fetch(`${base}/teapot`, { method: 'OPTIONS' });
+  assert.equal(options.status, 204);
+  assert.equal(options.headers.get('allow'), 'GET, HEAD, OPTIONS');
+  assert.equal(options.headers.get('x-brew'), 'not-standardized');
   const nothing = await fetch(`${base}/nothing`);
   assert.equal(nothing.status, 204);
   assert.equal(nothing.headers.get('x-nothing'), 'successfully-returned');
@@ -57,6 +64,14 @@ test('the public text-file and teapot eggs bypass consent', async () => {
   const nothingAgain = await fetch(`${base}/nothing?again`);
   assert.equal(nothingAgain.status, 204);
   assert.equal(nothingAgain.headers.get('x-nothing-again'), 'yes');
+  const headlessNothing = await fetch(`${base}/nothing`, { method: 'HEAD' });
+  assert.equal(headlessNothing.status, 204);
+  assert.equal(headlessNothing.headers.get('x-head'), 'nothing-to-see');
+  const ads = await fetch(`${base}/ads.txt`);
+  assert.equal(await ads.text(), '# No advertisements are available. Yet is not implied.\n');
+  const algorithm = await fetch(`${base}/algorithm`);
+  assert.equal(algorithm.status, 404);
+  assert.equal(await algorithm.text(), 'No algorithm lives here. You choose what to read.\n');
 
   assert.equal(teaIsSteeped(Date.now() - 4 * 60 * 1000 - 18 * 1000), true);
   assert.equal(teaIsSteeped(Date.now() - 60 * 1000), false);
@@ -72,6 +87,12 @@ test('reserved Easter egg profiles bypass consent and database-backed sessions',
   for (const [username, heading, pronouns] of [
     ['void', 'Void', 'void/void'],
     ['infinity', 'Infinity', 'on/and/on'],
+    ['everything', 'Everything', 'all/all'],
+    ['nothing', 'Nothing', 'no/thing'],
+    ['someone', 'Someone', 'some/one'],
+    ['something', 'Something', 'some/thing'],
+    ['unknown', 'Unknown', 'who/knows'],
+    ['else', 'Else', 'other/wise'],
   ]) {
     const res = await fetch(`${base}/u/${username}`, { headers: { cookie: `np_sid=${staleSession}` } });
     assert.equal(res.status, 200, username);

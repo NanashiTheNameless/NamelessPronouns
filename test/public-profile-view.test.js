@@ -93,6 +93,12 @@ test('reserved profiles each have distinct bios, notes, pronouns, and personalit
   assert.ok(PLACEHOLDER_PROFILES.root, 'root has a reserved placeholder profile');
   assert.ok(PLACEHOLDER_PROFILES.void, 'void has a reserved placeholder profile');
   assert.ok(PLACEHOLDER_PROFILES.infinity, 'infinity has a reserved placeholder profile');
+  assert.ok(PLACEHOLDER_PROFILES.everything, 'everything has a reserved placeholder profile');
+  assert.ok(PLACEHOLDER_PROFILES.nothing, 'nothing has a reserved placeholder profile');
+  assert.ok(PLACEHOLDER_PROFILES.someone, 'someone has a reserved placeholder profile');
+  assert.ok(PLACEHOLDER_PROFILES.something, 'something has a reserved placeholder profile');
+  assert.ok(PLACEHOLDER_PROFILES.unknown, 'unknown has a reserved placeholder profile');
+  assert.ok(PLACEHOLDER_PROFILES.else, 'else has a reserved placeholder profile');
   const seenBios = new Set();
   const seenNotes = new Set();
   for (const [username, placeholder] of Object.entries(PLACEHOLDER_PROFILES)) {

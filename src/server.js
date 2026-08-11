@@ -59,7 +59,14 @@ export function createApp() {
     res.append('Link', '</humans.txt>; rel="author"');
     res.setHeader('X-Nanashi', 'was-here');
     if (/\bcurl\//i.test(req.get('user-agent') || '')) res.setHeader('X-Curl', 'excellent-choice');
+    if (req.get('dnt') === '1') res.setHeader('X-Tracking', 'was-never-here');
+    if (req.get('sec-gpc') === '1') res.setHeader('X-Privacy-Preference', 'acknowledged');
     next();
+  });
+  app.options('/teapot', (req, res) => {
+    res.setHeader('Allow', 'GET, HEAD, OPTIONS');
+    res.setHeader('X-Brew', 'not-standardized');
+    res.status(204).end();
   });
   app.head('/teapot', (req, res) => {
     res.setHeader('X-Tea', 'omitted');
@@ -83,6 +90,12 @@ export function createApp() {
   app.get('/humans.txt', (req, res) => {
     res.type('text/plain').send('/* HUMANS */\nHuman: NamelessNanashi\nSite: NamelessPronouns\n\nThanks for remembering the humans behind NamelessPronouns.\n');
   });
+  app.get('/ads.txt', (req, res) => {
+    res.type('text/plain').send('# No advertisements are available. Yet is not implied.\n');
+  });
+  app.get('/algorithm', (req, res) => {
+    res.type('text/plain').status(404).send('No algorithm lives here. You choose what to read.\n');
+  });
   app.get('/robots.txt', (req, res) => {
     res.type('text/plain').send('# Crawl if you like. You may not remember this place.\n# Nanashi was here. The crawler saw nothing.\nUser-agent: *\nAllow: /\n');
   });
@@ -91,6 +104,12 @@ export function createApp() {
   });
   app.get('/pronouns.txt', (req, res) => {
     res.type('text/plain').send('Pronouns: any/all\nOwner: NamelessNanashi\n\nThis file uses it/its.\n');
+  });
+  app.head('/nothing', (req, res) => {
+    res.setHeader('X-Nothing', 'successfully-returned');
+    res.setHeader('X-Nothing-By', 'NamelessNanashi');
+    res.setHeader('X-Head', 'nothing-to-see');
+    res.status(204).end();
   });
   app.get('/nothing', (req, res) => {
     res.setHeader('X-Nothing', 'successfully-returned');

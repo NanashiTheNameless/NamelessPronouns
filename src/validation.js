@@ -4,7 +4,8 @@ const RESERVED_USERNAMES = new Set([
   'about', 'contact', 'terms', 'privacy', 'legal', 'login', 'logout', 'signup', 'register',
   'account', 'dashboard', 'settings', 'profiles', 'profile', 'workspaces', 'workspace',
   'u', 'user', 'users', 'api', 'static', 'assets', 'healthz', 'readyz', 'consent', 'recover',
-  'verify-email', 'null', 'undefined', 'anonymous', 'everyone', 'nobody', 'epoch',
+  'verify-email', 'null', 'undefined', 'anonymous', 'someone', 'something', 'unknown', 'else',
+  'everyone', 'everything', 'nobody', 'nothing', 'epoch',
   'nan', 'localhost', 'true', 'false', 'void', 'infinity', 'me', 'self',
 ]);
 export class ValidationError extends Error {}

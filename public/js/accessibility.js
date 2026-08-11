@@ -59,6 +59,18 @@ function writeSession(key, value) {
   } catch {}
 }
 
+function read404Returns() {
+  try {
+    const state = JSON.parse(readRaw('np-easter-404-returns') || 'null');
+    const updatedAt = Number(state?.updatedAt);
+    if (!state || !Number.isInteger(state.count) || !Number.isFinite(updatedAt)
+      || updatedAt > Date.now() || Date.now() - updatedAt > 60 * 60 * 1000) return 0;
+    return Math.max(0, Math.min(3, state.count));
+  } catch {
+    return 0;
+  }
+}
+
 let easterToastTimer;
 function announceEaster(message) {
   const easterStatus = document.querySelector('[data-easter-status]');
@@ -396,12 +408,16 @@ function wireKeyboardEggs() {
   let answerPosition = 0;
   let whoamiPosition = 0;
   let helpPosition = 0;
+  let pronounsPosition = 0;
+  let xyzzyPosition = 0;
   let headingTimer;
   let ownerTimer;
   const nanashiSequence = [...'nanashi'];
   const answerSequence = ['4', '2'];
   const whoamiSequence = [...'whoami'];
   const helpSequence = [...'help'];
+  const pronounsSequence = [...'pronouns'];
+  const xyzzySequence = [...'xyzzy'];
   const announce = announceEaster;
   let signatureClicks = 0;
   ownerSignature?.addEventListener('click', (event) => {
@@ -479,6 +495,20 @@ function wireKeyboardEggs() {
       helpPosition = 0;
       announce('Shift+? was right there.');
     }
+    pronounsPosition = key === pronounsSequence[pronounsPosition]
+      ? pronounsPosition + 1
+      : (key === pronounsSequence[0] ? 1 : 0);
+    if (pronounsPosition === pronounsSequence.length) {
+      pronounsPosition = 0;
+      announce('Correct. You found the subject.');
+    }
+    xyzzyPosition = key === xyzzySequence[xyzzyPosition]
+      ? xyzzyPosition + 1
+      : (key === xyzzySequence[0] ? 1 : 0);
+    if (xyzzyPosition === xyzzySequence.length) {
+      xyzzyPosition = 0;
+      announce('Nothing happens. Documented.');
+    }
     position = key === sequence[position] ? position + 1 : (key === sequence[0] ? 1 : 0);
     if (position !== sequence.length) return;
     position = 0;
@@ -501,6 +531,12 @@ function wirePageEggs() {
     if (today.getMonth() === 1 && today.getDate() === 29) {
       seasonal.textContent = 'This message appears approximately once every four years.';
       seasonal.hidden = false;
+    } else if (today.getMonth() === 2 && today.getDate() === 14) {
+      seasonal.textContent = 'Approximately 3.14 people are reading this.';
+      seasonal.hidden = false;
+    } else if (today.getMonth() === 3 && today.getDate() === 1) {
+      seasonal.textContent = 'Everything here is true, except False.';
+      seasonal.hidden = false;
     } else if (today.getMonth() === 0 && today.getDate() === 1) {
       seasonal.textContent = 'Epoch says happy birthday.';
       seasonal.hidden = false;
@@ -508,16 +544,11 @@ function wirePageEggs() {
   }
 
   document.querySelector('[data-404-return]')?.addEventListener('click', () => {
-    const count = Number(readSession('np-easter-404-returns') || 0) + 1;
-    writeSession('np-easter-404-returns', String(count));
-    writeSession('np-easter-404-returning', 'yes');
+    write('np-easter-404-returns', JSON.stringify({ count: Math.min(3, read404Returns() + 1), updatedAt: Date.now() }));
   });
-  if (location.pathname === '/' && readSession('np-easter-404-returning') === 'yes') {
-    writeSession('np-easter-404-returning', null);
-    if (Number(readSession('np-easter-404-returns') || 0) >= 3) {
-      writeSession('np-easter-404-returns', null);
-      announceEaster('The missing page was safely returned. Repeatedly.');
-    }
+  if (location.pathname === '/' && read404Returns() >= 3) {
+    write('np-easter-404-returns', null);
+    announceEaster('The missing page was safely returned. Repeatedly.');
   }
 
   const profile = document.querySelector('[data-profile-page]');
@@ -527,6 +558,7 @@ function wirePageEggs() {
     const visits = Number(readSession(key) || 0) + 1;
     writeSession(key, String(visits));
     if (visits === 7) announceEaster('You two have met before.');
+    if (username === 'infinity') setTimeout(() => announceEaster('Still going.'), 60 * 1000);
   }
 
   const avatar = document.querySelector('[data-profile-avatar]');
@@ -542,22 +574,35 @@ function wirePageEggs() {
 
   const focusable = () => [...document.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')]
     .filter((element) => !element.hidden && element.getClientRects().length > 0);
-  const keyboardVisited = new Set();
-  let tabPending = false;
-  let lapStart = null;
-  document.addEventListener('keydown', (event) => { tabPending = event.key === 'Tab'; });
+  const keyboardVisited = { forward: new Set(), reverse: new Set() };
+  const lapStart = { forward: null, reverse: null };
+  let tabDirection = null;
+  document.addEventListener('keydown', (event) => {
+    tabDirection = event.key === 'Tab' ? (event.shiftKey ? 'reverse' : 'forward') : null;
+  });
   document.addEventListener('focusin', (event) => {
-    if (!tabPending) return;
-    tabPending = false;
+    if (!tabDirection) return;
+    const direction = tabDirection;
+    tabDirection = null;
     const current = focusable();
     if (!current.includes(event.target)) return;
-    if (!lapStart) lapStart = event.target;
-    keyboardVisited.add(event.target);
-    if (event.target === lapStart && keyboardVisited.size >= current.length && readSession('np-easter-keyboard-lap') !== 'yes') {
-      writeSession('np-easter-keyboard-lap', 'yes');
-      announceEaster('Full keyboard lap completed.');
+    if (!lapStart[direction]) lapStart[direction] = event.target;
+    keyboardVisited[direction].add(event.target);
+    const storageKey = direction === 'reverse' ? 'np-easter-keyboard-lap-reverse' : 'np-easter-keyboard-lap';
+    if (event.target === lapStart[direction] && keyboardVisited[direction].size >= current.length && readSession(storageKey) !== 'yes') {
+      writeSession(storageKey, 'yes');
+      announceEaster(direction === 'reverse' ? 'Keyboard lap completed in reverse.' : 'Full keyboard lap completed.');
     }
   });
+
+  const checkErrorDimensions = () => {
+    if (window.innerWidth === 404 && window.innerHeight === 418 && readSession('np-easter-error-dimensions') !== 'yes') {
+      writeSession('np-easter-error-dimensions', 'yes');
+      announceEaster('Not found, but properly steeped.');
+    }
+  };
+  window.addEventListener('resize', checkErrorDimensions);
+  checkErrorDimensions();
 }
 
 window.npAccessibility = { exportSettings, importSettings, contrastRatio, applyAll };
