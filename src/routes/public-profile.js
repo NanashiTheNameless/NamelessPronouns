@@ -1,6 +1,6 @@
 import express from 'express';
 import db from '../db/index.js';
-import { publicPageHeaders } from '../middleware/security-headers.js';
+import { allowEmbeddedOrigins, publicPageHeaders } from '../middleware/security-headers.js';
 import { matchViewingBan } from '../bans.js';
 import { clientIp } from '../util/net.js';
 import * as V from '../validation.js';
@@ -10,6 +10,7 @@ import { pronounPreferenceLabel } from '../pronoun-preferences.js';
 import { opinionLabel } from '../opinions.js';
 import { fullMarkdownAllowed, roleAtLeast, staffRoleLabel } from '../middleware/staff.js';
 import { renderProfileMarkdown } from '../markdown.js';
+import { collectEmbeddedOrigins } from '../html-sanitize.js';
 import { obfuscateEmails } from '../email-obfuscation.js';
 import { groupProfileWords, PROFILE_WORD_GROUPS_SQL, PROFILE_WORDS_SQL } from '../profile-words.js';
 const router = express.Router();
@@ -73,16 +74,20 @@ router.get('/u/:username', async (req, res) => {
     db.query(PROFILE_WORD_GROUPS_SQL, [profile.id]),
     db.query(PROFILE_WORDS_SQL, [profile.id]),
   ]);
+  const full = fullMarkdownAllowed(profile.staff_role);
   const markdown = (value, headingOffset) => renderProfileMarkdown(value, {
-    full: fullMarkdownAllowed(profile.staff_role),
+    full,
     headingOffset,
     inlineText: obfuscateEmails,
   });
+  const descriptionHtml = profile.description ? await markdown(profile.description, 0) : '';
+  const notesHtml = profile.notes ? await markdown(profile.notes, 1) : '';
+  allowEmbeddedOrigins(res, collectEmbeddedOrigins(`${descriptionHtml}\n${notesHtml}`), { permitted: full });
   res.render('profile', {
     title: `${profile.display_name} (@${profile.username_display})`,
     preview,
-    descriptionHtml: profile.description ? await markdown(profile.description, 0) : '',
-    notesHtml: profile.notes ? await markdown(profile.notes, 1) : '',
+    descriptionHtml,
+    notesHtml,
     username: profile.username_display,
     profile,
     staffBadge: staffRoleLabel(profile.staff_role),

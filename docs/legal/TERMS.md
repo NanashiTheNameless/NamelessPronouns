@@ -80,10 +80,12 @@ links must use validated HTTPS URLs.
 The About me and Identity notes fields accept a limited set of Markdown
 formatting: bold, italics, underline, strikethrough, inline code, headings,
 bulleted lists, and block quotes. Administrator and Owner accounts may also use
-hyperlinks, numbered and nested lists, tables, fenced code blocks, horizontal
-rules, automatic linking of HTTPS addresses, and images that point at files
-already hosted on this site. Markdown that is not supported is displayed exactly
-as you typed it, and a backslash keeps a formatting character literal.
+hyperlinks, numbered, nested and task lists, definition lists, footnotes,
+tables, fenced code blocks, horizontal rules, automatic linking of HTTPS
+addresses, headings that carry their own link, images from any HTTPS address,
+and ordinary HTML markup including embedded video, audio, and HTTPS frames.
+Markdown that is not supported is displayed exactly as you typed it, and a
+backslash keeps a formatting character literal.
 
 Hyperlinks written inside About me or Identity notes are limited to
 Administrator and Owner accounts and must be HTTPS. Every account can add links
@@ -91,10 +93,20 @@ through the Links section of the profile editor, which requires validated HTTPS
 URLs. Submitting a hyperlink in a prose field without that permission is
 rejected.
 
-Apart from the Markdown above, profile text and links do not allow user HTML,
-JavaScript, CSS, iframes, embeds, widgets, executable code, remotely hosted
-images, web fonts, or other active content. HTML tags are shown as text instead
-of being interpreted. The only image upload-like feature is the account avatar
+No account may submit anything that executes. Scripts, event-handler
+attributes, `javascript:` addresses, plugins, forms, and inline or embedded CSS
+are removed before a profile is shown, and the content security policy blocks
+script execution from any other origin. A profile page permits loading only the
+specific HTTPS hosts that its own content refers to; every other page permits
+none at all. Addresses that are neither HTTPS nor a
+path on this site are refused. For accounts without the wider Markdown set,
+HTML tags are shown as text instead of being interpreted.
+
+Content that an Administrator or Owner embeds from another site, such as a
+picture or a video frame, is fetched by each viewer's own browser. That reveals
+the viewer's address and request details to the site being embedded, which is
+outside NamelessNanashi's control and is not covered by this service's
+protections. The only image upload-like feature is the account avatar
 tool. An avatar may use
 Gravatar, a locally generated deterministic identicon, or a size-limited PNG,
 JPEG, WebP, or restricted SVG `data:` URI prepared in the browser. Unsafe SVG

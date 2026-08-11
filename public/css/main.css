@@ -31,7 +31,7 @@
   --muted: #ffffff;
   --border: #45414a;
   --accent: #e51b23;
-  --accent-hover: #ff353d;
+  --accent-hover: #b3141b;
   --accent-soft: #3b171a;
   --danger: #ffffff;
   --danger-soft: #451719;
@@ -543,7 +543,7 @@ button,
   font: inherit;
   font-weight: 750;
   cursor: pointer;
-  transition: transform 150ms ease, background 150ms ease;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 .button {
   display: inline-flex;
@@ -557,25 +557,30 @@ button.secondary,
   background: var(--accent-soft);
 }
 button:hover,
-.button:hover {
+.button:hover,
+a.button:hover {
   color: var(--on-accent);
   background: var(--accent-hover);
-  transform: translateY(-1px);
+  text-decoration: underline;
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.2em;
 }
 button.secondary:hover,
-.button.secondary:hover {
-  color: var(--text);
-  background: var(--border);
+.button.secondary:hover,
+a.button.secondary:hover {
+  color: var(--on-accent);
+  background: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.2em;
 }
 a.button,
 a.button:visited,
-a.button:hover,
 a.button:active {
   color: var(--on-accent);
 }
 a.button.secondary,
 a.button.secondary:visited,
-a.button.secondary:hover,
 a.button.secondary:active {
   color: var(--text);
 }
@@ -607,6 +612,7 @@ a.button.secondary:active {
   margin-left: auto;
   content: "▾";
 }
+.flag-picker summary:hover,
 .flag-picker details[open] summary {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-soft);
@@ -655,8 +661,6 @@ button.flag-picker-option[aria-selected="true"] {
   color: var(--text);
   background: var(--accent-soft);
   border-color: var(--accent);
-  box-shadow: none;
-  transform: none;
 }
 .flag-picker-empty {
   display: grid;
@@ -862,11 +866,10 @@ altcha-widget.email-obfuscation .email-reveal {
   text-underline-offset: 0.18em;
   vertical-align: baseline;
 }
-altcha-widget.email-obfuscation .email-reveal:hover {
+altcha-widget.email-obfuscation .email-reveal:hover,
+.markdown-help summary:hover {
   color: var(--text);
-  background: transparent;
-  box-shadow: none;
-  transform: none;
+  text-decoration-thickness: 0.16em;
 }
 .prose-field {
   display: grid;
@@ -999,6 +1002,50 @@ altcha-widget.email-obfuscation .email-reveal:hover {
 .md-right {
   text-align: right;
 }
+.profile-prose iframe,
+.profile-prose video,
+.profile-prose audio,
+.profile-prose img {
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+.profile-prose iframe {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  height: auto;
+}
+.md-anchor {
+  font-weight: 650;
+  text-decoration: none;
+}
+.md-anchor:hover {
+  text-decoration: underline;
+}
+.profile-prose .md-tasks {
+  padding-left: 0.2rem;
+  list-style: none;
+}
+.profile-prose .md-task {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.profile-prose .md-definitions dt {
+  font-weight: 750;
+}
+.profile-prose .md-definitions dd {
+  margin: 0 0 0.5rem 1.1rem;
+}
+.profile-prose .md-footnotes {
+  margin-top: 1.2rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+.profile-prose .md-footnote-ref a {
+  text-decoration: none;
+}
 .profile-bio {
   margin-bottom: 1.2rem;
 }
@@ -1096,15 +1143,6 @@ altcha-widget.email-obfuscation .email-reveal:hover {
   color: var(--text);
   background: var(--surface-strong);
 }
-:root[data-theme="contrast"] button.secondary:hover,
-:root[data-theme="contrast"] a.button.secondary:hover,
-:root[data-theme="contrast-light"] button.secondary:hover,
-:root[data-theme="contrast-light"] a.button.secondary:hover,
-:root[data-theme="custom"] button.secondary:hover,
-:root[data-theme="custom"] a.button.secondary:hover {
-  color: var(--on-accent);
-  background: var(--accent);
-}
 .accessibility-panel {
   width: min(32rem, calc(100vw - 2rem));
   max-height: calc(100vh - 2rem);
@@ -1163,6 +1201,7 @@ altcha-widget.email-obfuscation .email-reveal:hover {
 }
 :root[data-theme="custom"] {
   --surface: var(--surface-strong);
+  --accent-hover: var(--accent);
   --accent-soft: var(--surface-strong);
   --danger: var(--text);
   --danger-soft: var(--surface-strong);

@@ -148,7 +148,7 @@ export function validateProfileForm(body, { full = false, max = PROSE_MAX } = {}
   if (!full) {
     for (const [field, value] of [['About me', raw.description], ['Identity notes', raw.notes]]) {
       if (hasMarkdownLink(value)) {
-        throw new V.ValidationError(`${field} hyperlinks are available to Administrator accounts only.`);
+        throw new V.ValidationError(`${field} does not accept hyperlinks. Add links in the Links section instead.`);
       }
     }
   }

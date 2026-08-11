@@ -26,6 +26,7 @@ const PAIRS = [
   ['--muted', '--surface-strong', 4.5],
   ['--placeholder', '--surface-strong', 4.5],
   ['--on-accent', '--accent', 4.5],
+  ['--on-accent', '--accent-hover', 4.5],
   ['--accent', '--bg', 4.5],
   ['--link', '--surface-strong', 4.5],
   ['--danger', '--danger-soft', 4.5],

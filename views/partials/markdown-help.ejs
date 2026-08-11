@@ -22,24 +22,32 @@
         <div><dt><code>| a | b |</code> then <code>| --- | --- |</code></dt><dd>Table, with <code>:---:</code> and <code>---:</code> for centered and right-aligned columns</dd></div>
         <div><dt><code>---</code> on its own line</dt><dd>Horizontal rule</dd></div>
         <div><dt><code>&lt;https://example.com&gt;</code> or a bare HTTPS URL</dt><dd>Automatic link</dd></div>
-        <div><dt><code>![alt](/static/path.png)</code></dt><dd>Image, site-hosted paths under <code>/static/</code> only</dd></div>
+        <div><dt><code>[label](&lt;https://example.com&gt;)</code></dt><dd>Hyperlink with the address wrapped in angle brackets, the same as a plain one</dd></div>
+        <div><dt><code>![alt](https://example.com/picture.png)</code></dt><dd>Image from any HTTPS address, or a path on this site</dd></div>
+        <div><dt><code>- [x] done</code></dt><dd>Task list with ticked and unticked boxes</dd></div>
+        <div><dt>A term, then <code>: meaning</code> on the next line</dt><dd>Definition list</dd></div>
+        <div><dt><code>text[^1]</code> and <code>[^1]: the note</code></dt><dd>Footnote, collected at the end with a link back</dd></div>
+        <div><dt>Headings</dt><dd>Each one gets a link you can copy to point at that section</dd></div>
+        <div><dt>HTML tags</dt><dd>Ordinary markup is kept: text, lists, tables, <code>details</code>, <code>img</code>, <code>video</code>, <code>audio</code>, and <code>iframe</code> embeds over HTTPS</dd></div>
       <% } %>
     </dl>
     <h2 class="markdown-help-subhead">Not supported</h2>
     <ul class="markdown-help-list">
       <% if (!full) { %>
-        <li>Hyperlinks — <code>[label](https://example.com)</code> is available to Administrator accounts only, and saving one here is rejected. Use the Links section instead.</li>
+        <li>Hyperlinks - write them in the Links section of the profile editor instead. A hyperlink typed into this field is rejected when you save.</li>
         <li>Images, video, and embeds</li>
         <li>Tables, fenced code blocks, and horizontal rules</li>
         <li>Numbered lists and nested lists</li>
         <li>Automatic linking of bare URLs</li>
         <li>Headings deeper than <code>###</code></li>
+        <li>Raw HTML - tags are shown as text</li>
       <% } else { %>
-        <li>Remotely hosted images, video, and embeds — the content security policy blocks them</li>
-        <li>Footnotes, definition lists, task lists, and heading anchors</li>
+        <li>Scripts and anything that runs code: <code>script</code>, <code>object</code>, <code>embed</code>, <code>form</code>, event handlers such as <code>onclick</code>, and <code>javascript:</code> addresses are removed</li>
+        <li>Inline <code>style</code> attributes and <code>style</code> blocks, so a profile cannot restyle the site</li>
+        <li>Addresses that are not HTTPS or a path on this site</li>
       <% } %>
-      <li>Raw HTML — tags are shown as text</li>
       <li>Emoji, accented letters, and other non-ASCII characters, including styled "fake font" letters</li>
+      <% if (full) { %><li class="fineprint">Anything a viewer's browser loads from another site, such as an embedded video, tells that site the viewer's address. Keep that in mind before embedding.</li><% } %>
     </ul>
     <p class="fineprint">Email addresses you write are automatically hidden behind a click-to-reveal widget.</p>
   </div>

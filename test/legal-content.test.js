@@ -16,6 +16,10 @@ test('the Terms describe the Markdown that profile prose actually accepts', asyn
     /do not allow user HTML, Markdown, JavaScript/,
     'the blanket ban on Markdown is gone now that Markdown is supported',
   );
+  assert.match(text, /ordinary HTML markup including embedded video, audio, and HTTPS frames/);
+  assert.match(text, /No account may submit anything that executes/);
+  assert.match(text, /permits loading only the\s+specific HTTPS hosts that its own content refers to/);
+  assert.match(text, /reveals\s+the viewer's address and request details to the site being embedded/);
 });
 test('both documents say who can open an unpublished profile', async () => {
   const termsText = await terms();
@@ -37,7 +41,14 @@ test('the Privacy Policy covers the accessibility settings kept in the browser',
   assert.match(text, /never sent\s+to the server/);
   assert.match(text, /are not included in an account\s+export/);
   assert.match(text, /Accessibility settings in local storage: kept in that browser/);
-  assert.match(text, /addresses taken from Markdown links written in\s+profile prose/);
+  assert.match(text, /addresses taken from Markdown links and embedded\s+media written in profile prose/);
+});
+test('the Privacy Policy warns that embedded content reaches other sites', async () => {
+  const text = await privacy();
+  assert.match(text, /A profile may contain content embedded from another site/);
+  assert.match(text, /the other site receives your IP address, user\s+agent/);
+  assert.match(text, /Nothing\s+else on the service loads third-party content into your browser/);
+  assert.match(text, /Each page permits only the hosts\s+its own content refers to/);
 });
 test('both documents say that every page asks not to be indexed', async () => {
   assert.match(await terms(), /Every page of the service is sent with instructions asking search engines\s+not to index or archive it/);
@@ -46,7 +57,9 @@ test('both documents say that every page asks not to be indexed', async () => {
 });
 test('the accepted policy versions moved past the pre-Markdown release', async () => {
   assert.equal(TERMS_VERSION, PRIVACY_VERSION, 'both documents are accepted as one version pair');
-  assert.notEqual(TERMS_VERSION, '2026-08-10.1', 'a material change requires renewed acceptance');
+  for (const superseded of ['2026-08-10.1', '2026-08-10.2']) {
+    assert.notEqual(TERMS_VERSION, superseded, 'a material change requires renewed acceptance');
+  }
   assert.match(TERMS_VERSION, /^\d{4}-\d{2}-\d{2}\.\d+$/);
   for (const document of [await terms(), await privacy()]) {
     assert.match(document, /^Effective date: \w+ \d{1,2}, \d{4}$/m);

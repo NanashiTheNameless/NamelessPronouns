@@ -1,4 +1,5 @@
 import { escapeHtml } from './util/html.js';
+import { BLOCK_TAGS, HTML_TAG_TOKEN, sanitizeTag, stripDangerousElements } from './html-sanitize.js';
 const HEADING = /^(#{1,6})[^\S\n]+(.*)$/;
 const BULLET_ITEM = /^([-*+])[^\S\n]+(.*)$/;
 const ORDERED_ITEM = /^(\d{1,9})[.)][^\S\n]+(.*)$/;
@@ -6,12 +7,17 @@ const QUOTE = /^>[^\S\n]?(.*)$/;
 const FENCE = /^```([A-Za-z0-9+#-]{0,20})$/;
 const RULE = /^(-{3,}|\*{3,}|_{3,})$/;
 const TABLE_DIVIDER = /^\|?[\s|:-]*-[\s|:-]*\|?$/;
-const LINK = /^\[([^\]\n]+)\]\((https:\/\/[^\s()<>"'`]+)\)/;
-const IMAGE = /^!\[([^\]\n]*)\]\((\/static\/[^\s()<>"'`]*)\)/;
+const URL_TARGET = '(?:https:\\/\\/|\\/)[^\\s()<>"\'`]*';
+const LINK = new RegExp(`^\\[([^\\]\\n]+)\\]\\(\\s*<?(${URL_TARGET})>?\\s*\\)`);
+const IMAGE = new RegExp(`^!\\[([^\\]\\n]*)\\]\\(\\s*<?(${URL_TARGET})>?\\s*\\)`);
+const FOOTNOTE_REFERENCE = /^\[\^([A-Za-z0-9_-]{1,32})\](?!:)/;
+const FOOTNOTE_DEFINITION = /^\[\^([A-Za-z0-9_-]{1,32})\]:[^\S\n]*(.*)$/;
+const TASK_ITEM = /^([-*+])[^\S\n]+\[([ xX])\][^\S\n]+(.*)$/;
+const DEFINITION = /^:[^\S\n]+(.*)$/;
 const ANGLE_LINK = /^<(https:\/\/[^\s<>"'`]+)>/;
 const BARE_LINK = /^https:\/\/[^\s<>"'`]+/;
 const LINK_SYNTAX = /\[[^\]\n]*\]\([^)\n]*\)/;
-const LINK_URLS = /\[[^\]\n]+\]\((https:\/\/[^\s()<>"'`]+)\)/g;
+const LINK_URLS = /\[[^\]\n]+\]\(\s*<?(https:\/\/[^\s()<>"'`]+)>?\s*\)/g;
 const ESCAPABLE = new Set(['*', '_', '~', '`', '#', '[', ']', '(', ')', '>', '-', '+', '|', '!', '\\']);
 const MARKERS = new Set(['*', '_', '~', '`']);
 const WORD_CHARACTER = /[A-Za-z0-9]/;
@@ -27,6 +33,10 @@ const INLINE_RULES = Object.freeze([
 const ALIGNMENT_CLASS = Object.freeze({ left: '', center: ' class="md-center"', right: ' class="md-right"' });
 async function escapeOnly(value) {
   return escapeHtml(value);
+}
+function slugFor(text) {
+  const slug = String(text).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+  return slug || 'section';
 }
 function headingTag(level, { full, headingOffset }) {
   const base = 2 + headingOffset;
@@ -82,6 +92,19 @@ async function renderInline(text, options) {
         continue;
       }
     }
+    if (options.full && character === '[') {
+      const reference = FOOTNOTE_REFERENCE.exec(rest);
+      if (reference && options.footnotes?.definitions.has(reference[1])) {
+        const id = reference[1];
+        if (!options.footnotes.order.includes(id)) options.footnotes.order.push(id);
+        const number = options.footnotes.order.indexOf(id) + 1;
+        await flush();
+        output += `<sup class="md-footnote-ref" id="md-fnref-${escapeHtml(id)}">`
+          + `<a href="#md-fn-${escapeHtml(id)}" aria-label="Footnote ${number}">${number}</a></sup>`;
+        index += reference[0].length;
+        continue;
+      }
+    }
     if (options.full && !options.linked && (character === '<' || character === 'h')) {
       const angle = character === '<' ? ANGLE_LINK.exec(rest) : null;
       const bare = angle ? null : BARE_LINK.exec(rest);
@@ -90,6 +113,15 @@ async function renderInline(text, options) {
         await flush();
         output += anchor(url, escapeHtml(url));
         index += angle ? angle[0].length : url.length;
+        continue;
+      }
+    }
+    if (options.full && character === '<') {
+      const token = HTML_TAG_TOKEN.exec(rest);
+      if (token) {
+        await flush();
+        output += sanitizeTag(token[0]);
+        index += token[0].length;
         continue;
       }
     }
@@ -115,6 +147,8 @@ function indentOf(line) {
 }
 function itemAt(line, full) {
   const body = line.trim();
+  const task = full ? TASK_ITEM.exec(body) : null;
+  if (task) return { ordered: false, start: 1, text: task[3], checked: task[2].toLowerCase() === 'x' };
   const bullet = BULLET_ITEM.exec(body);
   if (bullet) return { ordered: false, start: 1, text: bullet[2] };
   const ordered = full ? ORDERED_ITEM.exec(body) : null;
@@ -138,10 +172,20 @@ function isTableStart(lines, index, full) {
     && lines[index + 1].includes('|')
     && TABLE_DIVIDER.test(lines[index + 1].trim());
 }
+function htmlBlockAt(line, full) {
+  if (!full) return null;
+  const body = line.trim();
+  if (!body.startsWith('<')) return null;
+  const token = HTML_TAG_TOKEN.exec(body);
+  if (!token) return null;
+  const tag = /^<\/?([a-zA-Z][a-zA-Z0-9-]*)/.exec(token[0])[1].toLowerCase();
+  return BLOCK_TAGS.has(tag) ? tag : null;
+}
 function blockStarts(line, full) {
   const body = line.trim();
   if (body === '') return true;
   if (HEADING.test(body) || QUOTE.test(body) || itemAt(line, full)) return true;
+  if (full && (DEFINITION.test(body) || htmlBlockAt(line, full))) return true;
   return full && (FENCE.test(body) || RULE.test(body));
 }
 function collectWhile(lines, index, keep) {
@@ -194,6 +238,18 @@ function parseBlocks(lines, full) {
       index = cursor + 1;
       continue;
     }
+    const htmlTag = htmlBlockAt(line, full);
+    if (htmlTag) {
+      const collected = [body];
+      let cursor = index + 1;
+      while (cursor < lines.length && lines[cursor].trim() !== '') {
+        collected.push(lines[cursor].trim());
+        cursor += 1;
+      }
+      blocks.push({ type: 'html', lines: collected });
+      index = cursor;
+      continue;
+    }
     if (full && RULE.test(body)) {
       blocks.push({ type: 'rule' });
       index += 1;
@@ -214,7 +270,7 @@ function parseBlocks(lines, full) {
     const item = itemAt(line, full);
     if (item) {
       const indent = indentOf(line);
-      const list = { type: 'list', ordered: item.ordered, start: item.start, items: [] };
+      const list = { type: 'list', ordered: item.ordered, start: item.start, items: [], checks: [] };
       while (index < lines.length) {
         const next = lines[index];
         if (next.trim() === '') {
@@ -228,10 +284,32 @@ function parseBlocks(lines, full) {
         const gathered = collectItemLines(lines, index, indent, full);
         gathered.collected[0] = nextItem.text;
         list.items.push(gathered.collected);
+        list.checks.push(nextItem.checked);
         index = gathered.cursor;
       }
       blocks.push(list);
       continue;
+    }
+    if (full && !DEFINITION.test(body) && index + 1 < lines.length && DEFINITION.test(lines[index + 1].trim())) {
+      const entries = [];
+      let cursor = index;
+      while (cursor < lines.length) {
+        const term = lines[cursor].trim();
+        if (term === '' || DEFINITION.test(term) || blockStarts(lines[cursor], full)) break;
+        if (!(cursor + 1 < lines.length && DEFINITION.test(lines[cursor + 1].trim()))) break;
+        const definitions = [];
+        cursor += 1;
+        while (cursor < lines.length && DEFINITION.test(lines[cursor].trim())) {
+          definitions.push(DEFINITION.exec(lines[cursor].trim())[1]);
+          cursor += 1;
+        }
+        entries.push({ term, definitions });
+      }
+      if (entries.length) {
+        blocks.push({ type: 'definitions', entries });
+        index = cursor;
+        continue;
+      }
     }
     if (isTableStart(lines, index, full)) {
       const align = alignments(lines[index + 1]);
@@ -268,7 +346,31 @@ async function renderBlocks(blocks, options, { tight = false } = {}) {
     }
     if (block.type === 'heading') {
       const tag = headingTag(block.level, options);
-      html.push(`<${tag}>${await renderInline(block.text, options)}</${tag}>`);
+      const label = await renderInline(block.text, options);
+      if (!options.full) {
+        html.push(`<${tag}>${label}</${tag}>`);
+        continue;
+      }
+      const slug = `md-${slugFor(block.text)}`;
+      html.push(`<${tag} id="${slug}">${label}`
+        + ` <a class="md-anchor" href="#${slug}" aria-label="Link to this heading">#</a></${tag}>`);
+      continue;
+    }
+    if (block.type === 'html') {
+      const lines = [];
+      for (const line of block.lines) lines.push(await renderInline(line, options));
+      html.push(lines.join('\n'));
+      continue;
+    }
+    if (block.type === 'definitions') {
+      const entries = [];
+      for (const entry of block.entries) {
+        entries.push(`<dt>${await renderInline(entry.term, options)}</dt>`);
+        for (const definition of entry.definitions) {
+          entries.push(`<dd>${await renderInline(definition, options)}</dd>`);
+        }
+      }
+      html.push(`<dl class="md-definitions">${entries.join('')}</dl>`);
       continue;
     }
     if (block.type === 'quote') {
@@ -277,12 +379,19 @@ async function renderBlocks(blocks, options, { tight = false } = {}) {
     }
     if (block.type === 'list') {
       const items = [];
-      for (const item of block.items) {
-        items.push(`<li>${await renderBlocks(parseBlocks(item, options.full), options, { tight: true })}</li>`);
+      for (const [position, item] of block.items.entries()) {
+        const content = await renderBlocks(parseBlocks(item, options.full), options, { tight: true });
+        const checked = block.checks?.[position];
+        if (checked === undefined) {
+          items.push(`<li>${content}</li>`);
+          continue;
+        }
+        items.push(`<li class="md-task"><input type="checkbox" disabled${checked ? ' checked' : ''}> ${content}</li>`);
       }
       const tag = block.ordered ? 'ol' : 'ul';
       const start = block.ordered && block.start !== 1 ? ` start="${block.start}"` : '';
-      html.push(`<${tag}${start}>${items.join('')}</${tag}>`);
+      const className = block.checks?.some((value) => value !== undefined) ? ' class="md-tasks"' : '';
+      html.push(`<${tag}${start}${className}>${items.join('')}</${tag}>`);
       continue;
     }
     if (block.type === 'table') {
@@ -304,18 +413,43 @@ async function renderBlocks(blocks, options, { tight = false } = {}) {
     const lines = [];
     for (const line of block.lines) lines.push(await renderInline(line, options));
     const joined = lines.join('<br>');
+    if (joined.trim() === '') continue;
     html.push(tight && position === 0 ? joined : `<p>${joined}</p>`);
   }
   return html.join('');
 }
+async function renderFootnotes(footnotes, options) {
+  if (!footnotes.order.length) return '';
+  const items = [];
+  for (const [position, id] of footnotes.order.entries()) {
+    const body = await renderInline(footnotes.definitions.get(id), options);
+    items.push(`<li id="md-fn-${escapeHtml(id)}">${body}`
+      + ` <a href="#md-fnref-${escapeHtml(id)}" aria-label="Back to reference ${position + 1}">&#8617;</a></li>`);
+  }
+  return `<section class="md-footnotes" aria-label="Footnotes"><ol>${items.join('')}</ol></section>`;
+}
 export async function renderProfileMarkdown(text, { full = false, headingOffset = 0, inlineText = escapeOnly } = {}) {
-  const lines = String(text ?? '').replace(/\r\n?/g, '\n').split('\n');
-  return renderBlocks(parseBlocks(lines, full), {
+  const source = full ? stripDangerousElements(text) : String(text ?? '');
+  const lines = source.replace(/\r\n?/g, '\n').split('\n');
+  const footnotes = { order: [], definitions: new Map() };
+  const body = [];
+  for (const line of lines) {
+    const definition = full ? FOOTNOTE_DEFINITION.exec(line.trim()) : null;
+    if (definition) {
+      footnotes.definitions.set(definition[1], definition[2]);
+      continue;
+    }
+    body.push(line);
+  }
+  const options = {
     full,
     headingOffset: Math.max(0, Math.min(3, Number(headingOffset) || 0)),
     linked: false,
     inlineText,
-  });
+    footnotes,
+  };
+  const rendered = await renderBlocks(parseBlocks(body, full), options);
+  return rendered + await renderFootnotes(footnotes, options);
 }
 export function hasMarkdownLink(text) {
   return LINK_SYNTAX.test(String(text ?? ''));

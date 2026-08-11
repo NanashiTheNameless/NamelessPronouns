@@ -284,7 +284,8 @@ test('profile editor offers tall Markdown-aware prose fields with a cheatsheet',
   assert.match(html, /<details class="markdown-help">/, 'the cheatsheet opens from the note itself');
   assert.match(html, /Not supported/);
   assert.match(html, /Images, video, and embeds/);
-  assert.match(html, /available to Administrator accounts only/);
+  assert.match(html, /write them in the Links section of the profile editor instead/);
+  assert.doesNotMatch(html, /Administrator|Owner|staff/i, 'a field never advertises what other accounts may do');
   assert.doesNotMatch(html, /<dd>Hyperlink/);
   assert.doesNotMatch(html, /what you are into/, 'the bio hint stays plain');
   assert.match(html, /data-character-set="\[\\x20-\\x7E\\n\]"/);
@@ -297,8 +298,11 @@ test('profile editor offers tall Markdown-aware prose fields with a cheatsheet',
   assert.match(adminHtml, /Code block/);
   assert.match(adminHtml, /Table, with/);
   assert.match(adminHtml, /<dd>Hyperlink, HTTPS only<\/dd>/);
-  assert.match(adminHtml, /Raw HTML/, 'raw HTML stays unsupported at every level');
+  assert.match(adminHtml, /HTML tags/, 'Administrators may write HTML');
+  assert.match(adminHtml, /Scripts and anything that runs code/, 'but never anything that executes');
+  assert.match(adminHtml, /tells that site the viewer's address/, 'embedding is flagged as a viewer-privacy choice');
   assert.doesNotMatch(adminHtml, /Numbered lists and nested lists<\/li>/);
+  assert.match(html, /Raw HTML - tags are shown as text/, 'everyone else still gets escaped HTML');
   assert.match(html, /id="description-characters" role="status" aria-live="polite" data-character-report/,
     'the live character report is polite, not an interrupting alert');
   assert.doesNotMatch(html, /role="alert" data-character-report/);
@@ -312,12 +316,12 @@ test('profile editor offers tall Markdown-aware prose fields with a cheatsheet',
 });
 test('profile editor: prose fields keep Markdown links for Administrators only', () => {
   const body = validBody({ description: 'See [my site](https://example.com/me).' });
-  assert.throws(() => validateProfileForm(body), /Administrator accounts only/);
+  assert.throws(() => validateProfileForm(body), /does not accept hyperlinks\. Add links in the Links section instead\./);
   assert.equal(
     validateProfileForm(body, { full: true }).description,
     'See [my site](https://example.com/me).',
   );
-  assert.throws(() => validateProfileForm(validBody({ notes: '[x](https://example.com)' })), /Administrator accounts only/);
+  assert.throws(() => validateProfileForm(validBody({ notes: '[x](https://example.com)' })), /does not accept hyperlinks/);
   assert.equal(fullMarkdownAllowed('none'), false);
   assert.equal(fullMarkdownAllowed('support'), false);
   assert.equal(fullMarkdownAllowed('moderator'), false);

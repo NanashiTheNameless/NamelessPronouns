@@ -27,18 +27,18 @@ test('markdown: renders headings, lists, quotes and paragraphs', async () => {
   assert.equal(await renderProfileMarkdown(null), '');
 });
 test('markdown: never emits caller HTML or non-HTTPS links', async () => {
-  assert.equal(
-    await renderProfileMarkdown('<script>alert(1)</script>', { full: true }),
-    '<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>',
-  );
+  assert.equal(await renderProfileMarkdown('<script>alert(1)</script>'), '<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>');
+  assert.equal(await renderProfileMarkdown('<script>alert(1)</script>', { full: true }), '');
   assert.equal(
     await renderProfileMarkdown('`<b>x</b>`', { full: true }),
     '<p><code>&lt;b&gt;x&lt;/b&gt;</code></p>',
   );
-  for (const url of ['javascript:alert(1)', 'http://example.com', 'data:text/html,x', '/local']) {
+  for (const url of ['javascript:alert(1)', 'http://example.com', 'data:text/html,x']) {
     const html = await renderProfileMarkdown(`[label](${url})`, { full: true });
     assert.doesNotMatch(html, /<a /, `${url} must not become a link`);
   }
+  assert.match(await renderProfileMarkdown('[label](/local)', { full: true }), /<a href="\/local"/,
+    'a path on this site is a valid target');
   assert.equal(
     await renderProfileMarkdown('[a"onmouseover=x](https://example.com/"onmouseover=x)', { full: true }),
     '<p>[a&quot;onmouseover=x](<a href="https://example.com/" rel="noopener noreferrer nofollow">'
@@ -105,7 +105,7 @@ test('markdown: the full level renders ordered, nested and fenced blocks', async
     '<pre tabindex="0" role="region" aria-label="Code block"><code class="language-js">const x = 1 &lt; 2;</code></pre>',
   );
   assert.equal(await renderProfileMarkdown('---', full), '<hr>');
-  assert.equal(await renderProfileMarkdown('###### deepest', full), '<h6>deepest</h6>');
+  assert.match(await renderProfileMarkdown('###### deepest', full), /^<h6 id="md-deepest">deepest /);
 });
 test('markdown: the full level renders tables with alignment classes', async () => {
   assert.equal(
@@ -115,7 +115,7 @@ test('markdown: the full level renders tables with alignment classes', async () 
       + '<td class="md-right">3</td></tr></tbody></table></div>',
   );
 });
-test('markdown: the full level links automatically and allows only site-hosted images', async () => {
+test('markdown: the full level links automatically and refuses insecure media', async () => {
   const full = { full: true };
   assert.equal(
     await renderProfileMarkdown('see https://example.com/x.', full),
@@ -129,15 +129,18 @@ test('markdown: the full level links automatically and allows only site-hosted i
     await renderProfileMarkdown('![a flag](/static/flags/Queer.png)', full),
     '<p><img src="/static/flags/Queer.png" alt="a flag" loading="lazy"></p>',
   );
-  for (const source of ['https://evil.example/x.png', '/etc/passwd', 'javascript:alert(1)']) {
+  for (const source of ['http://cdn.example/x.png', 'javascript:alert(1)', 'data:image/svg+xml,<svg/>']) {
     assert.doesNotMatch(await renderProfileMarkdown(`![x](${source})`, full), /<img /, `${source} must not embed`);
   }
 });
-test('markdown: the full level still escapes raw HTML', async () => {
+test('markdown: raw HTML is escaped for everyone except the full level', async () => {
   assert.equal(
-    await renderProfileMarkdown('<img src=x onerror=alert(1)>\n\n<b>no</b>', { full: true }),
+    await renderProfileMarkdown('<img src=x onerror=alert(1)>\n\n<b>no</b>'),
     '<p>&lt;img src=x onerror=alert(1)&gt;</p><p>&lt;b&gt;no&lt;/b&gt;</p>',
   );
+  assert.equal(await renderProfileMarkdown('<img src=x onerror=alert(1)>', { full: true }), '',
+    'an image with a handler and no usable source leaves nothing behind, not even an empty paragraph');
+  assert.equal(await renderProfileMarkdown('<b>yes</b>', { full: true }), '<p><b>yes</b></p>');
 });
 test('markdown: scrollable blocks are reachable by keyboard', async () => {
   const table = await renderProfileMarkdown('| a | b |\n| --- | --- |\n| 1 | 2 |', { full: true });
@@ -149,7 +152,7 @@ test('markdown: heading levels sit under the section that holds them', async () 
   assert.equal(await renderProfileMarkdown('# a\n## b\n### c'), '<h2>a</h2><h3>b</h3><h4>c</h4>');
   assert.equal(await renderProfileMarkdown('# a\n## b', { headingOffset: 1 }), '<h3>a</h3><h4>b</h4>');
   assert.equal(await renderProfileMarkdown('### c', { headingOffset: 1 }), '<h5>c</h5>', 'the limited cap moves with the offset');
-  assert.equal(await renderProfileMarkdown('###### f', { full: true, headingOffset: 1 }), '<h6>f</h6>', 'nothing goes past h6');
+  assert.match(await renderProfileMarkdown('###### f', { full: true, headingOffset: 1 }), /^<h6 id="md-f">/, 'nothing goes past h6');
   assert.equal(await renderProfileMarkdown('# a', { headingOffset: 99 }), '<h5>a</h5>', 'a silly offset is clamped');
 });
 test('markdown: author underline is not styled like a link', async () => {
@@ -157,4 +160,63 @@ test('markdown: author underline is not styled like a link', async () => {
   const linked = await renderProfileMarkdown('[label](https://example.com/) and __mine__', { full: true });
   assert.match(linked, /<a href="https:\/\/example\.com\/"[^>]*>label<\/a>/);
   assert.match(linked, /<u class="md-underline">mine<\/u>/);
+});
+test('markdown: the full level accepts hidden link targets and any HTTPS image', async () => {
+  const full = { full: true };
+  assert.equal(
+    await renderProfileMarkdown('help go [here](<https://pronouns.namelessnanashi.dev/contact>).', full),
+    '<p>help go <a href="https://pronouns.namelessnanashi.dev/contact" rel="noopener noreferrer nofollow">here</a>.</p>',
+  );
+  assert.equal(
+    await renderProfileMarkdown('![art](https://cdn.example/art.png)', full),
+    '<p><img src="https://cdn.example/art.png" alt="art" loading="lazy"></p>',
+  );
+  assert.equal(
+    await renderProfileMarkdown('![flag](/static/flags/Queer.png)', full),
+    '<p><img src="/static/flags/Queer.png" alt="flag" loading="lazy"></p>',
+  );
+  assert.doesNotMatch(await renderProfileMarkdown('![x](http://cdn.example/a.png)', full), /<img/);
+  assert.equal(await renderProfileMarkdown('[here](<https://example.com>)'), '<p>[here](&lt;https://example.com&gt;)</p>',
+    'the limited level still refuses hyperlinks');
+});
+test('markdown: the full level keeps safe HTML and drops anything executable', async () => {
+  const full = { full: true };
+  assert.equal(
+    await renderProfileMarkdown('<div><p>Hi <em>there</em></p></div>', full),
+    '<div><p>Hi <em>there</em></p></div>',
+  );
+  assert.equal(
+    await renderProfileMarkdown('<iframe src="https://www.youtube.com/embed/abc" allowfullscreen></iframe>', full),
+    '<iframe src="https://www.youtube.com/embed/abc" allowfullscreen referrerpolicy="no-referrer" loading="lazy"></iframe>',
+  );
+  assert.equal(await renderProfileMarkdown('before <script>alert(1)</script> after', full), '<p>before  after</p>');
+  assert.equal(await renderProfileMarkdown('<p onclick="alert(1)">x</p>', full), '<p>x</p>');
+  assert.equal(await renderProfileMarkdown('mixed <strong>raw **and** markdown</strong>', full),
+    '<p>mixed <strong>raw <strong>and</strong> markdown</strong></p>');
+  assert.equal(await renderProfileMarkdown('<div>x</div>'), '<p>&lt;div&gt;x&lt;/div&gt;</p>',
+    'the limited level still shows tags as text');
+});
+test('markdown: the full level adds task lists, definitions, footnotes and heading links', async () => {
+  const full = { full: true };
+  assert.equal(
+    await renderProfileMarkdown('- [x] done\n- [ ] later', full),
+    '<ul class="md-tasks"><li class="md-task"><input type="checkbox" disabled checked> done</li>'
+      + '<li class="md-task"><input type="checkbox" disabled> later</li></ul>',
+  );
+  assert.equal(
+    await renderProfileMarkdown('Enby\n: not a boy\n: not a girl', full),
+    '<dl class="md-definitions"><dt>Enby</dt><dd>not a boy</dd><dd>not a girl</dd></dl>',
+  );
+  const footnoted = await renderProfileMarkdown('Boring[^why] really.\n\n[^why]: I like **quiet**.', full);
+  assert.match(footnoted, /Boring<sup class="md-footnote-ref" id="md-fnref-why"><a href="#md-fn-why" aria-label="Footnote 1">1<\/a><\/sup>/);
+  assert.match(footnoted, /<section class="md-footnotes" aria-label="Footnotes"><ol><li id="md-fn-why">I like <strong>quiet<\/strong>\./);
+  assert.match(footnoted, /<a href="#md-fnref-why" aria-label="Back to reference 1">/);
+  assert.doesNotMatch(footnoted, /\[\^why\]:/, 'the definition line is not printed twice');
+  assert.equal(
+    await renderProfileMarkdown('## About me', full),
+    '<h3 id="md-about-me">About me <a class="md-anchor" href="#md-about-me" aria-label="Link to this heading">#</a></h3>',
+  );
+  assert.equal(await renderProfileMarkdown('- [x] done', {}), '<ul><li>[x] done</li></ul>', 'the limited level keeps it literal');
+  assert.equal(await renderProfileMarkdown('## About me', {}), '<h3>About me</h3>', 'and adds no anchors');
+  assert.equal(await renderProfileMarkdown('Boring[^why].\n\n[^why]: quiet', {}), '<p>Boring[^why].</p><p>[^why]: quiet</p>');
 });

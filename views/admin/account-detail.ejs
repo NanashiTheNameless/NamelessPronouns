@@ -23,7 +23,7 @@
       <section class="panel signup-request" aria-labelledby="request-h">
         <h2 id="request-h">Signup request</h2>
         <p><strong><%= account.requested_display_name %></strong> <span class="username">@<%= account.requested_profile_username_display %></span></p>
-        <p class="fineprint">Requested <%= account.requested_at ? new Date(Number(account.requested_at)).toISOString() : 'unknown' %><%= account.email_verified_at ? '' : ' — email not verified yet' %>.</p>
+        <p class="fineprint">Requested <%= account.requested_at ? new Date(Number(account.requested_at)).toISOString() : 'unknown' %><%= account.email_verified_at ? '' : ' - email not verified yet' %>.</p>
         <h3>Their reason for requesting an account</h3>
         <% if (account.request_note) { %>
           <blockquote class="signup-reason"><%= account.request_note %></blockquote>
@@ -44,7 +44,7 @@
     <% if (!profiles.length) { %>
       <p>No profiles.<% if (account.requested_profile_username_display) { %> Requested <strong>@<%= account.requested_profile_username_display %></strong>.<% } %></p>
     <% } else { %>
-      <ul><% profiles.forEach(function (p) { %><li>@<%= p.username_display %> — <%= Number(p.published) === 1 ? 'published' : 'unpublished' %></li><% }) %></ul>
+      <ul><% profiles.forEach(function (p) { %><li>@<%= p.username_display %> - <%= Number(p.published) === 1 ? 'published' : 'unpublished' %></li><% }) %></ul>
     <% } %>
 
     <h2>Active bans</h2>

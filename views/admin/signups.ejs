@@ -76,7 +76,7 @@
                   <td><span class="status-badge"><%= row.signup_status %></span></td>
                   <td><%= new Date(Number(row.decided_at)).toISOString() %></td>
                   <td><% if (row.decided_by_email) { %><%- await obfuscateEmail(row.decided_by_email) %><% } else { %>System<% } %></td>
-                  <td><%= row.decision_note || '—' %></td>
+                  <td><%= row.decision_note || '-' %></td>
                   <td><a href="/admin/accounts/<%= row.id %>">Open</a></td>
                 </tr>
               <% } %>

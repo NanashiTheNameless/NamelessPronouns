@@ -123,11 +123,18 @@ test('static assets are exempt from the gate', async () => {
   assert.equal(flag.status, 200);
   assert.match(flag.headers.get('content-type') || '', /image\/png/);
 });
-test('CSP keeps profile flag images on the local origin', async () => {
+test('CSP names no remote origin until a page actually embeds one', async () => {
   const res = await fetch(`${base}/consent`);
   const csp = res.headers.get('content-security-policy');
   assert.doesNotMatch(csp, /pronouns\.page/);
-  assert.match(csp, /img-src 'self'/);
+  assert.match(csp, /img-src 'self' data: https:\/\/www\.gravatar\.com;/, 'only the avatar provider is named');
+  assert.match(csp, /media-src 'self' data:;/, 'no remote audio or video host by default');
+  assert.match(csp, /frame-src 'none';/, 'and no embedding at all by default');
+  assert.doesNotMatch(csp, /(img|media|frame)-src[^;]* https:;/, 'never a blanket allowance for all of HTTPS');
+  assert.match(csp, /script-src 'self' 'nonce-[^']+'/);
+  assert.doesNotMatch(csp, /script-src[^;]*unsafe-inline/);
+  assert.match(csp, /object-src 'none'/);
+  assert.match(csp, /style-src 'self'/);
 });
 test('site text colors stay white across semantic states', async () => {
   const res = await fetch(`${base}/static/css/main.css`);

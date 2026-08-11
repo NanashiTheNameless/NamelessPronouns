@@ -28,8 +28,8 @@ We collect:
 - Rights complaints and counter-notices, legal requests and disclosures,
   legal holds, export and deletion requests, incident records, and notices.
 - Automated content flags, encrypted attempted profile values, matched fields
-  and rule versions, including addresses taken from Markdown links written in
-  profile prose, warnings, suspension state, review requests, decisions,
+  and rule versions, including addresses taken from Markdown links and embedded
+  media written in profile prose, warnings, suspension state, review requests, decisions,
   and exemptions.
 
 We do not store plaintext passwords, email codes, recovery codes, or plaintext
@@ -100,6 +100,14 @@ or follow it. Those instructions are voluntary, so visitors, crawlers that
 ignore them, and archives may still copy or retain whatever they can reach.
 Unpublishing removes the profile from NamelessPronouns but cannot remove copies
 controlled by others.
+
+A profile may contain content embedded from another site when an Administrator
+or Owner has added it, such as a picture, a video, or a frame. Your browser
+requests that content directly, so the other site receives your IP address, user
+agent, and the fact that you loaded the page. Each page permits only the hosts
+its own content refers to, so no other outside host can be contacted from it. Those requests are not controlled
+by NamelessNanashi and are governed by the other site's own policies. Nothing
+else on the service loads third-party content into your browser.
 
 An unpublished profile is not public. Its page can still be opened at
 `/u/<username>` by the account that owns it and by authorized staff for

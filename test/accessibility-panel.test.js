@@ -161,16 +161,41 @@ test('every theme redefines the whole palette, and fonts stay first-party', asyn
 test('links styled as buttons take the button label color, and buttons carry no glow', async () => {
   const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
   const genericLinks = css.indexOf('a,\na:visited,\na:hover,\na:active {');
-  const linkButtons = css.indexOf('a.button,\na.button:visited,\na.button:hover,\na.button:active {');
+  const linkButtons = css.indexOf('a.button,\na.button:visited,\na.button:active {');
   assert.ok(genericLinks !== -1 && linkButtons !== -1, 'both rules exist');
   assert.ok(linkButtons > genericLinks, 'the button rule wins over the generic link color');
-  assert.match(css.slice(linkButtons), /^a\.button,\na\.button:visited,\na\.button:hover,\na\.button:active \{\n  color: var\(--on-accent\);/);
+  assert.match(css.slice(linkButtons), /^a\.button,\na\.button:visited,\na\.button:active \{\n  color: var\(--on-accent\);/);
   assert.match(css, /a\.button\.secondary,[\s\S]*?color: var\(--text\);/);
   const primary = /\nbutton,\n\.button \{([^}]*)\}/.exec(css)[1];
   assert.doesNotMatch(primary, /box-shadow/, 'no underglow behind a button');
-  const hover = /\nbutton:hover,\n\.button:hover \{([^}]*)\}/.exec(css)[1];
-  assert.doesNotMatch(hover, /box-shadow/, 'and none on hover');
   assert.doesNotMatch(css, /box-shadow: 0 8px 20px|box-shadow: 0 11px 24px/, 'the old button glows are gone');
   assert.match(css, /a:focus-visible,\nbutton:focus-visible,[\s\S]*?outline: 3px solid var\(--focus\)/, 'focus outlines stay');
   assert.match(css, /\[hidden\] \{\n  display: none !important;\n\}/, 'the hidden attribute beats layout display rules');
+});
+test('every button of a kind hovers the same simple way', async () => {
+  const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
+  const hoverBlocks = [...css.matchAll(/\n((?:[^\n{}]*:hover[^\n{}]*,?\n?)+)\{([^}]*)\}/g)]
+    .map(([, selector, body]) => ({ selector: selector.trim(), body: body.trim() }));
+  const buttonHovers = hoverBlocks.filter((rule) => /(^|[\s,])(button|\.button)[.:]/.test(rule.selector)
+    || /^button:hover/.test(rule.selector));
+  assert.equal(buttonHovers.length, 2, `one hover rule per button kind, saw: ${buttonHovers.map((r) => r.selector).join(' | ')}`);
+  const [primary, secondary] = buttonHovers;
+  assert.equal(primary.selector, 'button:hover,\n.button:hover,\na.button:hover');
+  assert.match(primary.body, /color: var\(--on-accent\);/);
+  assert.match(primary.body, /background: var\(--accent-hover\);/);
+  assert.match(primary.body, /text-decoration: underline;/);
+  assert.equal(secondary.selector, 'button.secondary:hover,\n.button.secondary:hover,\na.button.secondary:hover');
+  assert.match(secondary.body, /color: var\(--on-accent\);/);
+  assert.match(secondary.body, /background: var\(--accent\);/);
+  assert.match(secondary.body, /text-decoration: underline;/);
+  for (const rule of hoverBlocks) {
+    assert.doesNotMatch(rule.body, /transform|box-shadow|filter|opacity/, `${rule.selector} keeps its hover simple`);
+  }
+  assert.doesNotMatch(css, /data-theme="[a-z-]+"\] button\.secondary:hover/, 'no theme needs its own hover rule');
+  assert.match(css, /:root\[data-theme="custom"\] \{[^}]*--accent-hover: var\(--accent\);/s, 'a custom palette hovers within its own colors');
+  for (const surface of ['.choice:hover', '.flag-picker summary:hover', 'button.flag-picker-option:hover']) {
+    assert.ok(css.includes(surface), `${surface} has a hover state`);
+  }
+  assert.match(css, /altcha-widget\.email-obfuscation \.email-reveal:hover,\n\.markdown-help summary:hover \{[^}]*text-decoration-thickness: 0\.16em;/s,
+    'link-like buttons share one hover treatment');
 });
