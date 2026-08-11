@@ -617,7 +617,7 @@ export const EASTER_EGGS = Object.freeze([
   {
     "name": "Robots comment",
     "activation": "Visit /robots.txt",
-    "effect": "Displays \"Crawl if you like. You may not remember this place.\""
+    "effect": "Disallows every crawler and says \"Please do not crawl. You would not remember this place anyway.\""
   },
   {
     "name": "Robots annotation",

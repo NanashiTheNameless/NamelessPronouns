@@ -29,7 +29,7 @@ test('the public text-file and teapot eggs bypass consent', async () => {
   assert.match(await humans.text(), /humans behind NamelessPronouns/);
   const robots = await fetch(`${base}/robots.txt`);
   assert.equal(robots.status, 200);
-  assert.equal(await robots.text(), '# Crawl if you like. You may not remember this place.\n# Nanashi was here. The crawler saw nothing.\nUser-agent: *\nAllow: /\n');
+  assert.equal(await robots.text(), '# Please do not crawl. You would not remember this place anyway.\n# Nanashi was here. The crawler saw nothing.\nUser-agent: *\nDisallow: /\n');
   const identity = await fetch(`${base}/.well-known/nameless`);
   assert.deepEqual(await identity.json(), { name: null, pronouns: 'any/all', owner: 'NamelessNanashi' });
   const pronouns = await fetch(`${base}/pronouns.txt`);

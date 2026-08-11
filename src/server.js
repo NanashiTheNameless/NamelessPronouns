@@ -133,7 +133,7 @@ export function createApp() {
     res.type('text/plain').status(404).send('No algorithm lives here. You choose what to read.\n');
   });
   app.get('/robots.txt', (req, res) => {
-    res.type('text/plain').send('# Crawl if you like. You may not remember this place.\n# Nanashi was here. The crawler saw nothing.\nUser-agent: *\nAllow: /\n');
+    res.type('text/plain').send('# Please do not crawl. You would not remember this place anyway.\n# Nanashi was here. The crawler saw nothing.\nUser-agent: *\nDisallow: /\n');
   });
   app.get('/.well-known/nameless', (req, res) => {
     res.json({ name: null, pronouns: 'any/all', owner: 'NamelessNanashi' });
