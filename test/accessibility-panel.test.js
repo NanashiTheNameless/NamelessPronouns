@@ -70,6 +70,7 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.equal(result.rejected.inlineBg, '#102030', 'a malformed color never reaches the page');
     assert.equal(result.decade.message, 'A decade fits neatly into six hex digits.');
     assert.equal(result.decade.inlineBg, '#decade', 'the valid hex color still applies');
+    assert.equal(result.defaceQuip, 'No faces were harmed in the selection of this color.');
     assert.match(result.rejectedFamily.message, /only letters, numbers, spaces, commas, quotes, and hyphens/);
     assert.equal(result.rejectedFamily.inlineFont, 'Georgia, serif, "0xProto", monospace', 'a url() font name is refused');
     assert.match(result.imported.message, /Settings applied\. Ignored what could not be read: colors that are not #rrggbb\./);
@@ -79,6 +80,9 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.deepEqual(JSON.parse(result.imported.stored), { bg: '#204020', text: '#ffffff' });
     assert.match(result.badImport.message, /not valid settings text/);
     assert.equal(result.badImport.inlineBg, '#204020', 'a failed import changes nothing');
+    assert.deepEqual(result.timeMachine, {
+      message: 'Settings recovered from 1998.', theme: '1998', unlocked: 'unlocked', revealed: true,
+    });
     const exported = JSON.parse(result.custom.exported);
     assert.equal(exported.version, 1);
     assert.equal(exported.theme, 'custom');
@@ -94,17 +98,40 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.equal(result.monochromeQuip, 'You have chosen sides.');
     assert.equal(result.stealthQuip, 'Stealth mode enabled. Readability was not invited.');
     assert.match(result.fontQuip, /helps some dyslexic readers/);
+    assert.equal(result.timesQuip, 'The Times are new. The Roman is unchanged.');
     assert.equal(result.defaultFontQuip, 'You came all this way to choose the default. Respect.');
     assert.deepEqual(result.konami, { initiallyHidden: true, unlocked: true, stored: 'unlocked' });
+    assert.deepEqual(result.konamiToast, {
+      message: 'Achievement already achieved.',
+      visible: true,
+      topLayer: true,
+    });
     assert.equal(result.konamiEncore, 'Achievement already achieved.');
+    assert.deepEqual(result.konamiEncoreToast, {
+      message: 'Achievement already achieved.', visible: true, topLayer: true,
+    });
     assert.equal(result.retroTheme, '1998', 'the unlocked theme can be selected and applied');
     assert.equal(result.shortcutsOpened, true, 'Shift+? opens the keyboard shortcuts panel');
     assert.equal(result.shortcutInception, 'You are already here.');
     assert.deepEqual(result.ownerBusinessCard, { role: 'Owner', status: 'probably debugging' });
+    assert.equal(result.ownerBusinessCardText, '[Owner probably debugging]');
+    assert.equal(result.backupBackup, 'Backup of backup complete.');
     assert.match(result.ownerSequence, /Owner located.*3-5 business eternities/);
+    assert.equal(result.ownerSequenceToast.visible, true);
+    assert.equal(result.ownerSequenceToast.topLayer, true);
     assert.equal(result.footerPersistence, 'Still NamelessNanashi');
+    assert.deepEqual(result.footerPersistenceToast, {
+      message: 'NamelessNanashi remains operational.', visible: true, topLayer: true,
+    });
     assert.equal(result.ownerHeadingEncore, 'Yes, this is the Owner.');
+    assert.deepEqual(result.ownerHeadingToast, {
+      message: 'Yes, this is still the Owner.', visible: true, topLayer: true,
+    });
     assert.equal(result.ownerBadgeEncore, 'still wrote this bit');
+    assert.equal(result.fortyTwo, 'You have the answer. The question remains unavailable.');
+    assert.deepEqual(result.fortyTwoToast, {
+      message: 'You have the answer. The question remains unavailable.', visible: true, topLayer: true,
+    });
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
@@ -114,6 +141,7 @@ test('the footer offers the panel and the head applies it early', async () => {
   const head = await readFile(new URL('../views/partials/head.ejs', import.meta.url), 'utf8');
   assert.match(footer, /<button type="button"[^>]*data-accessibility-open hidden>Accessibility<\/button>/);
   assert.match(footer, /<dialog class="accessibility-panel" aria-labelledby="accessibility-h" data-accessibility-panel>/);
+  assert.match(footer, /class="easter-status" role="status" aria-live="polite" popover="manual" data-easter-status/);
   assert.match(footer, /kept in this browser only/);
   for (const value of ['default', 'light', 'contrast', 'contrast-light', '1998']) {
     assert.match(footer, new RegExp(`name="accessibility_theme" value="${value}"`));
@@ -124,6 +152,8 @@ test('the footer offers the panel and the head applies it early', async () => {
   assert.match(head, /<script src="\/static\/js\/accessibility\.js"><\/script>/);
   assert.match(footer, /data-konami-theme hidden[^>]*><input[^>]+value="1998"/);
   assert.match(footer, /data-shortcuts-panel/);
+  assert.match(footer, /<button type="button" class="owner-signature" data-owner-signature>NamelessNanashi<\/button>/);
+  assert.doesNotMatch(footer, /<a[^>]+data-owner-signature/);
   assert.match(footer, /<kbd>Shift<\/kbd> \+ <kbd>\?<\/kbd>/);
   for (const shortcut of ['Tab', 'Enter', 'Space', 'Arrow keys', 'Escape']) {
     assert.match(footer, new RegExp(`<kbd>${shortcut}<\\/kbd>`));
@@ -138,7 +168,7 @@ test('the accessibility script contains the local-only keyboard and input eggs',
   const script = await readFile(new URL('../public/js/accessibility.js', import.meta.url), 'utf8');
   assert.match(script, /ArrowUp.*ArrowUp.*ArrowDown.*ArrowDown.*ArrowLeft.*ArrowRight.*ArrowLeft.*ArrowRight.*'b'.*'a'/s);
   assert.match(script, /np-accessibility-konami/);
-  for (const code of ['#c0ffee', '#bada55', '#0ff1ce', '#facade']) assert.match(script, new RegExp(code));
+  for (const code of ['#c0ffee', '#bada55', '#0ff1ce', '#facade', '#deface']) assert.match(script, new RegExp(code));
   assert.match(script, /Bold choice\. Genuinely: it helps some dyslexic readers\./);
   assert.match(script, /You have chosen sides\./);
   assert.match(script, /Stealth mode enabled\. Readability was not invited\./);
@@ -154,6 +184,10 @@ test('the accessibility script contains the local-only keyboard and input eggs',
   assert.match(script, /still wrote this bit/);
   assert.match(script, /Preserved by NamelessNanashi/);
   assert.match(script, /Achievement Get: Read the console!/);
+  assert.match(script, /The Times are new\. The Roman is unchanged\./);
+  assert.match(script, /Backup of backup complete\./);
+  assert.match(script, /Settings recovered from 1998\./);
+  assert.match(script, /You have the answer\. The question remains unavailable\./);
 });
 test('the panel offers arbitrary colors, an arbitrary font, and settings transfer', async () => {
   const footer = await readFile(new URL('../views/partials/site-footer.ejs', import.meta.url), 'utf8');

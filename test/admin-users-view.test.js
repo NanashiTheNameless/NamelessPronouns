@@ -274,6 +274,15 @@ test('the admin lookup has an answer for sudo', async () => {
   assert.match(html, /Nice try\. This is not a shell\./);
   assert.doesNotMatch(html, /No account with that exact email/);
 });
+test('the admin lookup recognizes root and SQL-shaped jokes', async () => {
+  const render = (email, lookupMessage) => ejs.renderFile(fileURLToPath(new URL('../views/admin/overview.ejs', import.meta.url)), {
+    title: 'Administration', canReport: false, canApprove: false,
+    pending: [], searched: null, email, lookupMessage,
+    csrfToken: 'csrf', user: null, obfuscateEmail: async () => '',
+  }, { async: true });
+  assert.match(await render('root', 'Wrong tree.'), /Wrong tree\./);
+  assert.match(await render('select *', 'Please step away from the database.'), /Please step away from the database\./);
+});
 test('the Owner receives the owner-only admin greeting', async () => {
   const html = await ejs.renderFile(fileURLToPath(new URL('../views/admin/overview.ejs', import.meta.url)), {
     title: 'Administration', canReport: true, canApprove: true,

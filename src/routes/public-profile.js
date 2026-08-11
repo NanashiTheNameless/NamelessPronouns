@@ -64,6 +64,38 @@ export const PLACEHOLDER_PROFILES = Object.freeze({
     pronouns: [{ short: 'time/time', opinion: 'yes' }, { short: 'then/now', opinion: 'jokingly' }],
     words: [{ heading: 'I am a', words: [{ value: 'timestamp', opinion: 'yes' }, { value: 'timeless', opinion: 'nope' }] }],
   },
+  nan: {
+    displayName: 'NaN',
+    bio: 'Not a Name, but close enough for a profile URL.\n\n**Status:** mathematically questionable.',
+    notes: '- Equality checks have been inconclusive.\n- Please do not ask me to become a number.',
+    names: [{ value: 'NaN', opinion: 'yes' }, { value: 'Not a Name', opinion: 'jokingly' }],
+    pronouns: [{ short: 'not/a/name', opinion: 'yes' }, { short: 'they/them', opinion: 'okay' }],
+    words: [{ heading: 'I am', words: [{ value: 'a number', opinion: 'nope' }, { value: 'confusing', opinion: 'yes' }] }],
+  },
+  localhost: {
+    displayName: 'Localhost',
+    bio: 'There is no place like `127.0.0.1`.\n\nVisitors are always from around here.',
+    notes: '- Home is where the loopback is.\n- Remote relationships are complicated.',
+    names: [{ value: 'Localhost', opinion: 'yes' }, { value: 'Home', opinion: 'close' }],
+    pronouns: [{ short: 'here/here', opinion: 'yes' }, { short: 'it/its', opinion: 'okay' }],
+    words: [{ heading: 'I am', words: [{ value: 'local', opinion: 'yes' }, { value: 'remote', opinion: 'nope' }] }],
+  },
+  true: {
+    displayName: 'True',
+    bio: 'I agree with this profile.\n\nThis statement evaluates to itself.',
+    notes: '- Everything is fine.\n- False strongly disagrees.',
+    names: [{ value: 'True', opinion: 'yes' }, { value: 'Correct', opinion: 'jokingly' }],
+    pronouns: [{ short: 'yes/yes', opinion: 'yes' }, { short: 'it/its', opinion: 'okay' }],
+    words: [{ heading: 'I am', words: [{ value: 'right', opinion: 'yes' }, { value: 'false', opinion: 'nope' }] }],
+  },
+  false: {
+    displayName: 'False',
+    bio: 'I disagree with this profile.\n\nThe previous sentence cannot be trusted.',
+    notes: '- Nothing is fine.\n- True would say otherwise.',
+    names: [{ value: 'False', opinion: 'yes' }, { value: 'Incorrect', opinion: 'jokingly' }],
+    pronouns: [{ short: 'no/no', opinion: 'yes' }, { short: 'it/its', opinion: 'okay' }],
+    words: [{ heading: 'I am', words: [{ value: 'wrong', opinion: 'okay' }, { value: 'true', opinion: 'nope' }] }],
+  },
 });
 router.use(publicPageHeaders);
 function noStore(res) {

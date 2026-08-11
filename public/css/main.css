@@ -560,13 +560,19 @@ button[data-remove] {
   display: none;
 }
 .easter-status {
-  width: min(100%, 80rem);
-  margin: 1rem auto;
+  position: fixed;
+  inset: auto 1rem 1rem auto;
+  z-index: 1000;
+  width: min(calc(100% - 2rem), 28rem);
+  margin: 0;
   padding: 0.75rem 1rem;
   color: var(--text);
   background: var(--surface-strong);
   border: 1px solid var(--border);
-  text-align: center;
+  text-align: left;
+}
+.easter-status:not(.is-visible) {
+  display: none;
 }
 @media print {
   .print-easter-egg {
@@ -1313,6 +1319,17 @@ altcha-widget.email-obfuscation .email-reveal:hover,
 }
 .site-footer [data-accessibility-open] {
   margin: 0.5rem auto 0;
+}
+button.owner-signature {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  text-decoration: none;
 }
 .profile-prose a {
   color: var(--link);

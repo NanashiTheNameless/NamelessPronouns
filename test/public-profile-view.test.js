@@ -79,6 +79,14 @@ test('a profile with eleven flags earns the collector caption', async () => {
     pronounPreferences: [], descriptionHtml: '', notesHtml: '',
   }, { async: true });
   assert.match(html, /class="fineprint flag-collector">Collector\.<\/p>/);
+  const ultimate = await ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
+    title: 'Ultimate Collector', profile: { display_name: 'Ultimate Collector' }, username: 'ultimate',
+    avatar: '/static/avatar.svg', names: [], pronouns: [], words: [], links: [],
+    flags: Array.from({ length: 42 }, (_, index) => ({ label: `Flag ${index}`, imageUrl: `/flag-${index}.png` })),
+    pronounPreferences: [], descriptionHtml: '', notesHtml: '',
+  }, { async: true });
+  assert.match(ultimate, /class="fineprint flag-collector">The answer, apparently\.<\/p>/);
+  assert.doesNotMatch(ultimate, />Collector\.<\/p>/);
 });
 
 test('reserved profiles each have distinct bios, notes, pronouns, and personality', async () => {

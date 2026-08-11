@@ -27,7 +27,7 @@
   <footer-slot></footer-slot>
   <output id="browser-result">pending</output>
   <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     const root = document.documentElement;
     const dialog = document.querySelector('[data-accessibility-panel]');
     const open = document.querySelector('[data-accessibility-open]');
@@ -40,6 +40,12 @@
       field.dispatchEvent(new Event('input', { bubbles: true }));
     };
     const clickAction = (action) => dialog.querySelector(`[data-accessibility-${action}]`).click();
+    const toast = document.querySelector('[data-easter-status]');
+    const toastState = () => ({
+      message: toast.textContent,
+      visible: toast.classList.contains('is-visible'),
+      topLayer: toast.matches(':popover-open'),
+    });
     const colorsHidden = () => dialog.querySelector('[data-accessibility-colors]').hidden
       && getComputedStyle(dialog.querySelector('[data-accessibility-colors]')).display === 'none';
 
@@ -50,6 +56,12 @@
     const openedWithStoredChecked = dialog.querySelector('input[name="accessibility_theme"]:checked').value;
     const konamiInitiallyHidden = dialog.querySelector('[data-konami-theme]').hidden;
     const ownerBusinessCard = { ...window.NamelessNanashi };
+    const ownerBusinessCardText = window.NamelessNanashi.toString();
+    clickAction('copy');
+    clickAction('copy');
+    clickAction('copy');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const backupBackup = status();
 
     pick('accessibility_theme', 'light');
     pick('accessibility_font', 'sans');
@@ -76,6 +88,8 @@
     typeInto('[name="accessibility_color_bg"]', '#102030');
     typeInto('[name="accessibility_color_bg"]', '#c0ffee');
     const colorQuip = status();
+    typeInto('[name="accessibility_color_bg"]', '#deface');
+    const defaceQuip = status();
     typeInto('[name="accessibility_color_bg"]', '#102030');
     typeInto('[name="accessibility_color_text"]', '#f0f4ff');
     typeInto('[name="accessibility_color_bg"]', '#000000');
@@ -88,6 +102,8 @@
     typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
     typeInto('[name="accessibility_font_family"]', 'Comic Sans MS');
     const fontQuip = status();
+    typeInto('[name="accessibility_font_family"]', 'Times New Roman');
+    const timesQuip = status();
     typeInto('[name="accessibility_font_family"]', '0xProto');
     const defaultFontQuip = status();
     typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
@@ -144,6 +160,15 @@
     clickAction('import');
     const badImport = { message: status(), inlineBg: inline('--bg') };
 
+    typeInto('[data-accessibility-transfer]', JSON.stringify({ version: 1998 }));
+    clickAction('import');
+    const timeMachine = {
+      message: status(),
+      theme: root.getAttribute('data-theme'),
+      unlocked: localStorage.getItem('np-accessibility-konami'),
+      revealed: dialog.querySelector('[data-konami-theme]').hidden === false,
+    };
+
     clickAction('reset');
     const reset = {
       theme: root.getAttribute('data-theme'),
@@ -169,10 +194,12 @@
       unlocked: dialog.querySelector('[data-konami-theme]').hidden === false,
       stored: localStorage.getItem('np-accessibility-konami'),
     };
+    const konamiToast = toastState();
     for (const key of ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a']) {
       document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
     }
     const konamiEncore = status();
+    const konamiEncoreToast = toastState();
     open.click();
     pick('accessibility_theme', '1998');
     const retroTheme = root.getAttribute('data-theme');
@@ -185,15 +212,21 @@
     shortcuts.querySelector('[data-shortcuts-close]').click();
     for (const key of [...'nanashi']) document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
     const ownerSequence = document.querySelector('[data-easter-status]').textContent;
+    const ownerSequenceToast = toastState();
     const ownerSignature = document.querySelector('[data-owner-signature]');
-    for (let index = 0; index < 5; index += 1) ownerSignature.click();
+    for (let index = 0; index < 7; index += 1) ownerSignature.click();
     const footerPersistence = ownerSignature.textContent;
+    const footerPersistenceToast = toastState();
     const ownerHeading = document.querySelector('[data-owner-heading]');
-    for (let index = 0; index < 3; index += 1) ownerHeading.click();
+    for (let index = 0; index < 7; index += 1) ownerHeading.click();
     const ownerHeadingEncore = ownerHeading.textContent;
+    const ownerHeadingToast = toastState();
     const ownerBadge = document.querySelector('[data-owner-badge]');
     for (let index = 0; index < 5; index += 1) ownerBadge.dispatchEvent(new MouseEvent('mouseenter'));
     const ownerBadgeEncore = ownerBadge.nextElementSibling.textContent;
+    for (const key of ['4', '2']) document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    const fortyTwo = document.querySelector('[data-easter-status]').textContent;
+    const fortyTwoToast = toastState();
     document.getElementById('browser-result').textContent = JSON.stringify({
       early: window.earlyApply,
       seededFont,
@@ -212,23 +245,35 @@
       rejectedFamily,
       imported,
       badImport,
+      timeMachine,
       reset,
       doubleReset,
       colorQuip,
+      defaceQuip,
       monochromeQuip,
       stealthQuip,
       fontQuip,
+      timesQuip,
       defaultFontQuip,
       konami,
+      konamiToast,
       konamiEncore,
+      konamiEncoreToast,
       retroTheme,
       shortcutsOpened,
       shortcutInception,
       ownerBusinessCard,
+      ownerBusinessCardText,
+      backupBackup,
       ownerSequence,
+      ownerSequenceToast,
       footerPersistence,
+      footerPersistenceToast,
       ownerHeadingEncore,
+      ownerHeadingToast,
       ownerBadgeEncore,
+      fortyTwo,
+      fortyTwoToast,
     });
   });
   </script>

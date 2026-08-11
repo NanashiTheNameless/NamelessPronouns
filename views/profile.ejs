@@ -25,7 +25,8 @@
         <ul class="identity-flags">
           <% flags.forEach(function (flag) { %><li><img src="<%= flag.imageUrl %>" alt="" width="48" height="32" loading="lazy"><span><%= flag.label %></span></li><% }); %>
         </ul>
-        <% if (flags.length >= 11) { %><p class="fineprint flag-collector">Collector.</p><% } %>
+        <% if (flags.length === 42) { %><p class="fineprint flag-collector">The answer, apparently.</p>
+        <% } else if (flags.length >= 11) { %><p class="fineprint flag-collector">Collector.</p><% } %>
       </section>
     <% } %>
 

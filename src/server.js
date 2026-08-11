@@ -52,6 +52,9 @@ export function createApp() {
   });
   app.get('/teapot', (req, res) => {
     res.setHeader('X-Tea-Made-By', 'NamelessNanashi');
+    if (Object.hasOwn(req.query, 'coffee')) {
+      return res.type('text/plain').status(406).send('Wrong appliance.\n');
+    }
     res.type('text/plain').status(418).send("I'm a teapot. It/its, thanks.\n");
   });
   app.get('/humans.txt', (req, res) => {
@@ -66,6 +69,10 @@ export function createApp() {
   app.get('/nothing', (req, res) => {
     res.setHeader('X-Nothing', 'successfully-returned');
     res.setHeader('X-Nothing-By', 'NamelessNanashi');
+    if (Object.hasOwn(req.query, 'something')) {
+      return res.type('text/plain').status(409).send('That defeats the purpose.\n');
+    }
+    if (Object.hasOwn(req.query, 'again')) res.setHeader('X-Nothing-Again', 'yes');
     res.status(204).end();
   });
   app.get('/404', (req, res) => {

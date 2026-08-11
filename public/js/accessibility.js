@@ -22,7 +22,11 @@ const COLORS = Object.freeze({
 const COLOR_KEYS = Object.keys(COLORS);
 
 console.info('NamelessPronouns, Achievement Get: Read the console!');
-window.NamelessNanashi = Object.freeze({ role: 'Owner', status: 'probably debugging' });
+window.NamelessNanashi = Object.freeze({
+  role: 'Owner',
+  status: 'probably debugging',
+  toString() { return '[Owner probably debugging]'; },
+});
 
 function readRaw(key) {
   try {
@@ -129,7 +133,8 @@ function importSettings(text) {
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     return { ok: false, message: 'Settings text must be a single block of settings.' };
   }
-  const theme = THEMES.includes(parsed.theme) ? parsed.theme : 'default';
+  const from1998 = Number(parsed.version) === 1998;
+  const theme = from1998 ? '1998' : (THEMES.includes(parsed.theme) ? parsed.theme : 'default');
   const font = FONTS.includes(parsed.font) ? parsed.font : 'default';
   const colors = validColors(parsed.colors);
   const family = validFamily(parsed.fontFamily);
@@ -141,6 +146,7 @@ function importSettings(text) {
   }
   if (parsed.fontFamily && !family) dropped.push('font family');
   write(THEME_KEY, theme);
+  if (from1998) write(KONAMI_KEY, 'unlocked');
   write(FONT_KEY, font);
   write(COLORS_KEY, Object.keys(colors).length ? JSON.stringify(colors) : null);
   write(FAMILY_KEY, family || null);
@@ -148,7 +154,9 @@ function importSettings(text) {
   return {
     ok: true,
     dropped,
-    message: dropped.length
+    message: from1998
+      ? 'Settings recovered from 1998.'
+      : dropped.length
       ? `Settings applied. Ignored what could not be read: ${dropped.join(', ')}.`
       : 'Settings applied.',
   };
@@ -164,6 +172,7 @@ function wirePanel() {
   const warning = dialog.querySelector('[data-accessibility-contrast]');
   const konamiTheme = dialog.querySelector('[data-konami-theme]');
   let resetCount = 0;
+  let copyCount = 0;
   if (konamiTheme && readRaw(KONAMI_KEY) === 'unlocked') konamiTheme.hidden = false;
   const check = (name, value) => {
     const radio = form.querySelector(`input[name="${name}"][value="${value}"]`);
@@ -196,6 +205,7 @@ function wirePanel() {
     picker.value = HEX.test(active) ? active : '#000000';
   };
   const sync = () => {
+    if (konamiTheme && readRaw(KONAMI_KEY) === 'unlocked') konamiTheme.hidden = false;
     check('accessibility_theme', choice(THEME_KEY, THEMES));
     check('accessibility_font', choice(FONT_KEY, FONTS));
     const colors = storedColors();
@@ -217,6 +227,7 @@ function wirePanel() {
   });
   form.addEventListener('change', (event) => {
     resetCount = 0;
+    copyCount = 0;
     const field = event.target;
     if (field.name === 'accessibility_theme' && THEMES.includes(field.value)) write(THEME_KEY, field.value);
     if (field.name === 'accessibility_font' && FONTS.includes(field.value)) write(FONT_KEY, field.value);
@@ -225,6 +236,7 @@ function wirePanel() {
   });
   form.addEventListener('input', (event) => {
     resetCount = 0;
+    copyCount = 0;
     const field = event.target;
     const pickedKey = field.dataset?.colorPicker;
     if (pickedKey && COLOR_KEYS.includes(pickedKey)) {
@@ -249,6 +261,7 @@ function wirePanel() {
         '#0ff1ce': 'Office hours are over.',
         '#facade': 'The facade is holding up.',
         '#decade': 'A decade fits neatly into six hex digits.',
+        '#deface': 'No faces were harmed in the selection of this color.',
       };
       const paired = colors.bg && colors.text;
       const paletteQuip = paired && colors.bg === colors.text
@@ -272,6 +285,7 @@ function wirePanel() {
       const fontQuips = {
         'comic sans ms': 'Bold choice. Genuinely: it helps some dyslexic readers.',
         '0xproto': 'You came all this way to choose the default. Respect.',
+        'times new roman': 'The Times are new. The Roman is unchanged.',
       };
       say(status, fontQuips[family.toLowerCase()] || '');
       applyAll();
@@ -280,22 +294,26 @@ function wirePanel() {
     return undefined;
   });
   dialog.querySelector('[data-accessibility-copy]')?.addEventListener('click', async () => {
+    copyCount += 1;
     if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
+    say(status, copyCount >= 3 ? 'Backup of backup complete.' : 'Copying settings...');
     try {
       await navigator.clipboard.writeText(transfer.value);
-      say(status, 'Settings copied to your clipboard.');
+      say(status, copyCount >= 3 ? 'Backup of backup complete.' : 'Settings copied to your clipboard.');
     } catch {
       transfer?.select();
-      say(status, 'Copying was blocked, so the settings are selected for you to copy.');
+      say(status, copyCount >= 3 ? 'Backup of backup complete.' : 'Copying was blocked, so the settings are selected for you to copy.');
     }
   });
   dialog.querySelector('[data-accessibility-import]')?.addEventListener('click', () => {
     resetCount = 0;
+    copyCount = 0;
     const result = importSettings(transfer ? transfer.value : '');
     say(status, result.message);
     sync();
   });
   dialog.querySelector('[data-accessibility-reset]')?.addEventListener('click', () => {
+    copyCount = 0;
     resetCount += 1;
     write(THEME_KEY, null);
     write(FONT_KEY, null);
@@ -322,29 +340,47 @@ function wireKeyboardEggs() {
   const sequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
   let position = 0;
   let nanashiPosition = 0;
+  let answerPosition = 0;
   let headingTimer;
   let ownerTimer;
+  let toastTimer;
   const nanashiSequence = [...'nanashi'];
+  const answerSequence = ['4', '2'];
   const announce = (message) => {
-    if (easterStatus) easterStatus.textContent = message;
+    if (!easterStatus) return;
+    clearTimeout(toastTimer);
+    easterStatus.textContent = message;
+    easterStatus.classList.add('is-visible');
+    if (typeof easterStatus.showPopover === 'function' && !easterStatus.matches(':popover-open')) {
+      easterStatus.showPopover();
+    }
+    toastTimer = setTimeout(() => {
+      if (typeof easterStatus.hidePopover === 'function' && easterStatus.matches(':popover-open')) {
+        easterStatus.hidePopover();
+      }
+      easterStatus.classList.remove('is-visible');
+      easterStatus.textContent = '';
+    }, 4000);
   };
   let signatureClicks = 0;
   ownerSignature?.addEventListener('click', (event) => {
     event.preventDefault();
     signatureClicks += 1;
-    if (signatureClicks < 5) return;
+    if (signatureClicks < 7) return;
     signatureClicks = 0;
     ownerSignature.textContent = 'Still NamelessNanashi';
+    announce('NamelessNanashi remains operational.');
     clearTimeout(ownerTimer);
     ownerTimer = setTimeout(() => { ownerSignature.textContent = 'NamelessNanashi'; }, 1500);
   });
   let headingClicks = 0;
   ownerHeading?.addEventListener('click', () => {
     headingClicks += 1;
-    if (headingClicks < 3) return;
+    if (headingClicks < 7) return;
     headingClicks = 0;
     const original = ownerHeading.textContent;
     ownerHeading.textContent = 'Yes, this is the Owner.';
+    announce('Yes, this is still the Owner.');
     setTimeout(() => { ownerHeading.textContent = original; }, 1500);
   });
   let badgeVisits = 0;
@@ -379,15 +415,24 @@ function wireKeyboardEggs() {
       nanashiPosition = 0;
       announce('Owner located. Please allow 3-5 business eternities for a response.');
     }
+    answerPosition = key === answerSequence[answerPosition]
+      ? answerPosition + 1
+      : (key === answerSequence[0] ? 1 : 0);
+    if (answerPosition === answerSequence.length) {
+      answerPosition = 0;
+      announce('You have the answer. The question remains unavailable.');
+    }
     position = key === sequence[position] ? position + 1 : (key === sequence[0] ? 1 : 0);
     if (position !== sequence.length) return;
     position = 0;
     const alreadyUnlocked = readRaw(KONAMI_KEY) === 'unlocked';
     write(KONAMI_KEY, 'unlocked');
     if (konamiTheme) konamiTheme.hidden = false;
-    if (status) status.textContent = alreadyUnlocked
+    const message = alreadyUnlocked
       ? 'Achievement already achieved.'
       : '1998 theme unlocked. Some things do improve with age. Preserved by NamelessNanashi.';
+    if (status) status.textContent = message;
+    announce(message);
     if (accessibility?.open) konamiTheme?.querySelector('input')?.focus();
   });
 }

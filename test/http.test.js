@@ -14,6 +14,9 @@ test('the public text-file and teapot eggs bypass consent', async () => {
   assert.equal(teapot.headers.get('x-tea-made-by'), 'NamelessNanashi');
   assert.equal(teapot.headers.get('x-nanashi'), 'was-here');
   assert.equal(await teapot.text(), "I'm a teapot. It/its, thanks.\n");
+  const coffee = await fetch(`${base}/teapot?coffee`);
+  assert.equal(coffee.status, 406);
+  assert.equal(await coffee.text(), 'Wrong appliance.\n');
   const humans = await fetch(`${base}/humans.txt`);
   assert.equal(humans.status, 200);
   assert.match(await humans.text(), /humans behind NamelessPronouns/);
@@ -39,6 +42,12 @@ test('the public text-file and teapot eggs bypass consent', async () => {
   assert.equal(nothing.headers.get('x-nothing'), 'successfully-returned');
   assert.equal(nothing.headers.get('x-nothing-by'), 'NamelessNanashi');
   assert.equal(await nothing.text(), '');
+  const something = await fetch(`${base}/nothing?something=true`);
+  assert.equal(something.status, 409);
+  assert.equal(await something.text(), 'That defeats the purpose.\n');
+  const nothingAgain = await fetch(`${base}/nothing?again`);
+  assert.equal(nothingAgain.status, 204);
+  assert.equal(nothingAgain.headers.get('x-nothing-again'), 'yes');
 });
 test('GET / is gated: redirects to /consent before acceptance', async () => {
   const res = await fetch(`${base}/`, { redirect: 'manual' });

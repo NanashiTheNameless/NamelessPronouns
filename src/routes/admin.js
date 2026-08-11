@@ -21,7 +21,11 @@ router.get('/admin', requireStaff('support'), async (req, res) => {
   );
   let searched = null;
   const email = typeof req.query.email === 'string' ? req.query.email.trim().toLowerCase() : '';
-  const lookupMessage = email === 'sudo' ? 'Nice try. This is not a shell.' : '';
+  const lookupMessage = {
+    sudo: 'Nice try. This is not a shell.',
+    root: 'Wrong tree.',
+    'select *': 'Please step away from the database.',
+  }[email] || '';
   if (email && !lookupMessage) {
     const { rows } = await db.query(
       'SELECT id, email, signup_status, staff_role, twofa_method FROM users WHERE email = ?',
