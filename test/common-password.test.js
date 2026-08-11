@@ -1,13 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { ChromiumMissing, dumpDom } from './helpers/chromium.js';
 import { createHash } from 'node:crypto';
 import { createReadStream, readFileSync, readdirSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-const run = promisify(execFile);
 const root = fileURLToPath(new URL('..', import.meta.url));
 const INDEX_VERSION = 3;
 const REBUILD = 'Run: yarn build-password-index';
@@ -152,12 +150,9 @@ test('Chromium hard-blocks submission and cites the matching wordlist', async (t
   try {
     let stdout;
     try {
-      ({ stdout } = await run(process.env.CHROMIUM_PATH || '/snap/bin/chromium', [
-        '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-        '--virtual-time-budget=1500', '--dump-dom', `http://127.0.0.1:${server.address().port}/`,
-      ], { timeout: 15000, maxBuffer: 2 * 1024 * 1024 }));
+      stdout = await dumpDom(['--virtual-time-budget=1500', '--dump-dom', `http://127.0.0.1:${server.address().port}/`]);
     } catch (error) {
-      if (error.code === 'ENOENT') return t.skip('Chromium is not installed');
+      if (error instanceof ChromiumMissing) return t.skip('Chromium is not installed');
       throw error;
     }
     assert.match(stdout, /That password was found in a common password wordlist 100k-most-used-passwords-NCSC\.txt\. Choose another password\./);

@@ -61,7 +61,6 @@ router.get('/u/:username', async (req, res) => {
   if (unpublished && !preview) {
     return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
   }
-  if (unpublished) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   if (req.params.username !== profile.username_display) {
     return res.redirect(301, `/u/${encodeURIComponent(profile.username_display)}`);
   }

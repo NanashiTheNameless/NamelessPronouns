@@ -1,18 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-test('Chromium refuses unsafe SVG preview and offers explicit stripping', (t) => {
-  const chromium = process.env.CHROMIUM_PATH || '/snap/bin/chromium';
+import { ChromiumMissing, dumpDom } from './helpers/chromium.js';
+test('Chromium refuses unsafe SVG preview and offers explicit stripping', async (t) => {
   let html;
   try {
-    html = execFileSync(chromium, [
-      '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+    html = await dumpDom([
       '--allow-file-access-from-files', '--virtual-time-budget=1500', '--dump-dom',
       fileURLToPath(new URL('./fixtures/avatar-upload-harness.html', import.meta.url)),
-    ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 15000 });
+    ]);
   } catch (error) {
-    if (error.code === 'ENOENT') return t.skip('Chromium is not installed');
+    if (error instanceof ChromiumMissing) return t.skip('Chromium is not installed');
     throw error;
   }
   const encoded = /<output id="browser-result">([^<]+)<\/output>/.exec(html)?.[1];

@@ -27,8 +27,10 @@ function cspFor(res, { rum = false } = {}) {
     return directive;
   }).join('; ');
 }
+export const ROBOTS_DIRECTIVES = 'none, noindex, noarchive, nofollow, noimageindex, nosnippet';
 export function securityHeaders(req, res, next) {
   res.setHeader('Content-Security-Policy', cspFor(res));
+  res.setHeader('X-Robots-Tag', ROBOTS_DIRECTIVES);
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'no-referrer');
@@ -43,6 +45,7 @@ const RUM_SCRIPT = 'https://static.cloudflareinsights.com';
 const RUM_CONNECT = "'self'";
 export function publicPageHeaders(req, res, next) {
   res.setHeader('Content-Security-Policy', cspFor(res, { rum: true }));
+  res.setHeader('X-Robots-Tag', ROBOTS_DIRECTIVES);
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   next();
 }

@@ -2,6 +2,7 @@ import './setup.js';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from '../src/server.js';
+import { ROBOTS_DIRECTIVES } from '../src/middleware/security-headers.js';
 const app = createApp();
 const server = app.listen(0);
 await new Promise((r) => server.once('listening', r));
@@ -193,4 +194,18 @@ test('every session gate lets the challenge endpoint through', async () => {
   );
   assert.equal(run(restrictedSessionGate(), { path: '/dashboard', session: { restricted: 1 } }).redirected, '/account/suspended');
   assert.equal(run(deletionSessionGate(), { path: '/dashboard', deletionRequest: { id: 'del-1' } }).redirected, '/account/deletion');
+});
+test('every response tells search engines not to index or archive the page', async () => {
+  const expected = ROBOTS_DIRECTIVES;
+  assert.match(expected, /noindex/);
+  assert.match(expected, /noarchive/);
+  const paths = ['/', '/consent', '/terms', '/privacy', '/contact', '/legal-requests', '/acknowledgements', '/login', '/signup', '/dashboard', '/u/nobody-here', '/static/css/main.css'];
+  for (const path of paths) {
+    const res = await fetch(`${base}${path}`, { redirect: 'manual' });
+    assert.equal(res.headers.get('x-robots-tag'), expected, `${path} carries the directives`);
+  }
+  for (const path of ['/consent', '/terms', '/login']) {
+    const html = await fetch(`${base}${path}`).then((res) => res.text());
+    assert.ok(html.includes(`<meta name="robots" content="${expected}">`), path);
+  }
 });

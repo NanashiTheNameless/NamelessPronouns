@@ -32,9 +32,7 @@ function write(key, value) {
   try {
     if (value === null || value === '' || value === 'default') localStorage.removeItem(key);
     else localStorage.setItem(key, value);
-  } catch {
-    // Storage may be blocked; the setting still applies to this page view.
-  }
+  } catch {}
 }
 
 function choice(key, allowed) {

@@ -20,7 +20,6 @@ function contrast(a, b) {
   if (x === null || y === null) return null;
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 }
-// Text pairs need 4.5:1 (WCAG 1.4.3); borders and focus rings need 3:1 (1.4.11).
 const PAIRS = [
   ['--text', '--bg', 4.5],
   ['--text', '--surface-strong', 4.5],

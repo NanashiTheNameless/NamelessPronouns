@@ -57,8 +57,19 @@ uses a personal workspace record internally to own that profile. Collaborative
 profile management is not offered.
 
 Published profiles are visible to visitors who complete the policy and age
-gate. Other people may copy, screenshot, index, archive, or redistribute public
-content. Do not publish another person's information without permission.
+gate. Every page of the service is sent with instructions asking search engines
+not to index or archive it, but those instructions are voluntary and cannot stop
+copying. Other people may copy, screenshot, index, archive, or redistribute
+public content. Do not publish another person's information without
+permission.
+
+An unpublished profile is not shown to the public. Exactly two kinds of viewer
+can open it at its username address: the account that owns that profile, and
+authorized staff acting on moderation. Being signed in to some other account
+grants nothing here. You can preview your own unpublished profile, you cannot
+open anyone else's, and a request from any other account or from a signed-out
+browser receives the same not-found response as an address that never
+existed.
 
 ## 4. Content rules
 
@@ -66,9 +77,25 @@ Short display fields may contain only ASCII letters, digits, and spaces. Longer
 prose fields also allow a limited set of ordinary English punctuation. Profile
 links must use validated HTTPS URLs.
 
-Profile text and links do not allow user HTML, Markdown, JavaScript, CSS,
-iframes, embeds, widgets, executable code, or other active content. The only
-image upload-like feature is the account avatar tool. An avatar may use
+The About me and Identity notes fields accept a limited set of Markdown
+formatting: bold, italics, underline, strikethrough, inline code, headings,
+bulleted lists, and block quotes. Administrator and Owner accounts may also use
+hyperlinks, numbered and nested lists, tables, fenced code blocks, horizontal
+rules, automatic linking of HTTPS addresses, and images that point at files
+already hosted on this site. Markdown that is not supported is displayed exactly
+as you typed it, and a backslash keeps a formatting character literal.
+
+Hyperlinks written inside About me or Identity notes are limited to
+Administrator and Owner accounts and must be HTTPS. Every account can add links
+through the Links section of the profile editor, which requires validated HTTPS
+URLs. Submitting a hyperlink in a prose field without that permission is
+rejected.
+
+Apart from the Markdown above, profile text and links do not allow user HTML,
+JavaScript, CSS, iframes, embeds, widgets, executable code, remotely hosted
+images, web fonts, or other active content. HTML tags are shown as text instead
+of being interpreted. The only image upload-like feature is the account avatar
+tool. An avatar may use
 Gravatar, a locally generated deterministic identicon, or a size-limited PNG,
 JPEG, WebP, or restricted SVG `data:` URI prepared in the browser. Unsafe SVG
 features are refused unless you explicitly choose to strip them; an unsafe SVG
@@ -124,7 +151,8 @@ Do not use the service to:
 
 ## 6. Moderation and bans
 
-Staff may review reports and public profiles, unpublish content, limit features,
+Staff may review reports, public profiles, and unpublished profile pages,
+unpublish content, limit features,
 suspend or terminate accounts, revoke sessions, deny signup, and impose bans.
 Bans may apply to users, emails, email domains, IP addresses, or CIDR ranges and
 may block account access, profile viewing, or both.

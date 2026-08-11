@@ -2,11 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-const run = promisify(execFile);
+import { ChromiumMissing, dumpDom } from './helpers/chromium.js';
 const root = fileURLToPath(new URL('..', import.meta.url));
 test('rejected characters are named instead of "Please match the requested format"', async (t) => {
   const server = createServer((req, res) => {
@@ -24,12 +22,9 @@ test('rejected characters are named instead of "Please match the requested forma
   try {
     let stdout;
     try {
-      ({ stdout } = await run(process.env.CHROMIUM_PATH || '/snap/bin/chromium', [
-        '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-        '--virtual-time-budget=3000', '--dump-dom', `http://127.0.0.1:${server.address().port}/`,
-      ], { timeout: 15000, maxBuffer: 2 * 1024 * 1024 }));
+      stdout = await dumpDom(['--virtual-time-budget=3000', '--dump-dom', `http://127.0.0.1:${server.address().port}/`]);
     } catch (error) {
-      if (error.code === 'ENOENT') return t.skip('Chromium is not installed');
+      if (error instanceof ChromiumMissing) return t.skip('Chromium is not installed');
       throw error;
     }
     const encoded = /<output id="browser-result">([^<]+)<\/output>/.exec(stdout)?.[1];

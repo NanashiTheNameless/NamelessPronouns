@@ -4,19 +4,15 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import ejs from 'ejs';
 import path from 'node:path';
-const run = promisify(execFile);
+import { ChromiumMissing, dumpDom } from './helpers/chromium.js';
 const root = fileURLToPath(new URL('..', import.meta.url));
 test('accessibility settings apply before paint, persist locally, and reset', async (t) => {
   const footer = await ejs.renderFile(path.join(root, 'views/partials/site-footer.ejs'), {}, { async: true });
   const harness = readFileSync(path.join(root, 'test/fixtures/accessibility-harness.html'), 'utf8')
-    .replace('<!--FOOTER-->', footer);
-  // The site's real policy, except that this harness measures itself with inline scripts, which the site
-  // does with a nonce instead. style-src stays strict so the inline custom properties are genuinely tested.
+    .replace('<footer-slot></footer-slot>', footer);
   const csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; img-src 'self' data:; font-src 'self'";
   const server = createServer((req, res) => {
     res.setHeader('Content-Security-Policy', csp);
@@ -35,12 +31,9 @@ test('accessibility settings apply before paint, persist locally, and reset', as
   try {
     let stdout;
     try {
-      ({ stdout } = await run(process.env.CHROMIUM_PATH || '/snap/bin/chromium', [
-        '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-        '--virtual-time-budget=4000', '--dump-dom', `http://127.0.0.1:${server.address().port}/`,
-      ], { timeout: 20000, maxBuffer: 4 * 1024 * 1024 }));
+      stdout = await dumpDom(['--virtual-time-budget=4000', '--dump-dom', `http://127.0.0.1:${server.address().port}/`]);
     } catch (error) {
-      if (error.code === 'ENOENT') return t.skip('Chromium is not installed');
+      if (error instanceof ChromiumMissing) return t.skip('Chromium is not installed');
       throw error;
     }
     const encoded = /<output id="browser-result">([^<]+)<\/output>/.exec(stdout)?.[1];

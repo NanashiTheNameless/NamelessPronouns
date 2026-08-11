@@ -1238,6 +1238,11 @@ test('an unpublished profile is visible to its owner and to staff only', { skip 
     { sql: 'INSERT INTO profiles (id, workspace_id, username, username_display, display_name, description, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)', params: [profileId, workspaceId, username, username, 'Draft Profile', '**Still drafting** this bio.', now, now] },
   ]);
   let res = await get(`/u/${username}`);
+  assert.equal(res.status, 302, 'a browser that has not passed the policy gate never reaches the page');
+  const visitor = jar();
+  await get('/consent', visitor);
+  await post('/consent', { policies: 'on', age18: 'on', next: '/' }, visitor);
+  res = await get(`/u/${username}`, visitor);
   assert.equal(res.status, 404, 'a signed-out visitor cannot see an unpublished profile');
   const nosy = jar();
   await loginAs(nosy, otherEmail, password);
@@ -1252,21 +1257,26 @@ test('an unpublished profile is visible to its owner and to staff only', { skip 
   await loginAs(cookies, email, password);
   res = await get(`/u/${username}`, cookies);
   assert.equal(res.status, 200, 'the owner can preview their own unpublished page');
-  assert.equal(res.headers.get('x-robots-tag'), 'noindex, nofollow');
+  const { ROBOTS_DIRECTIVES } = await import('../src/middleware/security-headers.js');
+  assert.equal(res.headers.get('x-robots-tag'), ROBOTS_DIRECTIVES);
   let page = await res.text();
   assert.match(page, /Only you can see this page/);
   assert.match(page, new RegExp(`/profiles/${profileId}/edit`));
   assert.match(page, /<strong>Still drafting<\/strong> this bio\./, 'the preview renders the bio Markdown');
   res = await get('/dashboard', cookies);
   page = await res.text();
-  assert.match(page, new RegExp(`<a href="/u/${username}">Preview page</a>`));
+  assert.match(page, new RegExp(`<a href="/u/${username}" aria-label="Preview the unpublished page for ${username}">Preview page</a>`));
   await db.query('UPDATE profiles SET published = 1 WHERE id = ?', [profileId]);
-  res = await get(`/u/${username}`);
-  assert.equal(res.status, 200, 'publishing opens the page to everyone');
+  res = await get(`/u/${username}`, visitor);
+  assert.equal(res.status, 200, 'publishing opens the page to every gate-passing visitor');
   page = await res.text();
   assert.doesNotMatch(page, /not published/);
   res = await get(`/u/${username}`, cookies);
-  assert.equal(res.headers.get('x-robots-tag'), null, 'a published page is indexable');
+  assert.equal(
+    res.headers.get('x-robots-tag'),
+    ROBOTS_DIRECTIVES,
+    'a published page carries the same no-index instructions as every other page',
+  );
 });
 test('email change requires new-address confirmation and revokes every session', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;

@@ -19,8 +19,8 @@ We collect:
   attestation, and policy acceptance.
 - Selected 2FA method, encrypted TOTP secret, hashed recovery codes, login and
   password-reset challenges, and sessions.
-- Profile usernames, display names, names, pronouns, descriptions, identity
-  notes, themes, HTTPS links, avatar-source selection, and any uploaded avatar
+- Profile usernames, display names, names, pronouns, About me descriptions,
+  identity notes, themes, HTTPS links, avatar-source selection, and any uploaded avatar
   `data:` URI. Personal workspace ownership and membership records are used
   internally to associate an account with its profile.
 - Support requests, reports, appeals, recovery cases, moderation records, bans,
@@ -28,7 +28,8 @@ We collect:
 - Rights complaints and counter-notices, legal requests and disclosures,
   legal holds, export and deletion requests, incident records, and notices.
 - Automated content flags, encrypted attempted profile values, matched fields
-  and rule versions, warnings, suspension state, review requests, decisions,
+  and rule versions, including addresses taken from Markdown links written in
+  profile prose, warnings, suspension state, review requests, decisions,
   and exemptions.
 
 We do not store plaintext passwords, email codes, recovery codes, or plaintext
@@ -93,9 +94,19 @@ legal obligations, or legal claims.
 
 Published profiles, including the selected avatar, are available at
 `/u/<username>` to visitors who complete
-the policy and age gate. Visitors, search engines that can pass the gate, and
-archives may copy or retain them. Unpublishing removes the profile from
-NamelessPronouns but cannot remove copies controlled by others.
+the policy and age gate. Every page of the service, published profiles included,
+is sent with instructions asking search engines not to index, archive, snippet,
+or follow it. Those instructions are voluntary, so visitors, crawlers that
+ignore them, and archives may still copy or retain whatever they can reach.
+Unpublishing removes the profile from NamelessPronouns but cannot remove copies
+controlled by others.
+
+An unpublished profile is not public. Its page can still be opened at
+`/u/<username>` by the account that owns it and by authorized staff for
+moderation. A signed-in account can reach only its own unpublished profile and
+never another account's. Every other request, from a different account or from a
+signed-out browser alike, receives the same not-found response as an address that
+never existed.
 
 Emails, private drafts, workspace membership, authentication records, support
 notes, report identities, and staff records are not public profile data.
@@ -119,7 +130,7 @@ Information may be processed by:
 Information may be processed in locations used by these providers and the
 configured deployment. Appropriate transfer safeguards are used where required.
 
-## 5. Cookies
+## 5. Cookies and local storage
 
 Essential cookies support login sessions, CSRF protection, 2FA state, and
 browser-bound magic links. The site-wide policy and age cookie is also
@@ -128,6 +139,14 @@ are not used for advertising or cross-site tracking.
 
 Cloudflare Web Analytics and RUM use a browser beacon without analytics cookies.
 The Copy pronouns action runs locally and sends no custom analytics event.
+
+The Accessibility panel in the site footer stores the theme you pick, any custom
+colors you enter, and any custom font family you name in your browser's local
+storage. These values are written only when you choose them. They are never sent
+to the server, are not attached to an account, are not included in an account
+export, and are not used for analytics or tracking. The panel's reset control
+removes them, as does clearing site data for this domain. Copying your settings
+out of the panel writes them to your clipboard locally.
 
 ## 6. Government and legal requests
 
@@ -165,6 +184,8 @@ when doing so is lawful and does not materially risk identifying a person.
 - Self-service password-reset challenge records: active for ten minutes and
   removed by scheduled maintenance after expiry.
 - Site-wide acceptance cookie: up to 1 year in the accepting browser.
+- Accessibility settings in local storage: kept in that browser until you reset
+  them in the panel or clear site data. They are not stored on the server.
 - Account exports are generated in memory on demand and are not stored as ZIP
   archives by the application. Emailed export-link records contain a keyed token
   hash and timestamps. An unused record expires 14 days after creation; first
