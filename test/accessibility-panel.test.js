@@ -204,7 +204,7 @@ test('the accessibility script contains the local-only keyboard and input eggs',
   assert.match(script, /The Times are new\. The Roman is unchanged\./);
   assert.match(script, /The ancient records warned us\./);
   assert.match(script, /Backup of backup complete\./);
-  assert.match(script, /Settings recovered from 1998\./);
+  assert.match(script, /1998 theme unlocked\./);
   assert.match(script, /You have the answer\. The question remains unavailable\./);
   assert.match(script, /An easter egg collector, Apparently\./);
   assert.match(script, /Shift\+\? was right there\./);
