@@ -19,17 +19,19 @@
       <% if (account.decision_note) { %><dt>Internal note</dt><dd><%= account.decision_note %></dd><% } %>
     </dl>
 
-    <% if (account.signup_status === 'pending') { %>
-      <section class="panel signup-request" aria-labelledby="request-h">
-        <h2 id="request-h">Signup request</h2>
-        <p><strong><%= account.requested_display_name %></strong> <span class="username">@<%= account.requested_profile_username_display %></span></p>
-        <p class="fineprint">Requested <%= account.requested_at ? new Date(Number(account.requested_at)).toISOString() : 'unknown' %><%= account.email_verified_at ? '' : ' - email not verified yet' %>.</p>
-        <h3>Their reason for requesting an account</h3>
-        <% if (account.request_note) { %>
-          <blockquote class="signup-reason"><%= account.request_note %></blockquote>
-        <% } else { %>
-          <p class="fineprint">No reason was recorded with this request.</p>
-        <% } %>
+    <section class="panel signup-request" aria-labelledby="request-h">
+      <h2 id="request-h">Signup request</h2>
+      <% if (account.requested_display_name || account.requested_profile_username_display) { %>
+        <p><strong><%= account.requested_display_name || '' %></strong> <% if (account.requested_profile_username_display) { %><span class="username">@<%= account.requested_profile_username_display %></span><% } %></p>
+      <% } %>
+      <p class="fineprint">Requested <%= account.requested_at ? new Date(Number(account.requested_at)).toISOString() : 'unknown' %><%= account.email_verified_at ? '' : ' - email not verified yet' %>.</p>
+      <h3>Their reason for requesting an account</h3>
+      <% if (account.request_note) { %>
+        <blockquote class="signup-reason"><%= account.request_note %></blockquote>
+      <% } else { %>
+        <p class="fineprint">No reason was recorded with this request.</p>
+      <% } %>
+      <% if (account.signup_status === 'pending') { %>
         <% if (canDecideSignup) { %>
           <%- await include('../partials/signup-decision', {
             accountId: account.id, returnTo: 'account', hasSignupIp,
@@ -37,8 +39,8 @@
         <% } else { %>
           <p class="fineprint">You cannot decide this request.</p>
         <% } %>
-      </section>
-    <% } %>
+      <% } %>
+    </section>
 
     <h2>Profiles</h2>
     <% if (!profiles.length) { %>

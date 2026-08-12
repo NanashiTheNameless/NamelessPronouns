@@ -187,6 +187,22 @@ test('admin account page offers deletion and switches to cancelling once schedul
   assert.match(held, /held by a legal hold/);
   assert.match(held, /will not be purged until the legal hold is released/);
 });
+test('admin account page keeps the signup reason after the request is decided', async () => {
+  const html = await ejs.renderFile(
+    fileURLToPath(new URL('../views/admin/account-detail.ejs', import.meta.url)),
+    accountDetail({
+      account: {
+        ...accountDetail().account,
+        signup_status: 'approved', decided_at: 1700000000000, decision_note: 'Looks genuine.',
+      },
+    }),
+    { async: true },
+  );
+  assert.match(html, /Their reason for requesting an account/);
+  assert.match(html, /I want a profile for my pronouns\./);
+  assert.doesNotMatch(html, /\/approve"/);
+  assert.doesNotMatch(html, /\/deny"/);
+});
 test('admin account page hides decision, state and ban controls without permission', async () => {
   const html = await ejs.renderFile(
     fileURLToPath(new URL('../views/admin/account-detail.ejs', import.meta.url)),
