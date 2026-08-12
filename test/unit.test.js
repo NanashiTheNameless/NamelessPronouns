@@ -246,8 +246,8 @@ test('personal profile creation uses content-safe generated display text', () =>
   assert.equal(result.statements.at(-1).params[1], 'alex99');
 });
 test('policy versions are source-controlled and included in acceptance records', () => {
-  assert.equal(TERMS_VERSION, '2026-08-10.4');
-  assert.equal(PRIVACY_VERSION, '2026-08-10.4');
+  assert.equal(TERMS_VERSION, '2026-08-11.1');
+  assert.equal(PRIVACY_VERSION, '2026-08-11.1');
   const acceptance = buildAcceptance({ now: 123 });
   assert.equal(acceptance.terms, TERMS_VERSION);
   assert.equal(acceptance.privacy, PRIVACY_VERSION);

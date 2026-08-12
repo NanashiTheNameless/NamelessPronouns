@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Effective date: August 10, 2026
+Effective date: August 11, 2026
 
 Operator: NamelessNanashi
 
@@ -31,6 +31,13 @@ We collect:
   and rule versions, including addresses taken from Markdown links and embedded
   media written in profile prose, warnings, suspension state, review requests, decisions,
   and exemptions.
+- Content-rule exemption records: the exempted value in readable form, the scope
+  it applies to (account, profile, rule version, and field), the stated staff
+  reason, the staff accounts that created, edited, or revoked it, and its expiry.
+  An exemption that covers a whole account stores no value at all. Exempted
+  values are stored unencrypted so that staff can review and correct them;
+  exemptions created before this was possible keep a keyed hash of the value
+  instead, which is replaced by the readable value when staff next edit them.
 
 We do not store plaintext passwords, email codes, recovery codes, or plaintext
 login, password-reset, email-change, recovery, or export capability tokens. Keyed hashes or
@@ -318,7 +325,9 @@ suspension, but their attempted matching values are still flagged, encrypted,
 retained, and available for authorized review. Their self exemptions and each
 use are audited.
 Administrators and Owners may review the exact attempted values behind a
-content flag. Users may request Administrator review of a possible false
+content flag. They may also create, edit, and revoke detector exemptions,
+scoped to one value for one account or to an entire account, and every such
+change is audited and emailed to the affected account. Users may request Administrator review of a possible false
 positive through the restricted suspension screen. Staff decide signup
 approval, moderation appeals, content-flag reviews, and discretionary recovery
 requests.

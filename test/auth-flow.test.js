@@ -715,7 +715,7 @@ test('content flag review creates a narrow effective exemption', { skip }, async
   res = await get('/admin/content-exemptions', adminCookies);
   assert.equal(res.status, 200);
   page = await res.text();
-  assert.doesNotMatch(page, new RegExp(attemptedValue));
+  assert.match(page, new RegExp(attemptedValue.toLowerCase()), 'the readable exempt value is listed');
   csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
   res = await post(`/admin/content-exemptions/${exemption.rows[0].id}`, {
     _csrf: csrf, action: 'revoke', reason: 'False positive scope retired', confirmation: 'REVOKE EXEMPTION',
@@ -729,6 +729,136 @@ test('content flag review creates a narrow effective exemption', { skip }, async
   assert.equal(revoked.revoked_by, adminId);
   assert.equal(revoked.revoke_reason, 'False positive scope retired');
   assert.equal(await matchIsExempt({ ruleVersionId: versionId, field: 'display_name', attemptedValue }, { userId, profileId }), false);
+});
+test('an administrator creates and edits per-account and per-value exemptions', { skip }, async () => {
+  const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const termEmail = `exempt-term-${suffix}@allowed-${suffix}.example`;
+  const accountEmail = `exempt-account-${suffix}@allowed-${suffix}.example`;
+  const adminEmail = `exempt-admin-${suffix}@allowed-${suffix}.example`;
+  const adminPw = 'exemption-admin-passphrase';
+  const termUserId = await insertUser({ email: termEmail, password: 'exemption-term-passphrase', status: 'approved' });
+  const accountUserId = await insertUser({ email: accountEmail, password: 'exemption-account-passphrase', status: 'approved' });
+  const adminId = await insertUser({ email: adminEmail, password: adminPw, status: 'approved', role: 'administrator' });
+  const { newId } = await import('../src/util/ids.js');
+  const { matchIsExempt } = await import('../src/content-exemptions.js');
+  const ruleId = `exempt-rule-${suffix}`;
+  const versionId = newId();
+  const workspaceId = newId();
+  const profileId = newId();
+  const attemptedValue = `Contested Phrase ${suffix}`;
+  const now = Date.now();
+  await db.batch([
+    { sql: 'INSERT INTO workspaces (id, name, slug, kind, owner_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [workspaceId, 'Exempt Workspace', `exempt-${suffix}`, 'personal', termUserId, now, now] },
+    { sql: 'INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at) VALUES (?, ?, ?, ?, ?)', params: [newId(), workspaceId, termUserId, 'owner', now] },
+    { sql: 'INSERT INTO profiles (id, workspace_id, username, username_display, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [profileId, workspaceId, `exempt${suffix}`.slice(0, 30).toLowerCase(), `Exempt${suffix}`.slice(0, 30), 'Exempt Profile', now, now] },
+    { sql: 'INSERT INTO content_rules (id, current_version_id, created_at, updated_at) VALUES (?, ?, ?, ?)', params: [ruleId, versionId, now, now] },
+    { sql: `INSERT INTO content_rule_versions (id, rule_id, version, rule_type, match_value, category, severity, mode, explanation, created_at)
+            VALUES (?, ?, 1, 'exact_field', ?, 'test_category', 'warning', 'enforcing', ?, ?)`, params: [versionId, ruleId, attemptedValue.toLowerCase(), 'Test explanation', now] },
+  ]);
+  const adminCookies = jar();
+  await loginAs(adminCookies, adminEmail, adminPw);
+  let res = await get('/account/reauth?next=/admin/content-exemptions/new', adminCookies);
+  let page = await res.text();
+  let csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  const code = /code is:\s*(\d{6})/.exec(outbox.find((m) => m.to === adminEmail && /confirm a sensitive change/i.test(m.subject)).text)[1];
+  res = await post('/account/reauth', { _csrf: csrf, password: adminPw, code, next: '/admin/content-exemptions/new' }, adminCookies);
+  assert.equal(res.headers.get('location'), '/admin/content-exemptions/new');
+  res = await get('/admin/content-exemptions/new', adminCookies);
+  assert.equal(res.status, 200);
+  page = await res.text();
+  assert.match(page, new RegExp(`<option value="${ruleId}"`));
+  csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  const termForm = {
+    _csrf: csrf, type: 'term', account_scope: 'user', email: termEmail, profile_id: '',
+    rule_id: ruleId, field_type: 'display_name', value: attemptedValue, expiry: 'none',
+    reason: 'Reclaimed word for this account',
+  };
+  res = await post('/admin/content-exemptions/new', { ...termForm, confirmation: 'WRONG' }, adminCookies);
+  assert.equal(res.status, 400);
+  assert.equal(Number((await db.query('SELECT COUNT(*) AS count FROM content_rule_exemptions WHERE created_by = ?', [adminId])).rows[0].count), 0);
+  res = await post('/admin/content-exemptions/new', { ...termForm, email: `missing-${suffix}@allowed-${suffix}.example`, confirmation: 'CREATE EXEMPTION' }, adminCookies);
+  assert.equal(res.status, 400);
+  assert.match(await res.text(), /No account matches that email/);
+  res = await post('/admin/content-exemptions/new', { ...termForm, confirmation: 'CREATE EXEMPTION' }, adminCookies);
+  assert.equal(res.status, 302);
+  const term = (await db.query(
+    `SELECT id, rule_version_id, field_type, normalized_value, normalized_value_hash, user_id, profile_id, expires_at, self_exemption
+       FROM content_rule_exemptions WHERE created_by = ?`,
+    [adminId],
+  )).rows[0];
+  assert.equal(term.rule_version_id, versionId);
+  assert.equal(term.field_type, 'display_name');
+  assert.equal(term.normalized_value, attemptedValue.toLowerCase());
+  assert.equal(term.normalized_value_hash, null);
+  assert.equal(term.user_id, termUserId);
+  assert.equal(term.profile_id, null);
+  assert.equal(term.expires_at, null);
+  assert.equal(term.self_exemption, 0);
+  assert.equal(await matchIsExempt({ ruleVersionId: versionId, field: 'display_name', attemptedValue }, { userId: termUserId, profileId }), true);
+  assert.equal(await matchIsExempt({ ruleVersionId: versionId, field: 'display_name', attemptedValue }, { userId: accountUserId, profileId }), false);
+  assert.equal(await matchIsExempt({ ruleVersionId: versionId, field: 'notes', attemptedValue }, { userId: termUserId, profileId }), false);
+  res = await get(`/admin/content-exemptions/${term.id}/edit`, adminCookies);
+  assert.equal(res.status, 200);
+  page = await res.text();
+  assert.match(page, new RegExp(`value="${attemptedValue.toLowerCase()}"`));
+  csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  res = await post(`/admin/content-exemptions/${term.id}/edit`, {
+    _csrf: csrf, type: 'term', account_scope: 'keep', email: '', profile_id: profileId,
+    rule_id: '', field_type: '', value: attemptedValue, expiry: '30',
+    reason: 'Widened to every rule and field', confirmation: 'UPDATE EXEMPTION',
+  }, adminCookies);
+  assert.equal(res.status, 302);
+  const edited = (await db.query(
+    'SELECT rule_version_id, field_type, profile_id, user_id, expires_at, updated_by, updated_at FROM content_rule_exemptions WHERE id = ?',
+    [term.id],
+  )).rows[0];
+  assert.equal(edited.rule_version_id, null);
+  assert.equal(edited.field_type, null);
+  assert.equal(edited.profile_id, profileId);
+  assert.equal(edited.user_id, termUserId);
+  assert.equal(edited.updated_by, adminId);
+  assert.ok(Number(edited.updated_at) > 0);
+  assert.ok(Number(edited.expires_at) >= Date.now() + 29 * 24 * 60 * 60 * 1000);
+  assert.equal(await matchIsExempt({ ruleVersionId: newId(), field: 'notes', attemptedValue }, { userId: termUserId, profileId }), true);
+  assert.equal(await matchIsExempt({ ruleVersionId: versionId, field: 'display_name', attemptedValue }, { userId: termUserId, profileId: newId() }), false);
+  assert.equal(await matchIsExempt({ ruleVersionId: versionId, field: 'display_name', attemptedValue: 'Some Other Phrase' }, { userId: termUserId, profileId }), false);
+  res = await get('/admin/content-exemptions/new', adminCookies);
+  page = await res.text();
+  csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  res = await post('/admin/content-exemptions/new', {
+    _csrf: csrf, type: 'account', account_scope: 'all', email: '', profile_id: '',
+    rule_id: '', field_type: '', value: '', expiry: 'none',
+    reason: 'Account wide with no account', confirmation: 'CREATE EXEMPTION',
+  }, adminCookies);
+  assert.equal(res.status, 400);
+  assert.match(await res.text(), /must name one account/);
+  res = await post('/admin/content-exemptions/new', {
+    _csrf: csrf, type: 'account', account_scope: 'user', email: accountEmail, profile_id: '',
+    rule_id: '', field_type: '', value: '', expiry: 'none',
+    reason: 'Trusted account under review', confirmation: 'CREATE EXEMPTION',
+  }, adminCookies);
+  assert.equal(res.status, 302);
+  const accountWide = (await db.query(
+    `SELECT rule_version_id, field_type, normalized_value, normalized_value_hash, profile_id
+       FROM content_rule_exemptions WHERE user_id = ?`,
+    [accountUserId],
+  )).rows[0];
+  assert.equal(accountWide.rule_version_id, null);
+  assert.equal(accountWide.field_type, null);
+  assert.equal(accountWide.normalized_value, null);
+  assert.equal(accountWide.normalized_value_hash, null);
+  assert.equal(accountWide.profile_id, null);
+  assert.equal(await matchIsExempt({ ruleVersionId: versionId, field: 'display_name', attemptedValue }, { userId: accountUserId, profileId: newId() }), true);
+  assert.equal(await matchIsExempt({ ruleVersionId: newId(), field: 'links', attemptedValue: 'https://Example.test/anything' }, { userId: accountUserId, profileId: newId() }), true);
+  assert.equal(await matchIsExempt({ ruleVersionId: versionId, field: 'display_name', attemptedValue }, { userId: adminId, profileId: newId() }), false);
+  const events = await db.query(
+    `SELECT event_type FROM audit_events WHERE actor_user_id = ?
+       AND event_type IN ('content_rule.exemption_created', 'content_rule.exemption_updated') ORDER BY created_at`,
+    [adminId],
+  );
+  assert.deepEqual(events.rows.map((row) => row.event_type), [
+    'content_rule.exemption_created', 'content_rule.exemption_updated', 'content_rule.exemption_created',
+  ]);
 });
 test('three distinct enforcing edits suspend and Administrator restoration recovers access', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;

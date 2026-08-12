@@ -1,6 +1,6 @@
 import db from './db/index.js';
 import { keyedHash } from './util/crypto.js';
-export function normalizedExemptionHash(field, value) {
+export function normalizeExemptionValue(field, value) {
   let normalized = String(value).replace(/ {2,}/g, ' ').trim();
   if (field === 'links') {
     try {
@@ -12,12 +12,18 @@ export function normalizedExemptionHash(field, value) {
   } else {
     normalized = normalized.toLowerCase();
   }
-  return keyedHash(`content-exemption:v1:${field}:${normalized}`);
+  return normalized;
+}
+export function normalizedExemptionHash(field, value) {
+  return keyedHash(`content-exemption:v1:${field}:${normalizeExemptionValue(field, value)}`);
 }
 export async function matchingExemption(match, { userId, profileId, database = db, now = Date.now() }) {
   const { rows } = await database.query(
     `SELECT id FROM content_rule_exemptions
-      WHERE rule_version_id = ? AND field_type = ? AND normalized_value_hash = ?
+      WHERE (rule_version_id IS NULL OR rule_version_id = ?)
+        AND (field_type IS NULL OR field_type = ?)
+        AND ((normalized_value IS NULL AND normalized_value_hash IS NULL)
+             OR normalized_value = ? OR normalized_value = ? OR normalized_value_hash = ?)
         AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > ?)
         AND (user_id IS NULL OR user_id = ?)
         AND (profile_id IS NULL OR profile_id = ?)
@@ -25,6 +31,8 @@ export async function matchingExemption(match, { userId, profileId, database = d
     [
       match.ruleVersionId,
       match.field,
+      normalizeExemptionValue(match.field, match.attemptedValue),
+      normalizeExemptionValue(null, match.attemptedValue),
       normalizedExemptionHash(match.field, match.attemptedValue),
       now,
       userId,

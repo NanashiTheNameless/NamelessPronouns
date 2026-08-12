@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container narrow">
+    <p class="eyebrow">Administrator tools</p>
+    <h1><%= existing ? 'Edit content exemption' : 'Create content exemption' %></h1>
+    <p>An exemption never changes a rule. It only stops matching content from being flagged inside the scope you choose. Exempt values are stored in readable form so they can be reviewed and edited.</p>
+    <% if (error) { %><p class="error"><%= error %></p><% } %>
+    <% if (existing) { %>
+      <dl class="details">
+        <div><dt>Exemption</dt><dd><%= existing.id %></dd></div>
+        <div><dt>Current account</dt><dd><% if (existing.email) { %><%- await obfuscateEmail(existing.email) %><% } else { %>all accounts<% } %></dd></div>
+        <div><dt>Current rule</dt><dd><%= existing.rule_id ? `${existing.rule_id}, version ${existing.version}` : 'all rules' %></dd></div>
+        <div><dt>Origin</dt><dd><%= existing.self_exemption ? 'self exemption' : 'staff exemption' %></dd></div>
+      </dl>
+      <% if (existing.normalized_value === null && existing.normalized_value_hash !== null) { %>
+        <p class="error">This exemption predates readable values, so its value is only stored as a hash and cannot be shown. Saving this form replaces the hash with the value you type below.</p>
+      <% } %>
+    <% } %>
+    <form method="post" class="panel stack">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Exemption type
+        <select name="type" required>
+          <option value="term"<%= input.type === 'term' ? ' selected' : '' %>>Single value for one account</option>
+          <option value="account"<%= input.type === 'account' ? ' selected' : '' %>>Whole account, every rule and value</option>
+        </select>
+      </label>
+      <label>Account scope
+        <select name="account_scope" required>
+          <% if (existing) { %><option value="keep"<%= input.accountScope === 'keep' ? ' selected' : '' %>>Keep the current account</option><% } %>
+          <option value="user"<%= input.accountScope === 'user' ? ' selected' : '' %>>One account, by email</option>
+          <option value="all"<%= input.accountScope === 'all' ? ' selected' : '' %>>All accounts (single values only)</option>
+        </select>
+      </label>
+      <label>Account email
+        <input name="email" type="email" value="<%= input.email %>" maxlength="254" autocomplete="off" placeholder="Required when the account scope is one account">
+      </label>
+      <label>Profile ID (optional, single values only)
+        <input name="profile_id" value="<%= input.profileId %>" maxlength="64" autocomplete="off" placeholder="Leave blank to cover every profile on the account">
+      </label>
+      <label>Rule
+        <select name="rule_id">
+          <option value=""<%= input.ruleId === '' ? ' selected' : '' %>>All rules</option>
+          <% rules.forEach(function (rule) { %>
+            <option value="<%= rule.id %>"<%= input.ruleId === rule.id ? ' selected' : '' %>><%= rule.id %> (current version <%= rule.version %>)</option>
+          <% }); %>
+        </select>
+      </label>
+      <label>Field
+        <select name="field_type">
+          <option value=""<%= input.fieldType === '' ? ' selected' : '' %>>All fields</option>
+          <% fields.forEach(function (field) { %>
+            <option value="<%= field[0] %>"<%= input.fieldType === field[0] ? ' selected' : '' %>><%= field[1] %></option>
+          <% }); %>
+        </select>
+      </label>
+      <label>Exempt value
+        <input name="value" value="<%= input.value %>" maxlength="2048" autocomplete="off" placeholder="Required for a single-value exemption; ignored for a whole-account exemption">
+      </label>
+      <label>Expiry
+        <select name="expiry" required>
+          <% if (existing) { %><option value="keep"<%= input.expiry === 'keep' ? ' selected' : '' %>>Keep the current expiry</option><% } %>
+          <option value="7"<%= input.expiry === '7' ? ' selected' : '' %>>7 days</option>
+          <option value="30"<%= input.expiry === '30' ? ' selected' : '' %>>30 days</option>
+          <option value="90"<%= input.expiry === '90' ? ' selected' : '' %>>90 days</option>
+          <option value="none"<%= input.expiry === 'none' ? ' selected' : '' %>>No expiry</option>
+        </select>
+      </label>
+      <label>Reason
+        <input name="reason" value="<%= input.reason %>" maxlength="200" required placeholder="Why this content is legitimate">
+      </label>
+      <label>Type <strong><%= existing ? 'UPDATE EXEMPTION' : 'CREATE EXEMPTION' %></strong> to confirm
+        <input name="confirmation" autocomplete="off" required placeholder="<%= existing ? 'UPDATE EXEMPTION' : 'CREATE EXEMPTION' %>">
+      </label>
+      <p>Choosing a rule binds this exemption to that rule's current version. Later versions of the rule are not covered.</p>
+      <button type="submit"><%= existing ? 'Save exemption' : 'Create exemption' %></button>
+    </form>
+    <p><a href="/admin/content-exemptions">Back to content exemptions</a></p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>

@@ -59,9 +59,24 @@ test('both documents say that every page asks not to be indexed', async () => {
   assert.match(await privacy(), /Every page of the service, published profiles included,\s+is sent with instructions asking search engines not to index, archive, snippet,\s+or follow it/);
   assert.match(await privacy(), /Those instructions are voluntary/);
 });
+test('both documents describe how far a detector exemption can reach', async () => {
+  const termsText = await terms();
+  assert.match(termsText, /An exemption may cover one harmless value for one account/);
+  assert.match(termsText, /narrowed further to a single rule, a single field, or a single profile/);
+  assert.match(termsText, /may also exempt an entire account from the detector/);
+  assert.match(termsText, /content covered by an exemption may still be moderated/);
+  assert.match(termsText, /may be\s+edited, narrowed, widened, or revoked at any time/);
+  assert.match(termsText, /We email the affected account\s+when staff create, change, or revoke an exemption/);
+  const privacyText = await privacy();
+  assert.match(privacyText, /the exempted value in readable form/);
+  assert.match(privacyText, /An exemption that covers a whole account stores no value at all/);
+  assert.match(privacyText, /Exempted\s+values are stored unencrypted/);
+  assert.match(privacyText, /keep a keyed hash of the value\s+instead/);
+  assert.match(privacyText, /scoped to one value for one account or to an entire account/);
+});
 test('the accepted policy versions moved past the pre-Markdown release', async () => {
   assert.equal(TERMS_VERSION, PRIVACY_VERSION, 'both documents are accepted as one version pair');
-  for (const superseded of ['2026-08-10.1', '2026-08-10.2', '2026-08-10.3']) {
+  for (const superseded of ['2026-08-10.1', '2026-08-10.2', '2026-08-10.3', '2026-08-10.4']) {
     assert.notEqual(TERMS_VERSION, superseded, 'a material change requires renewed acceptance');
   }
   assert.match(TERMS_VERSION, /^\d{4}-\d{2}-\d{2}\.\d+$/);

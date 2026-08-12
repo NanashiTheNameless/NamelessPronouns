@@ -10,7 +10,7 @@ import { decrypt } from '../util/crypto.js';
 import config from '../config.js';
 import * as V from '../validation.js';
 import { newId } from '../util/ids.js';
-import { normalizedExemptionHash } from '../content-exemptions.js';
+import { normalizeExemptionValue } from '../content-exemptions.js';
 import { createBan, targetHash } from '../bans.js';
 import { roleAtLeast } from '../middleware/staff.js';
 import { EASTER_EGGS } from '../easter-eggs.js';
@@ -281,25 +281,25 @@ router.post(
     const now = Date.now();
     const expiresAt = expiry === 'none' ? null : now + Number(expiry) * 24 * 60 * 60 * 1000;
     const profileId = scope === 'profile' ? flag.profile_id : null;
-    const valueHash = normalizedExemptionHash(flag.field_type, attemptedValue);
+    const value = normalizeExemptionValue(flag.field_type, attemptedValue);
     await db.batch([
       { sql: 'UPDATE users SET updated_at = updated_at WHERE id = ?', params: [req.user.id] },
       {
         sql: `INSERT INTO content_rule_exemptions
-                (id, rule_version_id, field_type, normalized_value_hash, user_id,
+                (id, rule_version_id, field_type, normalized_value, user_id,
                  profile_id, reason, created_by, self_exemption, expires_at, created_at)
               SELECT ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?
                WHERE NOT EXISTS (
                  SELECT 1 FROM content_rule_exemptions
-                  WHERE rule_version_id = ? AND field_type = ? AND normalized_value_hash = ?
+                  WHERE rule_version_id = ? AND field_type = ? AND normalized_value = ?
                     AND user_id = ? AND ((profile_id IS NULL AND CAST(? AS TEXT) IS NULL) OR profile_id = ?)
                     AND self_exemption = 1 AND revoked_at IS NULL
                     AND (expires_at IS NULL OR expires_at > ?)
                )`,
         params: [
-          newId(), flag.rule_version_id, flag.field_type, valueHash, req.user.id,
+          newId(), flag.rule_version_id, flag.field_type, value, req.user.id,
           profileId, reason, req.user.id, expiresAt, now,
-          flag.rule_version_id, flag.field_type, valueHash, req.user.id,
+          flag.rule_version_id, flag.field_type, value, req.user.id,
           profileId, profileId, now,
         ],
       },
@@ -403,12 +403,12 @@ router.post(
       );
       statements.push({
         sql: `INSERT INTO content_rule_exemptions
-                (id, rule_version_id, field_type, normalized_value_hash,
+                (id, rule_version_id, field_type, normalized_value,
                  user_id, profile_id, reason, created_by, created_at)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         params: [
           newId(), review.rule_version_id, review.field_type,
-          normalizedExemptionHash(review.field_type, attemptedValue),
+          normalizeExemptionValue(review.field_type, attemptedValue),
           review.user_id, review.profile_id, reason, req.user.id, now,
         ],
       });

@@ -1,6 +1,6 @@
 # Terms of Service
 
-Effective date: August 10, 2026
+Effective date: August 11, 2026
 
 Operator: NamelessNanashi
 
@@ -142,9 +142,20 @@ warned. They may create a narrow exemption for their own exact value, but that
 does not change these Terms or prevent later moderation.
 
 You may ask an Administrator to review a flag if you believe it was incorrect.
-An Administrator or Owner may remove an incorrect flag or create a narrow
-detector exemption for a harmless exact value. An exemption corrects the
-automated detector only and does not permit content prohibited by these Terms.
+An Administrator or Owner may remove an incorrect flag or create a detector
+exemption. An exemption may cover one harmless value for one account, and it may
+be narrowed further to a single rule, a single field, or a single profile. An
+Administrator or Owner may also exempt an entire account from the detector when
+repeated false positives make narrower exemptions impractical. An exemption
+corrects the automated detector only. It does not permit content prohibited by
+these Terms, and content covered by an exemption may still be moderated,
+removed, or acted on under these Terms.
+
+Exemptions are staff records, not account settings. Each one names the staff
+account that created it and the stated reason, may carry an expiry, and may be
+edited, narrowed, widened, or revoked at any time. We email the affected account
+when staff create, change, or revoke an exemption on it. Creating an exemption
+is never a promise to keep it.
 
 You keep ownership of your content. You allow NamelessNanashi to store, format,
 display, moderate, and back up that content only as needed to run the service.

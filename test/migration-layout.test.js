@@ -13,6 +13,7 @@ test('the init schema stays consolidated and later migrations are additive', asy
     '0003_profile_words_and_signup_decisions.sql',
     '0004_drop_altcha_challenges.sql',
     '0005_drop_workspace_invites.sql',
+    '0006_content_exemption_scopes.sql',
   ]);
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\bALTER\s+TABLE\b/i);
@@ -92,6 +93,19 @@ test('shared-workspace invites are gone from the schema and the application', as
     const source = await readFile(new URL(file, import.meta.url), 'utf8');
     assert.doesNotMatch(source, /workspace_invites|invite_accept_ip|invite_send_workspace/);
   }
+});
+test('content exemptions become scopeable, readable, and editable', async () => {
+  const sql = await readFile(new URL('../db/migrations/0006_content_exemption_scopes.sql', import.meta.url), 'utf8');
+  assert.match(sql, /CREATE TABLE content_rule_exemptions_new \(/);
+  for (const column of ['rule_version_id TEXT,', 'field_type TEXT,', 'normalized_value TEXT,', 'updated_at BIGINT,', 'updated_by TEXT,']) {
+    assert.match(sql, new RegExp(`\\s${column.replace(/[()]/g, '\\$&')}`), `${column} is nullable`);
+  }
+  assert.match(sql, /INSERT INTO content_rule_exemptions_new/, 'existing exemptions are carried over');
+  assert.match(sql, /ALTER TABLE content_rule_exemptions_new RENAME TO content_rule_exemptions/);
+  assert.match(sql, /CREATE INDEX idx_content_exemptions_rule ON content_rule_exemptions \(rule_version_id, normalized_value\)/);
+  const source = await readFile(new URL('../src/content-exemptions.js', import.meta.url), 'utf8');
+  assert.match(source, /rule_version_id IS NULL OR rule_version_id = \?/, 'a null rule version covers every rule');
+  assert.match(source, /field_type IS NULL OR field_type = \?/, 'a null field covers every field');
 });
 test('production Compose applies pending migrations before startup', async () => {
   const compose = await readFile(new URL('../docker-compose.yml', import.meta.url), 'utf8');

@@ -9,6 +9,8 @@ import { newId } from '../util/ids.js';
 import { ipPrefixHash } from '../util/net.js';
 import * as mail from '../mail.js';
 import { keyedHash, safeEqual } from '../util/crypto.js';
+import { normalizeExemptionValue } from '../content-exemptions.js';
+import { CONTENT_FIELD_LABELS } from '../content-fields.js';
 const router = express.Router();
 const SHADOW_MS = 7 * 24 * 60 * 60 * 1000;
 const TYPES = ['exact_field', 'whole_token', 'exact_phrase', 'host', 'host_suffix', 'exact_url', 'url_prefix'];
@@ -83,10 +85,11 @@ router.get('/admin/content-rules', requireStaff('administrator'), requireFreshAu
 });
 router.get('/admin/content-exemptions', requireStaff('administrator'), requireFreshAuth(), async (req, res) => {
   const { rows } = await db.query(
-    `SELECT e.id, e.field_type, e.user_id, e.profile_id, e.self_exemption,
-            e.expires_at, e.created_at, v.rule_id, v.version, u.email
+    `SELECT e.id, e.rule_version_id, e.field_type, e.user_id, e.profile_id, e.self_exemption,
+            e.normalized_value, e.normalized_value_hash, e.expires_at, e.created_at,
+            e.updated_at, v.rule_id, v.version, u.email
        FROM content_rule_exemptions e
-       JOIN content_rule_versions v ON v.id = e.rule_version_id
+       LEFT JOIN content_rule_versions v ON v.id = e.rule_version_id
        LEFT JOIN users u ON u.id = e.user_id
       WHERE e.revoked_at IS NULL
       ORDER BY e.created_at DESC`,
@@ -95,11 +98,213 @@ router.get('/admin/content-exemptions', requireStaff('administrator'), requireFr
     title: 'Content exemptions',
     exemptions: rows.map((row) => ({
       ...row,
+      legacyHashed: row.normalized_value === null && row.normalized_value_hash !== null,
+      accountWide: row.rule_version_id === null && row.field_type === null && row.normalized_value === null
+        && row.normalized_value_hash === null,
       expiresAt: row.expires_at ? new Date(Number(row.expires_at)).toISOString() : null,
       createdAt: new Date(Number(row.created_at)).toISOString(),
+      updatedAt: row.updated_at ? new Date(Number(row.updated_at)).toISOString() : null,
     })),
   });
 });
+const EXEMPTION_TYPES = ['term', 'account'];
+const EXEMPTION_EXPIRIES = ['none', '7', '30', '90'];
+function exemptionInput(body = {}, existing = null) {
+  const existingType = existing && existing.normalized_value === null && existing.normalized_value_hash === null
+    ? 'account' : 'term';
+  return {
+    type: String(body.type ?? (existing ? existingType : 'term')),
+    accountScope: String(body.account_scope ?? (existing ? 'keep' : 'user')),
+    email: String(body.email || ''),
+    profileId: String(body.profile_id ?? existing?.profile_id ?? ''),
+    ruleId: String(body.rule_id ?? existing?.rule_id ?? ''),
+    fieldType: String(body.field_type ?? existing?.field_type ?? ''),
+    value: String(body.value ?? existing?.normalized_value ?? ''),
+    expiry: String(body.expiry ?? (existing ? 'keep' : 'none')),
+    reason: String(body.reason ?? ''),
+  };
+}
+function exemptionValue(input) {
+  const value = V.proseText(input, { field: 'Exempt value', max: 2048 });
+  if (value.includes('\n')) throw new V.ValidationError('Exempt value must be a single line.');
+  return value;
+}
+async function resolveExemption(input, existing = null) {
+  if (!EXEMPTION_TYPES.includes(input.type)) throw new V.ValidationError('Choose a valid exemption type.');
+  const reason = V.displayText(input.reason, { field: 'Exemption reason', max: 200 });
+  let userId = existing ? existing.user_id : null;
+  if (input.accountScope === 'all') userId = null;
+  else if (input.accountScope === 'user') {
+    const email = input.email.trim().toLowerCase();
+    if (!email) throw new V.ValidationError('Account email is required for an account-scoped exemption.');
+    const { rows } = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (!rows[0]) throw new V.ValidationError('No account matches that email.');
+    userId = rows[0].id;
+  } else if (input.accountScope !== 'keep' || !existing) {
+    throw new V.ValidationError('Choose a valid account scope.');
+  }
+  if (input.type === 'account' && !userId) {
+    throw new V.ValidationError('An account-wide exemption must name one account.');
+  }
+  let profileId = null;
+  if (input.type === 'term' && input.profileId.trim()) {
+    if (!userId) throw new V.ValidationError('A profile-scoped exemption must name one account.');
+    profileId = input.profileId.trim();
+    const { rows } = await db.query(
+      `SELECT p.id FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
+        WHERE p.id = ? AND w.owner_user_id = ?`,
+      [profileId, userId],
+    );
+    if (!rows[0]) throw new V.ValidationError('That profile does not belong to that account.');
+  }
+  let ruleVersionId = null;
+  let fieldType = null;
+  let value = null;
+  if (input.type === 'term') {
+    if (input.ruleId.trim()) {
+      const { rows } = await db.query('SELECT current_version_id FROM content_rules WHERE id = ?', [input.ruleId.trim()]);
+      if (!rows[0]) throw new V.ValidationError('No content rule matches that ID.');
+      ruleVersionId = rows[0].current_version_id;
+    }
+    if (input.fieldType.trim()) {
+      if (!Object.hasOwn(CONTENT_FIELD_LABELS, input.fieldType.trim())) {
+        throw new V.ValidationError('Choose a valid field.');
+      }
+      fieldType = input.fieldType.trim();
+    }
+    value = normalizeExemptionValue(fieldType, exemptionValue(input.value));
+  }
+  const allowedExpiries = existing ? [...EXEMPTION_EXPIRIES, 'keep'] : EXEMPTION_EXPIRIES;
+  if (!allowedExpiries.includes(input.expiry)) throw new V.ValidationError('Choose a valid expiry.');
+  const now = Date.now();
+  let expiresAt = null;
+  if (input.expiry === 'keep') expiresAt = existing.expires_at === null ? null : Number(existing.expires_at);
+  else if (input.expiry !== 'none') expiresAt = now + Number(input.expiry) * 24 * 60 * 60 * 1000;
+  return { reason, userId, profileId, ruleVersionId, fieldType, value, expiresAt, now };
+}
+async function renderExemptionForm(res, { input, existing = null, error = null, status = 200 }) {
+  const { rows } = await db.query(
+    `SELECT r.id, v.version FROM content_rules r
+       JOIN content_rule_versions v ON v.id = r.current_version_id ORDER BY r.id`,
+  );
+  return res.status(status).render('admin/content-exemption-form', {
+    title: existing ? 'Edit content exemption' : 'Create content exemption',
+    input, existing, error, rules: rows, fields: Object.entries(CONTENT_FIELD_LABELS),
+    expiries: EXEMPTION_EXPIRIES,
+  });
+}
+async function findExemption(id) {
+  const { rows } = await db.query(
+    `SELECT e.id, e.rule_version_id, e.field_type, e.normalized_value, e.normalized_value_hash,
+            e.user_id, e.profile_id, e.self_exemption, e.expires_at, e.created_at, v.rule_id, v.version, u.email
+       FROM content_rule_exemptions e
+       LEFT JOIN content_rule_versions v ON v.id = e.rule_version_id
+       LEFT JOIN users u ON u.id = e.user_id
+      WHERE e.id = ? AND e.revoked_at IS NULL`,
+    [id],
+  );
+  return rows[0] || null;
+}
+function exemptionAuditDetail(resolved, input) {
+  return {
+    type: input.type,
+    scope: resolved.userId ? (resolved.profileId ? 'profile' : 'account') : 'all accounts',
+    ruleVersionId: resolved.ruleVersionId || 'all rules',
+    field: resolved.fieldType || 'all fields',
+    expires: resolved.expiresAt === null ? 'never' : new Date(resolved.expiresAt).toISOString(),
+    reason: resolved.reason,
+  };
+}
+async function notifyExemptionChange(userId, message) {
+  if (!userId) return;
+  const { rows } = await db.query('SELECT email FROM users WHERE id = ?', [userId]);
+  if (rows[0]?.email) mail.securityNotice(rows[0].email, message).catch(() => {});
+}
+router.get('/admin/content-exemptions/new', requireStaff('administrator'), requireFreshAuth(), async (req, res) => {
+  const input = exemptionInput({});
+  if (typeof req.query.email === 'string') input.email = req.query.email;
+  await renderExemptionForm(res, { input });
+});
+router.post(
+  '/admin/content-exemptions/new',
+  requireStaff('administrator'),
+  requireFreshAuth({ returnTo: '/admin/content-exemptions/new' }),
+  async (req, res) => {
+    const input = exemptionInput(req.body);
+    let resolved;
+    try {
+      resolved = await resolveExemption(input);
+    } catch (error) {
+      if (!(error instanceof V.ValidationError)) throw error;
+      return renderExemptionForm(res, { input, error: error.message, status: 400 });
+    }
+    if (req.body.confirmation !== 'CREATE EXEMPTION') {
+      return renderExemptionForm(res, { input, error: 'Type CREATE EXEMPTION exactly to continue.', status: 400 });
+    }
+    const id = newId();
+    await db.query(
+      `INSERT INTO content_rule_exemptions
+         (id, rule_version_id, field_type, normalized_value, user_id, profile_id,
+          reason, created_by, self_exemption, expires_at, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+      [id, resolved.ruleVersionId, resolved.fieldType, resolved.value, resolved.userId,
+        resolved.profileId, resolved.reason, req.user.id, resolved.expiresAt, resolved.now],
+    );
+    await audit.record({
+      type: 'content_rule.exemption_created', actorUserId: req.user.id, subjectUserId: resolved.userId,
+      target: id, ipHash: ipPrefixHash(req), detail: exemptionAuditDetail(resolved, input),
+    });
+    await notifyExemptionChange(resolved.userId, input.type === 'account'
+      ? 'A content-rule exemption covering your whole account was created by staff.'
+      : 'A content-rule exemption was created on your account by staff.');
+    res.redirect('/admin/content-exemptions');
+  },
+);
+router.get('/admin/content-exemptions/:id/edit', requireStaff('administrator'), requireFreshAuth(), async (req, res) => {
+  const existing = await findExemption(req.params.id);
+  if (!existing) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
+  await renderExemptionForm(res, { input: exemptionInput({}, existing), existing });
+});
+router.post(
+  '/admin/content-exemptions/:id/edit',
+  requireStaff('administrator'),
+  requireFreshAuth({ returnTo: '/admin/content-exemptions' }),
+  async (req, res) => {
+    const existing = await findExemption(req.params.id);
+    if (!existing) return res.status(409).render('error', { title: 'Unavailable', status: 409, message: 'That exemption is no longer active.' });
+    const input = exemptionInput(req.body, existing);
+    let resolved;
+    try {
+      resolved = await resolveExemption(input, existing);
+    } catch (error) {
+      if (!(error instanceof V.ValidationError)) throw error;
+      return renderExemptionForm(res, { input, existing, error: error.message, status: 400 });
+    }
+    if (req.body.confirmation !== 'UPDATE EXEMPTION') {
+      return renderExemptionForm(res, { input, existing, error: 'Type UPDATE EXEMPTION exactly to continue.', status: 400 });
+    }
+    const { rowCount } = await db.query(
+      `UPDATE content_rule_exemptions
+          SET rule_version_id = ?, field_type = ?, normalized_value = ?, normalized_value_hash = NULL,
+              user_id = ?, profile_id = ?, reason = ?, expires_at = ?, updated_at = ?, updated_by = ?
+        WHERE id = ? AND revoked_at IS NULL`,
+      [resolved.ruleVersionId, resolved.fieldType, resolved.value, resolved.userId, resolved.profileId,
+        resolved.reason, resolved.expiresAt, resolved.now, req.user.id, existing.id],
+    );
+    if (!rowCount) {
+      return res.status(409).render('error', { title: 'Unavailable', status: 409, message: 'That exemption is no longer active.' });
+    }
+    await audit.record({
+      type: 'content_rule.exemption_updated', actorUserId: req.user.id, subjectUserId: resolved.userId,
+      target: existing.id, ipHash: ipPrefixHash(req), detail: exemptionAuditDetail(resolved, input),
+    });
+    await notifyExemptionChange(existing.user_id, 'A content-rule exemption on your account was changed by staff.');
+    if (resolved.userId && resolved.userId !== existing.user_id) {
+      await notifyExemptionChange(resolved.userId, 'A content-rule exemption was moved onto your account by staff.');
+    }
+    res.redirect('/admin/content-exemptions');
+  },
+);
 router.post(
   '/admin/content-exemptions/:id',
   requireStaff('administrator'),

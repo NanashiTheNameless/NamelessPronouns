@@ -6,13 +6,19 @@
   <main class="container">
     <p class="eyebrow">Administrator tools</p>
     <h1>Content exemptions</h1>
-    <p>Exact values and their hashes are deliberately not displayed here.</p>
+    <p><a class="button" href="/admin/content-exemptions/new">Create exemption</a></p>
     <% if (exemptions.length === 0) { %><p>No active exemptions.</p><% } %>
     <% for (const item of exemptions) { %>
       <section class="panel stack">
-        <h2><%= item.rule_id %>, version <%= item.version %></h2>
-        <p>Field <%= contentFieldLabel(item.field_type) %>; account <% if (item.email) { %><%- await obfuscateEmail(item.email) %><% } else { %>none<% } %>; profile scope <%= item.profile_id || 'all account profiles' %>; <%= item.self_exemption ? 'self exemption' : 'review exemption' %>.</p>
-        <p>Created <%= item.createdAt %>. Expires <%= item.expiresAt || 'never' %>.</p>
+        <h2><%= item.rule_id ? `${item.rule_id}, version ${item.version}` : 'All content rules' %></h2>
+        <p>Field <%= item.field_type ? contentFieldLabel(item.field_type) : 'all fields' %>; account <% if (item.email) { %><%- await obfuscateEmail(item.email) %><% } else { %>all accounts<% } %>; profile scope <%= item.profile_id || 'all account profiles' %>; <%= item.self_exemption ? 'self exemption' : 'staff exemption' %>.</p>
+        <p>Value:
+          <% if (item.accountWide) { %>every value on the account<%
+             } else if (item.legacyHashed) { %>stored as a hash by an older version and not displayable<%
+             } else { %><code><%- await obfuscateEmails(item.normalized_value) %></code><% } %>
+        </p>
+        <p>Created <%= item.createdAt %>. <% if (item.updatedAt) { %>Edited <%= item.updatedAt %>. <% } %>Expires <%= item.expiresAt || 'never' %>.</p>
+        <p><a href="/admin/content-exemptions/<%= item.id %>/edit">Edit this exemption</a></p>
         <form method="post" action="/admin/content-exemptions/<%= item.id %>" class="stack">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <label>New expiry
