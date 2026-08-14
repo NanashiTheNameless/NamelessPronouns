@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { splitStatements } from '../src/db/migrate.js';
+import { splitStatements, selectStatements } from '../src/db/migrate.js';
 const migrationsDir = fileURLToPath(new URL('../db/migrations/', import.meta.url));
 test('the init schema stays consolidated and later migrations are additive', async () => {
   const files = (await readdir(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
@@ -98,9 +98,19 @@ test('profiles hang off accounts, and workspaces are gone entirely', async () =>
   const sql = await readFile(new URL('../db/migrations/0007_profiles_per_account.sql', import.meta.url), 'utf8');
   assert.match(sql, /ALTER TABLE profiles ADD COLUMN owner_user_id TEXT/);
   assert.match(sql, /UPDATE profiles SET owner_user_id/, 'existing profiles keep their owner');
-  assert.match(sql, /ALTER TABLE profiles DROP COLUMN workspace_id/);
   assert.match(sql, /DROP TABLE workspace_members/);
   assert.match(sql, /DROP TABLE workspaces/);
+  const postgres = selectStatements(sql, 'postgres').join('\n');
+  assert.match(postgres, /ALTER TABLE profiles DROP COLUMN workspace_id/);
+  const d1 = selectStatements(sql, 'd1').join('\n');
+  assert.doesNotMatch(d1, /ALTER TABLE profiles DROP COLUMN/, 'SQLite cannot drop a column named in a foreign key');
+  assert.match(d1, /CREATE TABLE profiles_new/, 'SQLite rebuilds the table instead');
+  assert.match(d1, /ALTER TABLE profiles_new RENAME TO profiles/);
+  for (const child of ['profile_names', 'pronoun_sets', 'profile_links', 'profile_words']) {
+    assert.match(d1, new RegExp(`CREATE TABLE mig7_${child} AS SELECT \\* FROM ${child}`), `${child} is copied out first`);
+    assert.match(d1, new RegExp(`INSERT INTO ${child} SELECT \\* FROM mig7_${child}`), `${child} is restored after`);
+    assert.match(d1, new RegExp(`DROP TABLE mig7_${child}`), `the ${child} scratch copy is removed`);
+  }
   const sources = ['../src/profiles.js', '../src/data-export.js', '../src/maintenance.js', '../src/server.js',
     '../src/routes/profile-editor.js', '../src/routes/public-profile.js', '../src/routes/account.js',
     '../src/routes/admin-management.js', '../src/routes/admin.js', '../src/routes/content-rule-admin.js'];

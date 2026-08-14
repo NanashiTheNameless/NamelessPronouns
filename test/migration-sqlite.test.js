@@ -1,0 +1,111 @@
+import './setup.js';
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile, readdir } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import { selectStatements, BACKENDS } from '../src/db/migrate.js';
+const MIGRATIONS_DIR = fileURLToPath(new URL('../db/migrations/', import.meta.url));
+const CHILD_TABLES = [
+  'profile_names', 'pronoun_sets', 'profile_links', 'profile_identity_flags',
+  'profile_pronoun_preferences', 'profile_word_groups', 'profile_words',
+  'profile_revisions', 'content_flags', 'content_suspension_profiles',
+  'deletion_profile_states', 'content_rule_exemptions',
+];
+async function migrationFiles() {
+  return (await readdir(MIGRATIONS_DIR)).filter((file) => file.endsWith('.sql')).sort();
+}
+async function applyThrough(db, stopBefore) {
+  for (const file of await migrationFiles()) {
+    if (file === stopBefore) return;
+    const sql = await readFile(path.join(MIGRATIONS_DIR, file), 'utf8');
+    for (const statement of selectStatements(sql, 'd1')) db.exec(statement);
+  }
+}
+async function applyFrom(db, startAt) {
+  let started = false;
+  for (const file of await migrationFiles()) {
+    if (file === startAt) started = true;
+    if (!started) continue;
+    const sql = await readFile(path.join(MIGRATIONS_DIR, file), 'utf8');
+    for (const statement of selectStatements(sql, 'd1')) db.exec(statement);
+  }
+}
+function seedLegacyProfile(db) {
+  const now = Date.now();
+  db.exec(`
+    INSERT INTO users (id, email, password_hash, password_hash_version, signup_status, staff_role, twofa_method, created_at, updated_at)
+      VALUES ('u1', 'person@example.com', 'hash', 1, 'approved', 'none', 'email', ${now}, ${now});
+    INSERT INTO workspaces (id, name, slug, kind, owner_user_id, created_at, updated_at)
+      VALUES ('w1', 'Person Workspace', 'personal-person', 'personal', 'u1', ${now}, ${now});
+    INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at)
+      VALUES ('m1', 'w1', 'u1', 'owner', ${now});
+    INSERT INTO profiles (id, workspace_id, username, username_display, display_name, published, created_at, updated_at)
+      VALUES ('p1', 'w1', 'person', 'Person', 'Person', 1, ${now}, ${now});
+    INSERT INTO public_username_claims (username, username_display, state, profile_id, created_at)
+      VALUES ('person', 'Person', 'active', 'p1', ${now});
+    INSERT INTO profile_names (id, profile_id, value, position, opinion) VALUES ('n1', 'p1', 'Sam', 0, 'yes');
+    INSERT INTO pronoun_sets (id, profile_id, subject, object, possessive_determiner, possessive_pronoun, reflexive, position, opinion)
+      VALUES ('s1', 'p1', 'they', 'them', 'their', 'theirs', 'themselves', 0, 'yes');
+    INSERT INTO profile_links (id, profile_id, label, url, position) VALUES ('l1', 'p1', 'Site', 'https://example.com', 0);
+    INSERT INTO profile_identity_flags (id, profile_id, flag_key, position) VALUES ('f1', 'p1', 'Nonbinary', 0);
+    INSERT INTO profile_pronoun_preferences (profile_id, preference_key, opinion, position) VALUES ('p1', 'any_pronouns', 'yes', 0);
+    INSERT INTO profile_word_groups (id, profile_id, heading, position) VALUES ('g1', 'p1', 'Terms', 0);
+    INSERT INTO profile_words (id, group_id, value, opinion, position) VALUES ('w1w', 'g1', 'enby', 'yes', 0);
+    INSERT INTO profile_revisions (id, profile_id, snapshot, created_by, created_at)
+      VALUES ('r1', 'p1', '{}', 'u1', ${now});
+  `);
+}
+test('the D1 rebuild keeps every profile and all of its child rows', async () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec('PRAGMA foreign_keys = ON');
+  await applyThrough(db, '0007_profiles_per_account.sql');
+  seedLegacyProfile(db);
+  await applyFrom(db, '0007_profiles_per_account.sql');
+  const profiles = db.prepare('SELECT id, owner_user_id, username FROM profiles').all();
+  assert.equal(profiles.length, 1, 'the profile survives the rebuild');
+  assert.equal(profiles[0].owner_user_id, 'u1', 'ownership moved to the account');
+  for (const table of CHILD_TABLES) {
+    const seeded = ['profile_names', 'pronoun_sets', 'profile_links', 'profile_identity_flags',
+      'profile_pronoun_preferences', 'profile_word_groups', 'profile_words', 'profile_revisions'].includes(table);
+    const count = db.prepare(`SELECT COUNT(*) AS c FROM ${table}`).get().c;
+    if (seeded) assert.equal(count, 1, `${table} keeps its rows`);
+  }
+  const columns = db.prepare('PRAGMA table_info(profiles)').all().map((row) => row.name);
+  assert.ok(columns.includes('owner_user_id'));
+  assert.ok(!columns.includes('workspace_id'), 'workspace_id is gone');
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((row) => row.name);
+  assert.ok(!tables.includes('workspaces'), 'the workspaces table is gone');
+  assert.ok(!tables.includes('workspace_members'), 'the membership table is gone');
+  assert.equal(tables.filter((name) => name.startsWith('mig7_')).length, 0, 'no scratch tables are left behind');
+  const claim = db.prepare('SELECT state, profile_id FROM public_username_claims WHERE username = ?').get('person');
+  assert.equal(claim.state, 'active');
+  assert.equal(claim.profile_id, 'p1');
+  db.exec("INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, created_at, updated_at) VALUES ('p2', 'u1', 'second', 'Second', 'Second', 1, 1)");
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM profiles').get().c, 2, 'a second profile needs no workspace');
+  db.exec("DELETE FROM profiles WHERE id = 'p1'");
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM profile_names').get().c, 0, 'child rows still cascade on delete');
+  db.close();
+});
+test('one migration file serves both backends through guarded sections', async () => {
+  for (const file of await migrationFiles()) {
+    assert.match(file, /^\d{4}_[a-z0-9_]+\.sql$/, `${file} needs no backend suffix`);
+  }
+  const sql = await readFile(path.join(MIGRATIONS_DIR, '0007_profiles_per_account.sql'), 'utf8');
+  const d1 = selectStatements(sql, 'd1').join('\n');
+  const postgres = selectStatements(sql, 'postgres').join('\n');
+  assert.match(postgres, /ALTER TABLE profiles DROP COLUMN workspace_id/);
+  assert.doesNotMatch(postgres, /profiles_new|mig7_/, 'Postgres skips the SQLite rebuild');
+  assert.match(d1, /CREATE TABLE profiles_new/);
+  assert.doesNotMatch(d1, /DROP COLUMN workspace_id/, 'SQLite skips the unsupported drop');
+  for (const shared of ['ALTER TABLE users ADD COLUMN profile_limit', 'DROP TABLE workspaces', 'reserved_until BIGINT']) {
+    assert.ok(d1.includes(shared) && postgres.includes(shared), `${shared} runs on both backends`);
+  }
+  assert.deepEqual(BACKENDS, ['d1', 'postgres']);
+});
+test('guard markers must be balanced', () => {
+  assert.throws(() => selectStatements('-- @d1\nSELECT 1;', 'd1'), /never closes/);
+  assert.throws(() => selectStatements('SELECT 1;\n-- @end', 'd1'), /unopened/);
+  assert.throws(() => selectStatements('-- @d1\n-- @postgres\nSELECT 1;\n-- @end', 'd1'), /inside/);
+});

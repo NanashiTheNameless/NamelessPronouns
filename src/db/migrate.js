@@ -22,6 +22,28 @@ export async function appliedVersions() {
   const { rows } = await db.query('SELECT version FROM schema_migrations ORDER BY version');
   return new Set(rows.map((r) => r.version));
 }
+export const BACKENDS = ['d1', 'postgres'];
+export function selectStatements(sql, backend) {
+  const kept = [];
+  let section = null;
+  for (const line of sql.split('\n')) {
+    const marker = /^\s*--\s*@(d1|postgres|end)\s*$/.exec(line);
+    if (marker) {
+      if (marker[1] === 'end') {
+        if (section === null) throw new Error('Migration has an unopened -- @end marker.');
+        section = null;
+      } else {
+        if (section !== null) throw new Error(`Migration opens -- @${marker[1]} inside -- @${section}.`);
+        section = marker[1];
+      }
+      continue;
+    }
+    if (section !== null && section !== backend) continue;
+    kept.push(line);
+  }
+  if (section !== null) throw new Error(`Migration never closes its -- @${section} section.`);
+  return splitStatements(kept.join('\n'));
+}
 export async function pendingMigrations() {
   const applied = await appliedVersions();
   const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith('.sql')).sort();
@@ -35,7 +57,7 @@ export async function migrate({ log = console.log } = {}) {
   }
   for (const file of pending) {
     const sql = await readFile(path.join(MIGRATIONS_DIR, file), 'utf8');
-    const statements = splitStatements(sql).map((s) => ({ sql: s, params: [] }));
+    const statements = selectStatements(sql, db.backend).map((s) => ({ sql: s, params: [] }));
     statements.push({
       sql: 'INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)',
       params: [file, Date.now()],

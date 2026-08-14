@@ -7,7 +7,80 @@ UPDATE profiles SET owner_user_id = (
 );
 DELETE FROM profiles WHERE owner_user_id IS NULL;
 DROP INDEX IF EXISTS idx_profiles_workspace;
+
+-- Postgres drops the column outright: the foreign key on it goes with it.
+-- @postgres
 ALTER TABLE profiles DROP COLUMN workspace_id;
+-- @end
+
+-- SQLite refuses to drop a column named in a foreign key, so the table is
+-- rebuilt. Dropping the old table cascades into every child table, and D1
+-- cannot turn foreign keys off, so child rows are copied out and restored.
+-- @d1
+PRAGMA defer_foreign_keys = ON;
+CREATE TABLE mig7_deletion_profile_states AS SELECT * FROM deletion_profile_states;
+CREATE TABLE mig7_profile_names AS SELECT * FROM profile_names;
+CREATE TABLE mig7_pronoun_sets AS SELECT * FROM pronoun_sets;
+CREATE TABLE mig7_profile_links AS SELECT * FROM profile_links;
+CREATE TABLE mig7_profile_revisions AS SELECT * FROM profile_revisions;
+CREATE TABLE mig7_content_rule_exemptions AS SELECT * FROM content_rule_exemptions;
+CREATE TABLE mig7_content_flags AS SELECT * FROM content_flags;
+CREATE TABLE mig7_content_suspension_profiles AS SELECT * FROM content_suspension_profiles;
+CREATE TABLE mig7_profile_identity_flags AS SELECT * FROM profile_identity_flags;
+CREATE TABLE mig7_profile_pronoun_preferences AS SELECT * FROM profile_pronoun_preferences;
+CREATE TABLE mig7_profile_word_groups AS SELECT * FROM profile_word_groups;
+CREATE TABLE mig7_profile_words AS SELECT * FROM profile_words;
+CREATE TABLE profiles_new (
+  id TEXT PRIMARY KEY,
+  owner_user_id TEXT NOT NULL,
+  username TEXT NOT NULL UNIQUE,
+  username_display TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  description TEXT,
+  notes TEXT,
+  theme TEXT NOT NULL DEFAULT 'default',
+  published INTEGER NOT NULL DEFAULT 0,
+  accepted_revision_id TEXT,
+  avatar_source TEXT,
+  avatar_data_uri TEXT,
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL,
+  FOREIGN KEY (owner_user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+INSERT INTO profiles_new
+  (id, owner_user_id, username, username_display, display_name, description, notes,
+   theme, published, accepted_revision_id, avatar_source, avatar_data_uri, created_at, updated_at)
+  SELECT id, owner_user_id, username, username_display, display_name, description, notes,
+         theme, published, accepted_revision_id, avatar_source, avatar_data_uri, created_at, updated_at
+    FROM profiles;
+DROP TABLE profiles;
+ALTER TABLE profiles_new RENAME TO profiles;
+INSERT INTO deletion_profile_states SELECT * FROM mig7_deletion_profile_states;
+INSERT INTO profile_names SELECT * FROM mig7_profile_names;
+INSERT INTO pronoun_sets SELECT * FROM mig7_pronoun_sets;
+INSERT INTO profile_links SELECT * FROM mig7_profile_links;
+INSERT INTO profile_revisions SELECT * FROM mig7_profile_revisions;
+INSERT INTO content_rule_exemptions SELECT * FROM mig7_content_rule_exemptions;
+INSERT INTO content_flags SELECT * FROM mig7_content_flags;
+INSERT INTO content_suspension_profiles SELECT * FROM mig7_content_suspension_profiles;
+INSERT INTO profile_identity_flags SELECT * FROM mig7_profile_identity_flags;
+INSERT INTO profile_pronoun_preferences SELECT * FROM mig7_profile_pronoun_preferences;
+INSERT INTO profile_word_groups SELECT * FROM mig7_profile_word_groups;
+INSERT INTO profile_words SELECT * FROM mig7_profile_words;
+DROP TABLE mig7_deletion_profile_states;
+DROP TABLE mig7_profile_names;
+DROP TABLE mig7_pronoun_sets;
+DROP TABLE mig7_profile_links;
+DROP TABLE mig7_profile_revisions;
+DROP TABLE mig7_content_rule_exemptions;
+DROP TABLE mig7_content_flags;
+DROP TABLE mig7_content_suspension_profiles;
+DROP TABLE mig7_profile_identity_flags;
+DROP TABLE mig7_profile_pronoun_preferences;
+DROP TABLE mig7_profile_word_groups;
+DROP TABLE mig7_profile_words;
+-- @end
+
 CREATE INDEX idx_profiles_owner ON profiles (owner_user_id);
 DROP INDEX IF EXISTS idx_workspace_members_user;
 DROP TABLE workspace_members;
