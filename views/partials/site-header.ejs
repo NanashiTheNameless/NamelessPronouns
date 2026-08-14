@@ -4,21 +4,21 @@
     <div class="nav-links">
       <% if (typeof user !== 'undefined' && user) { %>
         <% if (typeof deletionRequest === 'undefined' || !deletionRequest) { %>
-          <a href="/dashboard">Dashboard</a>
-          <a href="/settings">Settings</a>
+          <a class="button secondary compact" href="/dashboard">Dashboard</a>
+          <a class="button secondary compact" href="/settings">Settings</a>
           <% if (['support', 'moderator', 'administrator', 'owner'].includes(user.staff_role)) { %>
-            <a href="/admin">Admin</a>
+            <a class="button secondary compact" href="/admin">Admin</a>
           <% } %>
         <% } %>
         <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
           <form class="nav-logout" method="post" action="/logout">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button type="submit">Sign out</button>
+            <button type="submit" class="secondary compact">Sign out</button>
           </form>
         <% } %>
       <% } else { %>
-        <a href="/login">Sign in</a>
-        <a class="nav-cta" href="/signup">Request account</a>
+        <a class="button secondary compact" href="/login">Sign in</a>
+        <a class="button compact" href="/signup">Request account</a>
       <% } %>
     </div>
   </nav>

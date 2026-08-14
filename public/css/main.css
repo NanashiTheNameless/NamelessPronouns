@@ -87,26 +87,14 @@ body {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
-.site-nav .nav-cta {
-  color: var(--on-accent);
-  background: var(--accent);
+.site-nav .button.compact {
+  margin-top: 0;
 }
 .nav-logout {
   margin: 0;
 }
-.nav-logout button {
-  display: inline-block;
-  min-height: 0;
+.nav-logout button.compact {
   margin: 0;
-  padding: 0.55rem 0.8rem;
-  color: var(--text);
-  background: var(--accent-soft);
-  border: 0;
-  border-radius: 999px;
-  font: inherit;
-  font-weight: 650;
-  text-decoration: none;
-  cursor: pointer;
 }
 .container {
   width: min(100%, 80rem);
@@ -295,6 +283,9 @@ tbody tr:last-child td {
   justify-content: center;
   margin-block: 1rem;
 }
+.pagination .button.compact {
+  margin-top: 0;
+}
 .admin-tools-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
@@ -424,7 +415,8 @@ fieldset {
 .add-row {
   margin-top: 0.85rem;
 }
-button.compact {
+button.compact,
+.button.compact {
   min-height: 2.25rem;
   margin-top: 0.55rem;
   padding: 0.4rem 0.75rem;
@@ -1365,6 +1357,9 @@ altcha-widget.email-obfuscation .email-reveal:hover,
 .site-footer [data-accessibility-open] {
   margin: 0.5rem auto 0;
 }
+.site-footer nav .button {
+  margin-top: 0;
+}
 button.owner-signature {
   padding: 0;
   color: inherit;
@@ -1407,7 +1402,10 @@ img {
   .button {
     width: 100%;
   }
-  .nav-logout button {
+  .nav-logout button,
+  .site-nav .button,
+  .site-footer nav .button,
+  .pagination .button {
     width: auto;
   }
   button.profile-avatar-button {

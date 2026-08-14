@@ -55,9 +55,9 @@
 
     <% if (totalPages > 1) { %>
       <nav class="pagination" aria-label="Signup request pages">
-        <% if (page > 1) { %><a href="/admin/signups?page=<%= page - 1 %>">Previous</a><% } %>
+        <% if (page > 1) { %><a class="button secondary compact" href="/admin/signups?page=<%= page - 1 %>">Previous</a><% } %>
         <span>Page <%= page %> of <%= totalPages %></span>
-        <% if (page < totalPages) { %><a href="/admin/signups?page=<%= page + 1 %>">Next</a><% } %>
+        <% if (page < totalPages) { %><a class="button secondary compact" href="/admin/signups?page=<%= page + 1 %>">Next</a><% } %>
       </nav>
     <% } %>
 
