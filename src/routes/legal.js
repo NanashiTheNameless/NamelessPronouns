@@ -1,6 +1,7 @@
 import express from 'express';
 import { publicPageHeaders } from '../middleware/security-headers.js';
 import { loadLegalDocument } from '../legal-documents.js';
+import { listSupporters, listSupportLinks } from '../supporters.js';
 const router = express.Router();
 router.use(publicPageHeaders);
 router.get('/terms', async (req, res) => {
@@ -25,6 +26,11 @@ router.get('/acknowledgements', (req, res) => res.render('legal/acknowledgements
     { name: 'yazl', purpose: 'Streaming ZIP archive creation', license: 'MIT', url: 'https://github.com/thejoshwolfe/yazl' },
     { name: 'Zod', purpose: 'Configuration and data validation', license: 'MIT', url: 'https://zod.dev/' },
   ],
+}));
+router.get('/supporters', (req, res) => res.render('legal/supporters', {
+  title: 'Supporters',
+  supporters: listSupporters(),
+  supportLinks: listSupportLinks(),
 }));
 router.get('/recover', (req, res) => res.render('recover', { title: 'Account recovery' }));
 export default router;

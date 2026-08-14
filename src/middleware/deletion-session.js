@@ -1,6 +1,6 @@
 const EXACT = new Set([
   '/account/deletion', '/account/reauth', '/logout', '/consent', '/terms',
-  '/privacy', '/contact', '/recover', '/legal-requests', '/acknowledgements',
+  '/privacy', '/contact', '/recover', '/legal-requests', '/acknowledgements', '/supporters',
   '/altcha/challenge',
 ]);
 const PREFIX = ['/account/deletion', '/account/reauth', '/login', '/static/'];

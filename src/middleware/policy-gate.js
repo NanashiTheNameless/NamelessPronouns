@@ -1,7 +1,7 @@
 import { hasAccepted } from '../policy.js';
 import { setConsentReturn } from '../consent-return.js';
 const EXEMPT_EXACT = new Set([
-  '/consent', '/terms', '/privacy', '/legal-requests', '/contact', '/acknowledgements',
+  '/consent', '/terms', '/privacy', '/legal-requests', '/contact', '/acknowledgements', '/supporters',
   '/recover', '/altcha/challenge', '/teapot', '/humans.txt', '/robots.txt',
   '/.well-known/nameless', '/404', '/nothing',
 ]);

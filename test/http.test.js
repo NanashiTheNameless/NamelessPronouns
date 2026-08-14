@@ -255,6 +255,7 @@ test('legal and contact pages contain their real public content before consent',
     ['/contact', /data-obfuscated=/],
     ['/legal-requests', /non-binding administrative warrants/],
     ['/acknowledgements', /SecLists maintainers and contributors/],
+    ['/supporters', /supported the project financially/],
   ];
   for (const [path, expected] of cases) {
     const res = await fetch(`${base}${path}`);
@@ -265,7 +266,7 @@ test('legal and contact pages contain their real public content before consent',
   }
 });
 test('rendered informational pages never expose the operator email', async () => {
-  for (const path of ['/terms', '/privacy', '/contact', '/legal-requests', '/acknowledgements']) {
+  for (const path of ['/terms', '/privacy', '/contact', '/legal-requests', '/acknowledgements', '/supporters']) {
     const res = await fetch(`${base}${path}`);
     const html = await res.text();
     assert.doesNotMatch(html, /Nanashi@NamelessNanashi\.dev/i, path);
@@ -394,7 +395,7 @@ test('every response tells search engines not to index or archive the page', asy
   const expected = ROBOTS_DIRECTIVES;
   assert.match(expected, /noindex/);
   assert.match(expected, /noarchive/);
-  const paths = ['/', '/consent', '/terms', '/privacy', '/contact', '/legal-requests', '/acknowledgements', '/login', '/signup', '/dashboard', '/u/nobody-here', '/static/css/main.css'];
+  const paths = ['/', '/consent', '/terms', '/privacy', '/contact', '/legal-requests', '/acknowledgements', '/supporters', '/login', '/signup', '/dashboard', '/u/nobody-here', '/static/css/main.css'];
   for (const path of paths) {
     const res = await fetch(`${base}${path}`, { redirect: 'manual' });
     assert.equal(res.headers.get('x-robots-tag'), expected, `${path} carries the directives`);

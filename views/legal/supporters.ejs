@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head><%- await include('../partials/head', { title }) %></head>
+<body>
+  <%- await include('../partials/site-header') %>
+  <main class="container legal-document">
+    <p class="eyebrow">Project credits</p>
+    <h1>Supporters</h1>
+    <p>NamelessPronouns is funded out of pocket. The people listed here have supported the project financially, and the service runs on their generosity. Thank you.</p>
+
+    <% if (supporters.length) { %>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Supporter</th><th>Note</th></tr></thead>
+          <tbody>
+            <% for (const supporter of supporters) { %>
+              <tr>
+                <td>
+                  <% if (supporter.url) { %>
+                    <a href="<%= supporter.url %>" target="_blank" rel="noopener noreferrer nofollow"><%= supporter.name %></a>
+                  <% } else { %>
+                    <%= supporter.name %>
+                  <% } %>
+                </td>
+                <td><%= supporter.note %></td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <p>Nobody is listed yet. When someone supports the project and agrees to be named, their name appears here.</p>
+    <% } %>
+
+    <h2>Support the project</h2>
+    <p>NamelessPronouns has no ads, no trackers, and nothing to sell. Servers, domains, and backups are paid for anyway. If the site is worth something to you and you can spare it, support keeps it running and keeps it free for everyone who cannot.</p>
+    <p>Support is always optional. No feature, profile, or account is ever locked behind it, and nothing you give changes how you are treated here. The only thing it can get you is a spot on this page, and only if you ask for one.</p>
+    <% if (supportLinks.length) { %>
+      <ul>
+        <% for (const link of supportLinks) { %>
+          <li><a href="<%= link.url %>" target="_blank" rel="noopener noreferrer nofollow"><%= link.name %></a><% if (link.note) { %> &mdash; <%= link.note %><% } %></li>
+        <% } %>
+      </ul>
+      <p>To arrange support another way, or to offer help that is not money, write to <%- await obfuscateEmail('Nanashi@NamelessNanashi.dev') %>.</p>
+    <% } else { %>
+      <p>There is no donation page yet. To arrange support, or to offer help that is not money, write to <%- await obfuscateEmail('Nanashi@NamelessNanashi.dev') %>.</p>
+    <% } %>
+
+    <h2>Listing and removal</h2>
+    <p>A supporter is named here only with their permission, and anyone listed can ask to be renamed or removed at any time.</p>
+    <p>To be listed, corrected, or removed, contact <%- await obfuscateEmail('Nanashi@NamelessNanashi.dev') %>.</p>
+  </main>
+  <%- await include('../partials/site-footer') %>
+</body>
+</html>
