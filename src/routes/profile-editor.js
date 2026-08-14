@@ -17,6 +17,15 @@ import { PRONOUN_PREFERENCES } from '../pronoun-preferences.js';
 import { PRONOUN_PRESETS } from '../pronoun-presets.js';
 import { DEFAULT_OPINION, isOpinion, normalizeOpinion, OPINIONS } from '../opinions.js';
 import { groupProfileWords, PROFILE_WORD_GROUPS_SQL, PROFILE_WORDS_SQL } from '../profile-words.js';
+import { avatarUrl, profileAvatarUrl, validateAvatarDataUri, MAX_AVATAR_DATA_URI_BYTES } from '../avatar.js';
+import {
+  additionalProfileStatements,
+  deleteProfileStatements,
+  ownedProfileCount,
+  profileLimitFor,
+  usernameAvailability,
+  USERNAME_HOLD_MS,
+} from '../profiles.js';
 import {
   emptyLink,
   emptyName,
@@ -41,11 +50,12 @@ const FLAG_OPTIONS = Object.freeze(PRONOUNS_PAGE_FLAG_OPTIONS.map((key) => Objec
   label: flagLabel(key),
   imageUrl: pronounsPageFlagUrl(key),
 })));
-function editorView(profile, values, overrides = {}) {
+function editorView(profile, values, user, overrides = {}) {
   return {
     title: `Edit ${profile.username}`,
     profile,
     values,
+    ...avatarView(profile, user),
     error: null,
     warning: null,
     saved: false,
@@ -218,13 +228,23 @@ export function validateProfileForm(body, { full = false, max = PROSE_MAX } = {}
 }
 async function editableProfile(profileId, userId) {
   const { rows } = await db.query(
-    `SELECT p.id, p.username_display AS username, p.display_name, p.description, p.notes, p.published
+    `SELECT p.id, p.username_display AS username, p.display_name, p.description, p.notes, p.published,
+            p.avatar_source, p.avatar_data_uri
        FROM profiles p
-       JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
-      WHERE p.id = ? AND wm.user_id = ? AND wm.role = 'owner'`,
+      WHERE p.id = ? AND p.owner_user_id = ?`,
     [profileId, userId],
   );
   return rows[0] || null;
+}
+function avatarView(profile, user) {
+  return {
+    avatar: profileAvatarUrl(profile, user),
+    avatarSource: profile.avatar_source || 'inherit',
+    accountAvatar: avatarUrl(user),
+    identiconAvatar: avatarUrl({ id: profile.id, avatar_source: 'identicon' }),
+    gravatarAvatar: avatarUrl({ ...user, avatar_source: 'gravatar', avatar_data_uri: null }),
+    maxAvatarBytes: MAX_AVATAR_DATA_URI_BYTES,
+  };
 }
 async function profileWords(profileId) {
   const [groups, words] = await Promise.all([
@@ -349,15 +369,14 @@ function suspensionStatements({ userId, saveHash, suspensionId, now }) {
     {
       sql: `INSERT INTO content_suspension_profiles (suspension_id, profile_id, was_published)
             SELECT ?, p.id, p.published FROM profiles p
-            JOIN workspaces w ON w.id = p.workspace_id
-            WHERE w.kind = 'personal' AND w.owner_user_id = ?
+            WHERE p.owner_user_id = ?
               AND EXISTS (SELECT 1 FROM content_suspensions WHERE id = ?)
             ON CONFLICT (suspension_id, profile_id) DO NOTHING`,
       params: [suspensionId, userId, suspensionId],
     },
     {
       sql: `UPDATE profiles SET published = 0, updated_at = ?
-            WHERE workspace_id IN (SELECT id FROM workspaces WHERE kind = 'personal' AND owner_user_id = ?)
+            WHERE owner_user_id = ?
               AND EXISTS (SELECT 1 FROM content_suspensions WHERE id = ?)`,
       params: [now, userId, suspensionId],
     },
@@ -445,13 +464,146 @@ function acceptedSaveStatements(profileId, userId, values, now) {
     },
   ];
 }
+function newProfileView(overrides = {}) {
+  return {
+    title: 'New profile',
+    error: null,
+    values: { username: '', displayName: '' },
+    ...overrides,
+  };
+}
+router.get('/profiles/new', requireApproved, async (req, res) => {
+  const limit = profileLimitFor(req.user);
+  const owned = await ownedProfileCount(req.user.id);
+  res.render('profile-new', newProfileView({ limit, owned, atLimit: owned >= limit }));
+});
+router.post('/profiles/new', requireApproved, async (req, res) => {
+  const limit = profileLimitFor(req.user);
+  const owned = await ownedProfileCount(req.user.id);
+  const view = (overrides) => newProfileView({ limit, owned, atLimit: owned >= limit, ...overrides });
+  if (owned >= limit) {
+    return res.status(409).render('profile-new', view({
+      error: `This account already has its limit of ${limit} profile${limit === 1 ? '' : 's'}.`,
+    }));
+  }
+  const rate = await consume('profile_create', req.user.id);
+  if (!rate.allowed) {
+    return res.status(429).render('profile-new', view({ error: 'Too many profiles created. Try again later.' }));
+  }
+  let username;
+  let displayName;
+  try {
+    username = V.username(String(req.body.username ?? ''), { field: 'Username' });
+    displayName = lineText(String(req.body.display_name ?? ''), { field: 'Display name', max: 80 });
+  } catch (error) {
+    if (!(error instanceof V.ValidationError)) throw error;
+    return res.status(400).render('profile-new', view({
+      error: error.message,
+      values: { username: String(req.body.username ?? ''), displayName: String(req.body.display_name ?? '') },
+    }));
+  }
+  const now = Date.now();
+  const availability = await usernameAvailability(username.key, { userId: req.user.id, now });
+  if (!availability.available) {
+    return res.status(409).render('profile-new', view({
+      error: availability.reason,
+      values: { username: username.display, displayName },
+    }));
+  }
+  const rules = await loadCurrentRules();
+  const screened = screenContent({ text: { display_name: displayName, names: [username.display] }, urls: {} }, rules);
+  const filtered = await filterExemptMatches(screened, { userId: req.user.id, profileId: null });
+  if (filtered.matches.some((match) => match.mode === 'enforcing')) {
+    return res.status(422).render('profile-new', view({
+      error: 'That username or display name matched a prohibited-content rule.',
+      values: { username: username.display, displayName },
+    }));
+  }
+  const created = additionalProfileStatements({
+    userId: req.user.id,
+    username: username.key,
+    usernameDisplay: username.display,
+    displayName,
+    now,
+  });
+  await db.batch(created.statements);
+  await audit.record({
+    type: 'profile.created',
+    actorUserId: req.user.id,
+    subjectUserId: req.user.id,
+    target: created.profileId,
+    detail: { username: username.key, reclaimedOwnHold: Boolean(availability.ownHold) },
+  });
+  res.redirect(`/profiles/${created.profileId}/edit`);
+});
+router.post('/profiles/:id/delete', requireApproved, async (req, res) => {
+  const profile = await editableProfile(req.params.id, req.user.id);
+  if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
+  if (String(req.body.confirmation || '').trim() !== 'DELETE PROFILE') {
+    return res.status(400).render('error', {
+      title: 'Profile kept', status: 400,
+      message: 'Type DELETE PROFILE to confirm removing a profile.',
+    });
+  }
+  const owned = await ownedProfileCount(req.user.id);
+  if (owned <= 1) {
+    return res.status(409).render('error', {
+      title: 'Profile kept', status: 409,
+      message: 'This is the only profile on the account. Delete the account itself to remove it.',
+    });
+  }
+  const { rows } = await db.query('SELECT username, username_display FROM profiles WHERE id = ?', [profile.id]);
+  const stored = rows[0];
+  if (!stored) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
+  const now = Date.now();
+  await db.batch(deleteProfileStatements({
+    profileId: profile.id,
+    username: stored.username,
+    usernameDisplay: stored.username_display,
+    userId: req.user.id,
+    now,
+  }));
+  await audit.record({
+    type: 'profile.deleted',
+    actorUserId: req.user.id,
+    subjectUserId: req.user.id,
+    target: profile.id,
+    detail: { username: stored.username, heldUntil: now + USERNAME_HOLD_MS },
+  });
+  res.redirect('/dashboard');
+});
 router.get('/profiles/:id/edit', requireApproved, async (req, res) => {
   const profile = await editableProfile(req.params.id, req.user.id);
   if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
-  res.render('profile-edit', editorView(profile, await editorState(profile), {
+  res.render('profile-edit', editorView(profile, await editorState(profile), req.user, {
     saved: req.query.saved === '1',
     markdown: markdownSettings(req.user.staff_role),
   }));
+});
+router.post('/profiles/:id/avatar', requireApproved, async (req, res) => {
+  const profile = await editableProfile(req.params.id, req.user.id);
+  if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
+  const source = String(req.body.avatar_source || '');
+  if (!['inherit', 'gravatar', 'identicon', 'data'].includes(source)) {
+    return res.status(400).render('error', { title: 'Icon unchanged', status: 400, message: 'Choose a valid profile icon source.' });
+  }
+  let dataUri = null;
+  if (source === 'data') {
+    try {
+      dataUri = validateAvatarDataUri(req.body.avatar_data_uri);
+    } catch (error) {
+      return res.status(400).render('error', { title: 'Icon unchanged', status: 400, message: error.message });
+    }
+  }
+  await db.query(
+    'UPDATE profiles SET avatar_source = ?, avatar_data_uri = ?, updated_at = ? WHERE id = ?',
+    [source === 'inherit' ? null : source, dataUri, Date.now(), profile.id],
+  );
+  await audit.record({
+    type: 'profile.avatar_changed', actorUserId: req.user.id, subjectUserId: req.user.id,
+    target: profile.id, detail: { source },
+  });
+  res.redirect(`/profiles/${profile.id}/edit?saved=1#profile-icon`);
 });
 router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, res) => {
   const profile = await editableProfile(req.params.id, req.user.id);
@@ -459,7 +611,7 @@ router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, r
   const current = await editorState(profile);
   const limit = await consume('profile_import', req.user.id);
   if (!limit.allowed) {
-    return res.status(429).render('profile-edit', editorView(profile, current, {
+    return res.status(429).render('profile-edit', editorView(profile, current, req.user, {
       error: 'Too many import attempts. Try again later.',
       markdown: markdownSettings(req.user.staff_role),
     }));
@@ -473,12 +625,12 @@ router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, r
     if (result.skippedFlags) omissions.push(`${result.skippedFlags} unavailable built-in flag${result.skippedFlags === 1 ? '' : 's'}`);
     if (result.skippedWordGroups) omissions.push(`${result.skippedWordGroups} empty word group${result.skippedWordGroups === 1 ? '' : 's'}`);
     const suffix = omissions.length ? ` Skipped ${omissions.join(' and ')}.` : '';
-    return res.render('profile-edit', editorView(profile, result.values, {
+    return res.render('profile-edit', editorView(profile, result.values, req.user, {
       importNotice: `Imported the ${result.locale} profile for review.${suffix} Save the profile to keep these changes.`,
       markdown: markdownSettings(req.user.staff_role),
     }));
   } catch (error) {
-    return res.status(400).render('profile-edit', editorView(profile, current, {
+    return res.status(400).render('profile-edit', editorView(profile, current, req.user, {
       error: error.message,
       markdown: markdownSettings(req.user.staff_role),
     }));
@@ -493,7 +645,7 @@ router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
     values = validateProfileForm(req.body, markdown);
   } catch (error) {
     if (!(error instanceof V.ValidationError)) throw error;
-    return res.status(400).render('profile-edit', editorView(profile, formValues(req.body), {
+    return res.status(400).render('profile-edit', editorView(profile, formValues(req.body), req.user, {
       error: error.message,
       markdown,
     }));
@@ -532,7 +684,7 @@ router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
       mail.securityNotice(req.user.email, 'Normal account access was temporarily restricted pending content review.').catch(() => {});
       mail.adminActionNeeded('content_suspension', `admin:suspension:${suspensionId}`).catch(() => {});
     }
-    return res.status(422).render('profile-edit', editorView(profile, await editorState(profile), {
+    return res.status(422).render('profile-edit', editorView(profile, await editorState(profile), req.user, {
       markdown,
       warning: 'That edit matched a prohibited-content rule and was reverted. Do not submit it again. You may request Administrator review if the flag is incorrect.',
     }));

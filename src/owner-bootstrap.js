@@ -1,5 +1,5 @@
 import { newId } from './util/ids.js';
-import { personalProfileStatements } from './profiles.js';
+import { firstProfileStatements } from './profiles.js';
 
 export function ownerBootstrapStatements({ email, passwordHash, passwordHashVersion, username = null, now = Date.now() }) {
   const userId = newId();
@@ -23,7 +23,7 @@ export function ownerBootstrapStatements({ email, passwordHash, passwordHashVers
               VALUES (?, ?, 'pending', ?, ?, ?)`,
         params: [usernameKey, usernameDisplay, userId, usernameDisplay, now],
       },
-      ...personalProfileStatements({
+      ...firstProfileStatements({
         userId,
         username: usernameKey,
         usernameDisplay,

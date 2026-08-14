@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- await include('partials/head', { title }) %></head>
+<body>
+  <%- await include('partials/site-header') %>
+  <main class="container">
+    <p class="eyebrow">Profile editor</p>
+    <h1>New profile</h1>
+    <div class="inline-actions">
+      <a class="button secondary compact" href="/dashboard">Back to dashboard</a>
+    </div>
+    <p class="lede">This account uses <%= owned %> of its <%= limit %> profile<%= limit === 1 ? '' : 's' %>.</p>
+    <% if (error) { %><p class="error" role="alert"><%= error %></p><% } %>
+    <% if (atLimit) { %>
+      <p>Delete a profile before making another one, or ask an Administrator to raise the limit for this account.</p>
+    <% } else { %>
+      <form method="post" action="/profiles/new">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Username
+          <input name="username" maxlength="32" minlength="3" pattern="[A-Za-z0-9]+(-[A-Za-z0-9]+)*" required data-character-constraint data-character-hint="Use only letters, numbers, and single dashes between them." value="<%= values.username %>" placeholder="The name this profile answers to at /u/">
+        </label>
+        <p class="fineprint">3 to 32 letters, digits, or single internal dashes. The public page will live at /u/your-username.</p>
+        <label>Display name
+          <input name="display_name" maxlength="80" required data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." value="<%= values.displayName %>" placeholder="The name shown at the top of this profile">
+        </label>
+        <button type="submit">Create profile</button>
+      </form>
+      <p class="fineprint">New profiles start unpublished. Everything else is set in the editor afterwards.</p>
+    <% } %>
+  </main>
+  <%- await include('partials/site-footer') %>
+</body>
+</html>

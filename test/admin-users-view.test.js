@@ -94,6 +94,7 @@ function accountDetail(overrides = {}) {
     canManageRole: false, canEmergency: true, canAction: true,
     canDecideSignup: true, hasSignupIp: true,
     pendingDeletion: null, deletionGraceDays: 30,
+    accountProfileLimit: 5, defaultProfileLimit: 5,
     csrfToken: 'csrf', user: null,
     obfuscateEmail: async () => '<span data-email-hidden>Protected email</span>',
     ...overrides,

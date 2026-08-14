@@ -9,7 +9,7 @@ import { signValue, unsignValue, signJson, unsignJson, sealJson, unsealJson } fr
 import { ipInCidr, ipToBigInt, ipPrefix } from '../src/util/net.js';
 import * as V from '../src/validation.js';
 import * as totp from '../src/auth/totp.js';
-import { personalProfileStatements } from '../src/profiles.js';
+import { firstProfileStatements } from '../src/profiles.js';
 import { TERMS_VERSION, PRIVACY_VERSION, buildAcceptance } from '../src/policy.js';
 import { safeConsentReturn } from '../src/consent-return.js';
 import config, { DEFAULT_EMAIL_DOMAIN_ALLOWLIST } from '../src/config.js';
@@ -236,18 +236,19 @@ test('totp: verify accepts current step and rejects replay/wrong', () => {
   assert.equal(totp.verify(secret, code, { now, lastUsedStep: step }), null);
   assert.equal(totp.verify(secret, code === '000000' ? '111111' : '000000', { now }), null);
 });
-test('personal profile creation uses content-safe generated display text', () => {
-  const result = personalProfileStatements({
+test('the first profile of an account belongs to that account and claims its username', () => {
+  const result = firstProfileStatements({
     userId: 'user-1', username: 'alex99', displayName: 'Alex 99', now: 123,
   });
-  const workspaceInsert = result.statements[0];
-  assert.equal(workspaceInsert.params[1], 'Alex 99 Workspace');
-  assert.match(workspaceInsert.params[1], /^[A-Za-z0-9 ]+$/);
+  const profileInsert = result.statements[0];
+  assert.match(profileInsert.sql, /INSERT INTO profiles/);
+  assert.equal(profileInsert.params[1], 'user-1', 'the account owns the profile directly');
+  assert.deepEqual(profileInsert.params.slice(2, 5), ['alex99', 'alex99', 'Alex 99']);
   assert.equal(result.statements.at(-1).params[1], 'alex99');
 });
 test('policy versions are source-controlled and included in acceptance records', () => {
-  assert.equal(TERMS_VERSION, '2026-08-11.1');
-  assert.equal(PRIVACY_VERSION, '2026-08-11.1');
+  assert.equal(TERMS_VERSION, '2026-08-14.1');
+  assert.equal(PRIVACY_VERSION, '2026-08-14.1');
   const acceptance = buildAcceptance({ now: 123 });
   assert.equal(acceptance.terms, TERMS_VERSION);
   assert.equal(acceptance.privacy, PRIVACY_VERSION);

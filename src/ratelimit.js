@@ -10,6 +10,7 @@ export const POLICIES = {
   consent: { max: 20, window: HOUR },
   export_request: { max: 5, window: 24 * HOUR },
   profile_import: { max: 10, window: HOUR },
+  profile_create: { max: 5, window: HOUR },
   altcha_challenge: { max: 120, window: HOUR },
 };
 const counters = new Map();

@@ -14,6 +14,7 @@ test('the init schema stays consolidated and later migrations are additive', asy
     '0004_drop_altcha_challenges.sql',
     '0005_drop_workspace_invites.sql',
     '0006_content_exemption_scopes.sql',
+    '0007_profiles_per_account.sql',
   ]);
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\bALTER\s+TABLE\b/i);
@@ -21,7 +22,6 @@ test('the init schema stays consolidated and later migrations are additive', asy
   for (const table of [
     'users',
     'bans',
-    'workspaces',
     'profiles',
     'content_rules',
     'content_flags',
@@ -92,6 +92,21 @@ test('shared-workspace invites are gone from the schema and the application', as
   for (const file of ['../src/maintenance.js', '../src/ratelimit.js']) {
     const source = await readFile(new URL(file, import.meta.url), 'utf8');
     assert.doesNotMatch(source, /workspace_invites|invite_accept_ip|invite_send_workspace/);
+  }
+});
+test('profiles hang off accounts, and workspaces are gone entirely', async () => {
+  const sql = await readFile(new URL('../db/migrations/0007_profiles_per_account.sql', import.meta.url), 'utf8');
+  assert.match(sql, /ALTER TABLE profiles ADD COLUMN owner_user_id TEXT/);
+  assert.match(sql, /UPDATE profiles SET owner_user_id/, 'existing profiles keep their owner');
+  assert.match(sql, /ALTER TABLE profiles DROP COLUMN workspace_id/);
+  assert.match(sql, /DROP TABLE workspace_members/);
+  assert.match(sql, /DROP TABLE workspaces/);
+  const sources = ['../src/profiles.js', '../src/data-export.js', '../src/maintenance.js', '../src/server.js',
+    '../src/routes/profile-editor.js', '../src/routes/public-profile.js', '../src/routes/account.js',
+    '../src/routes/admin-management.js', '../src/routes/admin.js', '../src/routes/content-rule-admin.js'];
+  for (const file of sources) {
+    const source = await readFile(new URL(file, import.meta.url), 'utf8');
+    assert.doesNotMatch(source, /workspace/i, `${file} speaks only of accounts and profiles`);
   }
 });
 test('content exemptions become scopeable, readable, and editable', async () => {

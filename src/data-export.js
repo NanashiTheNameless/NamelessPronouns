@@ -1,16 +1,13 @@
 import yazl from 'yazl';
 import db from './db/index.js';
-const WORKSPACE_SCOPE = `
-  owner_user_id = ? OR id IN (
-    SELECT workspace_id FROM workspace_members WHERE user_id = ?
-  )`;
 export async function collectUserData(userId, { generatedAt = new Date().toISOString() } = {}) {
   const account = await db.query(
     `SELECT id, email, email_verified_at, signup_status,
             requested_profile_username, requested_profile_username_display,
             requested_display_name, request_note, requested_at, decided_at,
             decided_by, decision_note, staff_role, twofa_method,
-            email_login_disabled, avatar_source, avatar_data_uri, created_at, updated_at
+            email_login_disabled, avatar_source, avatar_data_uri, profile_limit,
+            created_at, updated_at
        FROM users WHERE id = ?`,
     [userId],
   );
@@ -20,78 +17,59 @@ export async function collectUserData(userId, { generatedAt = new Date().toISOSt
        FROM policy_acceptances WHERE user_id = ? ORDER BY accepted_at`,
     [userId],
   );
-  const workspaces = await db.query(
-    `SELECT id, name, slug, kind, owner_user_id, created_at, updated_at
-       FROM workspaces WHERE ${WORKSPACE_SCOPE} ORDER BY created_at, id`,
-    [userId, userId],
-  );
-  const workspaceMembers = await db.query(
-    `SELECT id, workspace_id, user_id, role, created_at
-       FROM workspace_members
-      WHERE workspace_id IN (SELECT id FROM workspaces WHERE ${WORKSPACE_SCOPE})
-      ORDER BY workspace_id, created_at, id`,
-    [userId, userId],
-  );
   const profiles = await db.query(
-    `SELECT id, workspace_id, username, username_display, display_name,
+    `SELECT id, owner_user_id, username, username_display, display_name,
             description, notes, theme, published, accepted_revision_id,
-            created_at, updated_at
+            avatar_source, avatar_data_uri, created_at, updated_at
        FROM profiles
-      WHERE workspace_id IN (SELECT id FROM workspaces WHERE ${WORKSPACE_SCOPE})
+      WHERE owner_user_id = ?
       ORDER BY created_at, id`,
-    [userId, userId],
+    [userId],
   );
-  const profileScope = `profile_id IN (
-    SELECT id FROM profiles WHERE workspace_id IN (
-      SELECT id FROM workspaces WHERE ${WORKSPACE_SCOPE}
-    )
-  )`;
+  const profileScope = 'profile_id IN (SELECT id FROM profiles WHERE owner_user_id = ?)';
   const profileNames = await db.query(
     `SELECT id, profile_id, value, opinion, position FROM profile_names
       WHERE ${profileScope} ORDER BY profile_id, position`,
-    [userId, userId],
+    [userId],
   );
   const pronounSets = await db.query(
     `SELECT id, profile_id, subject, object, possessive_determiner,
             possessive_pronoun, reflexive, opinion, position
        FROM pronoun_sets WHERE ${profileScope} ORDER BY profile_id, position`,
-    [userId, userId],
+    [userId],
   );
   const profileWordGroups = await db.query(
     `SELECT id, profile_id, heading, position FROM profile_word_groups
       WHERE ${profileScope} ORDER BY profile_id, position`,
-    [userId, userId],
+    [userId],
   );
   const profileWords = await db.query(
     `SELECT id, group_id, value, opinion, position FROM profile_words
       WHERE group_id IN (SELECT id FROM profile_word_groups WHERE ${profileScope})
       ORDER BY group_id, position`,
-    [userId, userId],
+    [userId],
   );
   const profileLinks = await db.query(
     `SELECT id, profile_id, label, url, position FROM profile_links
       WHERE ${profileScope} ORDER BY profile_id, position`,
-    [userId, userId],
+    [userId],
   );
   const profileIdentityFlags = await db.query(
     `SELECT id, profile_id, flag_key, position FROM profile_identity_flags
       WHERE ${profileScope} ORDER BY profile_id, position`,
-    [userId, userId],
+    [userId],
   );
   const profilePronounPreferences = await db.query(
     `SELECT profile_id, preference_key, opinion, position FROM profile_pronoun_preferences
       WHERE ${profileScope} ORDER BY profile_id, position`,
-    [userId, userId],
+    [userId],
   );
   const usernameClaims = await db.query(
     `SELECT username, username_display, state, pending_user_id,
-            requested_display_name, profile_id, created_at
+            requested_display_name, profile_id, reserved_user_id, reserved_until, created_at
        FROM public_username_claims
-      WHERE pending_user_id = ? OR profile_id IN (
-        SELECT id FROM profiles WHERE workspace_id IN (
-          SELECT id FROM workspaces WHERE ${WORKSPACE_SCOPE}
-        )
-      )
+      WHERE pending_user_id = ? OR reserved_user_id = ?
+         OR profile_id IN (SELECT id FROM profiles WHERE owner_user_id = ?)
       ORDER BY created_at, username`,
     [userId, userId, userId],
   );
@@ -108,8 +86,6 @@ export async function collectUserData(userId, { generatedAt = new Date().toISOSt
     owned_by: 'you',
     account: account.rows[0] || null,
     policy_acceptances: policyAcceptances.rows,
-    workspaces: workspaces.rows,
-    workspace_members: workspaceMembers.rows,
     profiles: profiles.rows,
     profile_names: profileNames.rows,
     pronoun_sets: pronounSets.rows,

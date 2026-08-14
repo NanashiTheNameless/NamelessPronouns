@@ -6,7 +6,10 @@
   <main class="container">
     <p class="eyebrow">Profile editor</p>
     <h1>Edit <%= profile.username %></h1>
-    <p><a href="/dashboard">Back to dashboard</a></p>
+    <div class="inline-actions">
+      <a class="button secondary compact" href="/dashboard">Back to dashboard</a>
+      <a class="button secondary compact" href="#profile-icon">Edit profile icon</a>
+    </div>
     <% if (error) { %><p class="error" role="alert"><%= error %></p><% } %>
     <% if (warning) { %><p class="error" role="alert"><%= warning %> <a href="/account/content-flags">Review content flags</a>.</p><% } %>
     <% if (saved) { %><p role="status">Profile saved.</p><% } %>
@@ -154,6 +157,27 @@
       <button type="submit">Save profile</button>
     </form>
 
+    <section class="panel stack" id="profile-icon" aria-labelledby="profile-icon-h">
+      <h2 id="profile-icon-h">Profile icon</h2>
+      <p class="fineprint">This icon is used for <%= profile.username %> only. Leave it on the account default to follow the icon set in account settings.</p>
+      <img id="avatar-preview" class="avatar avatar-large" src="<%= avatar %>" alt="Profile icon preview" width="96" height="96">
+      <form method="post" action="/profiles/<%= profile.id %>/avatar" id="avatar-form" class="stack" data-max-bytes="<%= maxAvatarBytes %>" data-current-source="<%= avatarSource %>" data-identicon="<%= identiconAvatar %>" data-gravatar="<%= gravatarAvatar %>" data-inherit="<%= accountAvatar %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label><input type="radio" name="avatar_source" value="inherit" <%= avatarSource === 'inherit' ? 'checked' : '' %>> The account default set in <a href="/settings#profile-icon">account settings</a></label>
+        <label><input type="radio" name="avatar_source" value="identicon" <%= avatarSource === 'identicon' ? 'checked' : '' %>> Deterministic identicon for this profile</label>
+        <label><input type="radio" name="avatar_source" value="gravatar" <%= avatarSource === 'gravatar' ? 'checked' : '' %>> Gravatar for the verified email</label>
+        <label><input type="radio" name="avatar_source" value="data" <%= avatarSource === 'data' ? 'checked' : '' %>> Uploaded image stored as a small data URI</label>
+        <label>Choose image
+          <input id="avatar-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+        </label>
+        <input id="avatar-data-uri" type="hidden" name="avatar_data_uri" value="">
+        <p id="avatar-size" aria-live="polite">Select a raster image to resize and compress, or a safe SVG icon to sanitize, entirely in this browser.</p>
+        <p id="avatar-error" class="error" role="alert" hidden></p>
+        <button id="avatar-strip-svg" type="button" hidden>Strip disallowed SVG content</button>
+        <button id="avatar-save" type="submit">Save profile icon</button>
+      </form>
+    </section>
+
     <section class="panel import-panel" aria-labelledby="import-h">
       <h2 id="import-h">Import from Pronouns.page</h2>
       <p>Enter a username, <code>u/username</code> path, or profile URL. You can review the imported values before saving.</p>
@@ -168,5 +192,6 @@
   </main>
   <%- await include('partials/site-footer') %>
   <script src="/static/js/profile-editor.js"></script>
+  <script src="/static/js/avatar-upload.js"></script>
 </body>
 </html>

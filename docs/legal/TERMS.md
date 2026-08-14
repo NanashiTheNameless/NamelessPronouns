@@ -1,6 +1,6 @@
 # Terms of Service
 
-Effective date: August 11, 2026
+Effective date: August 14, 2026
 
 Operator: NamelessNanashi
 
@@ -52,9 +52,12 @@ denial-by-default, and not guaranteed. Do not rely on it to regain access.
 ## 3. Profiles
 
 Every public profile uses `/u/<username>` from one global username namespace.
-Each approved account currently receives a personal profile. The application
-uses a personal workspace record internally to own that profile. Collaborative
-profile management is not offered.
+Each approved account receives a first profile on approval and may create more,
+up to a per-account limit an Administrator can adjust. Every profile is owned by
+one account. Collaborative profile management is not offered.
+
+Deleting a profile keeps its username reserved to that account for seven days
+before the name returns to the pool.
 
 Published profiles are visible to visitors who complete the policy and age
 gate. Every page of the service is sent with instructions asking search engines
@@ -217,9 +220,9 @@ data-preservation guarantee is provided.
 
 You may request an account export or account deletion. Each export ZIP is
 generated on demand and contains both user-friendly plain-text files and
-machine-readable JSON files. A direct download requires a signed-in account and
-fresh authentication. You may instead request an emailed capability link. That
-link is reusable, expires 14 days after it is issued if never used, and remains
+machine-readable JSON files. Exports are collected only through an emailed
+capability link, requested from a signed-in account with fresh authentication.
+That link is reusable, expires 14 days after it is issued if never used, and remains
 valid for seven days after its first successful use even if first used near the
 end of the initial 14-day period. Anyone possessing a still-valid link can
 download the export, but must first complete the current Terms, Privacy, and

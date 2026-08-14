@@ -151,8 +151,7 @@ async function resolveExemption(input, existing = null) {
     if (!userId) throw new V.ValidationError('A profile-scoped exemption must name one account.');
     profileId = input.profileId.trim();
     const { rows } = await db.query(
-      `SELECT p.id FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
-        WHERE p.id = ? AND w.owner_user_id = ?`,
+      'SELECT id FROM profiles WHERE id = ? AND owner_user_id = ?',
       [profileId, userId],
     );
     if (!rows[0]) throw new V.ValidationError('That profile does not belong to that account.');

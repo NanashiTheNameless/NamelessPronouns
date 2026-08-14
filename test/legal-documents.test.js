@@ -25,8 +25,10 @@ test('canonical Terms and Privacy documents load completely', async () => {
   assert.match(termsText, /reusable.*14 days.*seven days/i);
   assert.match(termsText, /restricted SVG/i);
   assert.match(termsText, /collaborative profile management is not offered/i);
-  assert.doesNotMatch(termsText, /shared workspace/i);
-  assert.doesNotMatch(privacyText, /shared workspace/i);
+  assert.doesNotMatch(termsText, /workspace/i, 'the Terms speak only of accounts and profiles');
+  assert.doesNotMatch(privacyText, /workspace/i, 'the Privacy Policy speaks only of accounts and profiles');
+  assert.match(termsText, /may create more/i, 'the Terms describe more than one profile per account');
+  assert.match(termsText, /reserved to that account for seven days/i);
   assert.match(privacyText, /Cloudflare Web Analytics and RUM/i);
   assert.match(privacyText, /generated in memory on demand/i);
   assert.match(privacyText, /does not currently receive or store Resend webhook events/i);

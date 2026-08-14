@@ -6,10 +6,11 @@ import { requireStaff, roleAtLeast } from '../middleware/staff.js';
 import { requireFreshAuth } from '../middleware/session.js';
 import { ipPrefixHash } from '../util/net.js';
 import { newId } from '../util/ids.js';
-import { personalProfileStatements } from '../profiles.js';
+import { firstProfileStatements, profileLimitFor } from '../profiles.js';
 import { DELETION_GRACE_MS, purgeDeletion } from '../maintenance.js';
 import * as V from '../validation.js';
 import * as mail from '../mail.js';
+import config from '../config.js';
 import { isIP } from 'node:net';
 const router = express.Router();
 const ROLES = ['none', 'support', 'moderator', 'administrator', 'owner'];
@@ -38,15 +39,11 @@ router.get('/admin/users', requireStaff('administrator'), requireFreshAuth(), as
   const { rows } = await db.query(
     `SELECT u.id, u.email, u.signup_status, u.staff_role, u.twofa_method,
             u.email_verified_at, u.created_at, u.updated_at,
-            (SELECT p.username_display
-               FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
-              WHERE w.owner_user_id = u.id ORDER BY p.created_at LIMIT 1) AS profile_username,
-            (SELECT p.display_name
-               FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
-              WHERE w.owner_user_id = u.id ORDER BY p.created_at LIMIT 1) AS profile_display_name,
-            (SELECT COUNT(*)
-               FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
-              WHERE w.owner_user_id = u.id) AS profile_count,
+            (SELECT p.username_display FROM profiles p
+              WHERE p.owner_user_id = u.id ORDER BY p.created_at LIMIT 1) AS profile_username,
+            (SELECT p.display_name FROM profiles p
+              WHERE p.owner_user_id = u.id ORDER BY p.created_at LIMIT 1) AS profile_display_name,
+            (SELECT COUNT(*) FROM profiles p WHERE p.owner_user_id = u.id) AS profile_count,
             (SELECT COUNT(*) FROM sessions s
               WHERE s.user_id = u.id AND s.revoked_at IS NULL AND s.expires_at > ?) AS active_sessions,
             (SELECT d.status FROM deletion_requests d
@@ -148,12 +145,11 @@ router.get('/admin/accounts/:id', requireStaff('support'), requireFreshAuth(), a
     db.query(`SELECT id, email, signup_status, staff_role, twofa_method, email_verified_at,
                     requested_profile_username_display, requested_display_name, request_note,
                     requested_at, decided_at, decision_note, decision_reason_public,
-                    signup_ip_prefix_hash, created_at, updated_at
+                    signup_ip_prefix_hash, profile_limit, created_at, updated_at
                FROM users WHERE id = ?`, [req.params.id]),
     db.query(`SELECT COUNT(*) AS count FROM sessions WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?`, [req.params.id, now]),
     db.query(`SELECT p.id, p.username_display, p.published FROM profiles p
-               JOIN workspaces w ON w.id = p.workspace_id
-              WHERE w.owner_user_id = ? ORDER BY p.created_at`, [req.params.id]),
+              WHERE p.owner_user_id = ? ORDER BY p.created_at`, [req.params.id]),
     db.query(`SELECT id, scope, reason, created_at, expires_at FROM bans
                WHERE target_type = 'user' AND target_hash = ? AND lifted_at IS NULL
                  AND (expires_at IS NULL OR expires_at > ?)
@@ -179,6 +175,8 @@ router.get('/admin/accounts/:id', requireStaff('support'), requireFreshAuth(), a
     hasSignupIp: Boolean(signupIpHash),
     pendingDeletion: deletions.rows[0] || null,
     deletionGraceDays: Math.round(DELETION_GRACE_MS / 86400000),
+    accountProfileLimit: profileLimitFor(account),
+    defaultProfileLimit: config.MAX_PROFILES_PER_USER,
   });
 });
 router.post('/admin/accounts/:id/state', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
@@ -201,12 +199,11 @@ router.post('/admin/accounts/:id/state', requireStaff('administrator'), requireF
   }];
   if (state === 'approved' && target.requested_profile_username) {
     const existing = await db.query(
-      `SELECT COUNT(*) AS count FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
-        WHERE w.owner_user_id = ?`,
+      'SELECT COUNT(*) AS count FROM profiles WHERE owner_user_id = ?',
       [target.id],
     );
     if (Number(existing.rows[0]?.count || 0) === 0) {
-      statements.push(...personalProfileStatements({
+      statements.push(...firstProfileStatements({
         userId: target.id,
         username: target.requested_profile_username,
         usernameDisplay: target.requested_profile_username_display || target.requested_profile_username,
@@ -228,8 +225,7 @@ router.post('/admin/accounts/:id/state', requireStaff('administrator'), requireF
       { sql: 'DELETE FROM login_challenges WHERE user_id = ?', params: [target.id] },
       { sql: 'DELETE FROM reauth_challenges WHERE user_id = ?', params: [target.id] },
       {
-        sql: `UPDATE profiles SET published = 0, updated_at = ?
-               WHERE workspace_id IN (SELECT id FROM workspaces WHERE owner_user_id = ?)`,
+        sql: 'UPDATE profiles SET published = 0, updated_at = ? WHERE owner_user_id = ?',
         params: [now, target.id],
       },
     );
@@ -266,13 +262,11 @@ router.post('/admin/accounts/:id/delete', requireStaff('administrator'), require
       },
       {
         sql: `INSERT INTO deletion_profile_states (deletion_id, profile_id, was_published)
-              SELECT ?, p.id, p.published FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
-               WHERE w.owner_user_id = ? AND w.kind = 'personal'`,
+              SELECT ?, p.id, p.published FROM profiles p WHERE p.owner_user_id = ?`,
         params: [id, target.id],
       },
       {
-        sql: `UPDATE profiles SET published = 0, updated_at = ?
-               WHERE workspace_id IN (SELECT id FROM workspaces WHERE owner_user_id = ? AND kind = 'personal')`,
+        sql: 'UPDATE profiles SET published = 0, updated_at = ? WHERE owner_user_id = ?',
         params: [now, target.id],
       },
       { sql: 'UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL', params: [now, target.id] },
@@ -406,6 +400,26 @@ router.post('/admin/accounts/:id/role', requireStaff('owner'), requireFreshAuth(
   await db.query('UPDATE users SET staff_role = ?, updated_at = ? WHERE id = ?', [role, Date.now(), target.id]);
   await audit.record({ type: 'staff.role_changed', actorUserId: req.user.id, subjectUserId: target.id, ipHash: ipPrefixHash(req), detail: { from: target.staff_role, to: role } });
   mail.securityNotice(target.email, `Your staff role changed from ${target.staff_role} to ${role}.`).catch(() => {});
+  res.redirect(`/admin/accounts/${target.id}`);
+});
+router.post('/admin/accounts/:id/profile-limit', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
+  const raw = String(req.body.profile_limit ?? '').trim();
+  let limit = null;
+  if (raw !== '') {
+    const parsed = Number(raw);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
+      return fail(res, 400, 'A profile limit must be a whole number from 1 to 100, or blank for the site default.');
+    }
+    limit = parsed;
+  }
+  const { rows } = await db.query('SELECT id, profile_limit FROM users WHERE id = ?', [req.params.id]);
+  const target = rows[0];
+  if (!target) return fail(res, 404, 'Page not found.');
+  await db.query('UPDATE users SET profile_limit = ?, updated_at = ? WHERE id = ?', [limit, Date.now(), target.id]);
+  await audit.record({
+    type: 'account.profile_limit_changed', actorUserId: req.user.id, subjectUserId: target.id,
+    ipHash: ipPrefixHash(req), detail: { from: target.profile_limit ?? null, to: limit },
+  });
   res.redirect(`/admin/accounts/${target.id}`);
 });
 router.post('/admin/accounts/:id/revoke-sessions', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {

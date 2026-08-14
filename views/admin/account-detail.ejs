@@ -154,6 +154,20 @@
       </section>
     <% } %>
 
+    <% if (canAction) { %>
+      <section class="panel">
+        <h2>Profile limit</h2>
+        <p>This account may hold <%= accountProfileLimit %> profile<%= accountProfileLimit === 1 ? '' : 's' %><%= account.profile_limit ? ' by override' : ` by the site default of ${defaultProfileLimit}` %>.</p>
+        <form method="post" action="/admin/accounts/<%= account.id %>/profile-limit" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>Profile limit
+            <input name="profile_limit" type="number" min="1" max="100" step="1" value="<%= account.profile_limit ?? '' %>" placeholder="Leave empty to use the site default">
+          </label>
+          <button type="submit">Save profile limit</button>
+        </form>
+      </section>
+    <% } %>
+
     <% if (canManageRole) { %>
       <section class="panel">
         <h2>Staff role</h2>

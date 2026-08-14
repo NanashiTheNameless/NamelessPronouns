@@ -6,7 +6,9 @@ import audit from '../audit.js';
 import { isFresh, safeNextPath } from '../auth/reauth.js';
 async function fetchUser(userId) {
   const { rows } = await db.query(
-    'SELECT id, email, staff_role, signup_status, twofa_method, email_verified_at, avatar_source, avatar_data_uri FROM users WHERE id = ?',
+    `SELECT id, email, staff_role, signup_status, twofa_method, email_verified_at,
+            avatar_source, avatar_data_uri, profile_limit
+       FROM users WHERE id = ?`,
     [userId],
   );
   return rows[0] || null;

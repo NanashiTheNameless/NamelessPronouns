@@ -16,8 +16,9 @@
           <div><dt>Status</dt><dd><%= user.signup_status %></dd></div>
         </dl>
       </section>
-      <section class="panel stack">
-        <h2>Profile icon</h2>
+      <section class="panel stack" id="profile-icon">
+        <h2>Default profile icon</h2>
+        <p class="fineprint">Every profile uses this icon unless that profile sets its own in the profile editor.</p>
         <img id="avatar-preview" class="avatar avatar-large" src="<%= avatar %>" alt="Avatar preview" width="96" height="96">
         <form method="post" action="/account/avatar" id="avatar-form" class="stack" data-max-bytes="<%= maxAvatarBytes %>" data-current-source="<%= avatarSource %>" data-identicon="<%= identiconAvatar %>" data-gravatar="<%= gravatarAvatar %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">

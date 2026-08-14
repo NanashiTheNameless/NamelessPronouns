@@ -592,15 +592,12 @@ test('content flag review creates a narrow effective exemption', { skip }, async
   const ruleId = `review-rule-${suffix}`;
   const versionId = newId();
   const profileId = newId();
-  const workspaceId = newId();
   const flagId = newId();
   const attemptedValue = `Blocked Phrase ${suffix}`;
   const encrypted = encrypt(config.CONTENT_FLAG_ENCRYPTION_KEY, attemptedValue);
   const now = Date.now();
   await db.batch([
-    { sql: 'INSERT INTO workspaces (id, name, slug, kind, owner_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [workspaceId, 'Flag Workspace', `flag-${suffix}`, 'personal', userId, now, now] },
-    { sql: 'INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at) VALUES (?, ?, ?, ?, ?)', params: [newId(), workspaceId, userId, 'owner', now] },
-    { sql: 'INSERT INTO profiles (id, workspace_id, username, username_display, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [profileId, workspaceId, `flag${suffix}`.slice(0, 30).toLowerCase(), `Flag${suffix}`.slice(0, 30), 'Flag Profile', now, now] },
+    { sql: 'INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [profileId, userId, `flag${suffix}`.slice(0, 30).toLowerCase(), `Flag${suffix}`.slice(0, 30), 'Flag Profile', now, now] },
     { sql: 'INSERT INTO content_rules (id, current_version_id, created_at, updated_at) VALUES (?, ?, ?, ?)', params: [ruleId, versionId, now, now] },
     { sql: `INSERT INTO content_rule_versions (id, rule_id, version, rule_type, match_value, category, severity, mode, explanation, created_at)
             VALUES (?, ?, 1, 'exact_field', ?, 'test_category', 'warning', 'enforcing', ?, ?)`, params: [versionId, ruleId, attemptedValue.toLowerCase(), 'Test explanation', now] },
@@ -632,15 +629,12 @@ test('content flag review creates a narrow effective exemption', { skip }, async
   const code = /code is:\s*(\d{6})/.exec(reauthMail.text)[1];
   res = await post('/account/reauth', { _csrf: csrf, password: adminPw, code, next: '/admin/content-flags' }, adminCookies);
   assert.equal(res.headers.get('location'), '/admin/content-flags');
-  const adminWorkspaceId = newId();
   const adminProfileId = newId();
   const adminFlagId = newId();
   const adminAttemptedValue = attemptedValue;
   const adminEncrypted = encrypt(config.CONTENT_FLAG_ENCRYPTION_KEY, adminAttemptedValue);
   await db.batch([
-    { sql: 'INSERT INTO workspaces (id, name, slug, kind, owner_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [adminWorkspaceId, 'Admin Flag Workspace', `admin-flag-${suffix}`, 'personal', adminId, now, now] },
-    { sql: 'INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at) VALUES (?, ?, ?, ?, ?)', params: [newId(), adminWorkspaceId, adminId, 'owner', now] },
-    { sql: 'INSERT INTO profiles (id, workspace_id, username, username_display, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [adminProfileId, adminWorkspaceId, `adminflag${suffix}`.slice(0, 30).toLowerCase(), `AdminFlag${suffix}`.slice(0, 30), 'Admin Flag Profile', now, now] },
+    { sql: 'INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [adminProfileId, adminId, `adminflag${suffix}`.slice(0, 30).toLowerCase(), `AdminFlag${suffix}`.slice(0, 30), 'Admin Flag Profile', now, now] },
     { sql: `INSERT INTO content_flags
               (id, user_id, profile_id, rule_version_id, field_type, attempted_ciphertext,
                attempted_nonce, idempotency_key_hash, policy_category, severity, mode,
@@ -743,14 +737,11 @@ test('an administrator creates and edits per-account and per-value exemptions', 
   const { matchIsExempt } = await import('../src/content-exemptions.js');
   const ruleId = `exempt-rule-${suffix}`;
   const versionId = newId();
-  const workspaceId = newId();
   const profileId = newId();
   const attemptedValue = `Contested Phrase ${suffix}`;
   const now = Date.now();
   await db.batch([
-    { sql: 'INSERT INTO workspaces (id, name, slug, kind, owner_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [workspaceId, 'Exempt Workspace', `exempt-${suffix}`, 'personal', termUserId, now, now] },
-    { sql: 'INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at) VALUES (?, ?, ?, ?, ?)', params: [newId(), workspaceId, termUserId, 'owner', now] },
-    { sql: 'INSERT INTO profiles (id, workspace_id, username, username_display, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [profileId, workspaceId, `exempt${suffix}`.slice(0, 30).toLowerCase(), `Exempt${suffix}`.slice(0, 30), 'Exempt Profile', now, now] },
+    { sql: 'INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [profileId, termUserId, `exempt${suffix}`.slice(0, 30).toLowerCase(), `Exempt${suffix}`.slice(0, 30), 'Exempt Profile', now, now] },
     { sql: 'INSERT INTO content_rules (id, current_version_id, created_at, updated_at) VALUES (?, ?, ?, ?)', params: [ruleId, versionId, now, now] },
     { sql: `INSERT INTO content_rule_versions (id, rule_id, version, rule_type, match_value, category, severity, mode, explanation, created_at)
             VALUES (?, ?, 1, 'exact_field', ?, 'test_category', 'warning', 'enforcing', ?, ?)`, params: [versionId, ruleId, attemptedValue.toLowerCase(), 'Test explanation', now] },
@@ -869,16 +860,13 @@ test('three distinct enforcing edits suspend and Administrator restoration recov
   const userId = await insertUser({ email, password: pw, status: 'approved' });
   await insertUser({ email: adminEmail, password: adminPw, status: 'approved', role: 'administrator' });
   const { newId } = await import('../src/util/ids.js');
-  const workspaceId = newId();
   const profileId = newId();
   const ruleId = `suspend-rule-${suffix}`;
   const versionId = newId();
   const blockedValue = `Blocked ${suffix}`;
   const now = Date.now();
   await db.batch([
-    { sql: 'INSERT INTO workspaces (id, name, slug, kind, owner_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', params: [workspaceId, 'Suspend Workspace', `suspend-${suffix}`, 'personal', userId, now, now] },
-    { sql: 'INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at) VALUES (?, ?, ?, ?, ?)', params: [newId(), workspaceId, userId, 'owner', now] },
-    { sql: 'INSERT INTO profiles (id, workspace_id, username, username_display, display_name, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)', params: [profileId, workspaceId, `suspend${suffix}`.slice(0, 30).toLowerCase(), `Suspend${suffix}`.slice(0, 30), 'Safe Name', now, now] },
+    { sql: 'INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)', params: [profileId, userId, `suspend${suffix}`.slice(0, 30).toLowerCase(), `Suspend${suffix}`.slice(0, 30), 'Safe Name', now, now] },
     { sql: 'INSERT INTO content_rules (id, current_version_id, created_at, updated_at) VALUES (?, ?, ?, ?)', params: [ruleId, versionId, now, now] },
     { sql: `INSERT INTO content_rule_versions
               (id, rule_id, version, rule_type, match_value, category, severity, mode, explanation, created_at)
@@ -1329,14 +1317,11 @@ test('avatar source selection stores only bounded safe image data URIs', { skip 
   const password = 'avatar-source-test-passphrase';
   const userId = await insertUser({ email, password, status: 'approved' });
   const { newId } = await import('../src/util/ids.js');
-  const workspaceId = newId();
   const profileId = newId();
   const username = `avatar${suffix}`.slice(0, 30).toLowerCase();
   const now = Date.now();
   await db.batch([
-    { sql: "INSERT INTO workspaces (id, name, slug, kind, owner_user_id, created_at, updated_at) VALUES (?, 'Avatar Workspace', ?, 'personal', ?, ?, ?)", params: [workspaceId, `avatar-${suffix}`, userId, now, now] },
-    { sql: "INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at) VALUES (?, ?, ?, 'owner', ?)", params: [newId(), workspaceId, userId, now] },
-    { sql: 'INSERT INTO profiles (id, workspace_id, username, username_display, display_name, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)', params: [profileId, workspaceId, username, username, 'Avatar Profile', now, now] },
+    { sql: 'INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)', params: [profileId, userId, username, username, 'Avatar Profile', now, now] },
   ]);
   const cookies = jar();
   await loginAs(cookies, email, password);
@@ -1379,14 +1364,11 @@ test('an unpublished profile is visible to its owner and to staff only', { skip 
   await insertUser({ email: otherEmail, password, status: 'approved' });
   await insertUser({ email: staffEmail, password, status: 'approved', role: 'support' });
   const { newId } = await import('../src/util/ids.js');
-  const workspaceId = newId();
   const profileId = newId();
   const username = `draft${suffix}`.slice(0, 30).toLowerCase();
   const now = Date.now();
   await db.batch([
-    { sql: "INSERT INTO workspaces (id, name, slug, kind, owner_user_id, created_at, updated_at) VALUES (?, 'Draft Workspace', ?, 'personal', ?, ?, ?)", params: [workspaceId, `draft-${suffix}`, userId, now, now] },
-    { sql: "INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at) VALUES (?, ?, ?, 'owner', ?)", params: [newId(), workspaceId, userId, now] },
-    { sql: 'INSERT INTO profiles (id, workspace_id, username, username_display, display_name, description, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)', params: [profileId, workspaceId, username, username, 'Draft Profile', '**Still drafting** this bio.', now, now] },
+    { sql: 'INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, description, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)', params: [profileId, userId, username, username, 'Draft Profile', '**Still drafting** this bio.', now, now] },
   ]);
   let res = await get(`/u/${username}`);
   assert.equal(res.status, 302, 'a browser that has not passed the policy gate never reaches the page');
@@ -1416,7 +1398,7 @@ test('an unpublished profile is visible to its owner and to staff only', { skip 
   assert.match(page, /<strong>Still drafting<\/strong> this bio\./, 'the preview renders the bio Markdown');
   res = await get('/dashboard', cookies);
   page = await res.text();
-  assert.match(page, new RegExp(`<a href="/u/${username}" aria-label="Preview the unpublished page for ${username}">Preview page</a>`));
+  assert.match(page, new RegExp(`<a class="button secondary compact" href="/u/${username}" aria-label="Preview the unpublished page for ${username}">Preview page</a>`));
   await db.query('UPDATE profiles SET published = 1 WHERE id = ?', [profileId]);
   res = await get(`/u/${username}`, visitor);
   assert.equal(res.status, 200, 'publishing opens the page to every gate-passing visitor');
@@ -1544,13 +1526,10 @@ test('account deletion restricts immediately, cancels freshly, and purges after 
   const userId = await insertUser({ email, password, status: 'approved' });
   const ownerId = await insertUser({ email: adminEmail, password: password, status: 'approved', role: 'owner' });
   const { newId } = await import('../src/util/ids.js');
-  const workspaceId = newId();
   const profileId = newId();
   const now = Date.now();
   await db.batch([
-    { sql: "INSERT INTO workspaces (id, name, slug, kind, owner_user_id, created_at, updated_at) VALUES (?, 'Delete Workspace', ?, 'personal', ?, ?, ?)", params: [workspaceId, `delete-${suffix}`, userId, now, now] },
-    { sql: "INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at) VALUES (?, ?, ?, 'owner', ?)", params: [newId(), workspaceId, userId, now] },
-    { sql: 'INSERT INTO profiles (id, workspace_id, username, username_display, display_name, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)', params: [profileId, workspaceId, `delete${suffix}`.slice(0, 30).toLowerCase(), `Delete${suffix}`.slice(0, 30), 'Delete Profile', now, now] },
+    { sql: 'INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)', params: [profileId, userId, `delete${suffix}`.slice(0, 30).toLowerCase(), `Delete${suffix}`.slice(0, 30), 'Delete Profile', now, now] },
   ]);
   const cookies = jar();
   await loginAs(cookies, email, password);
@@ -1616,7 +1595,7 @@ test('reauth return path rejects an off-site redirect', { skip }, async () => {
   assert.match(html, /name="next" value="\/settings"/);
   assert.doesNotMatch(html, /evil\.example/);
 });
-test('account export supports direct and renewable-window emailed downloads', { skip }, async () => {
+test('account export is emailed only, with a renewable download window', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `export-${suffix}@allowed-${suffix}.example`;
   const pw = 'export-user-passphrase-xx';
@@ -1625,10 +1604,13 @@ test('account export supports direct and renewable-window emailed downloads', { 
   await loginAs(cookies, email, pw);
   let res = await get('/account/export', cookies);
   assert.equal(res.status, 200);
-  let csrf = /name="_csrf" value="([^"]+)"/.exec(await res.text())[1];
-  res = await post('/account/export/download', { _csrf: csrf }, cookies);
+  let page = await res.text();
+  assert.doesNotMatch(page, /action="\/account\/export\/download"/, 'there is no direct download');
+  assert.doesNotMatch(page, /Download now/);
+  let csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  res = await post('/account/export/link', { _csrf: csrf }, cookies);
   assert.equal(res.status, 302);
-  assert.match(res.headers.get('location'), /^\/account\/reauth/);
+  assert.match(res.headers.get('location'), /^\/account\/reauth/, 'emailing a link still needs fresh authentication');
   outbox.length = 0;
   res = await get('/account/reauth?next=/account/export', cookies);
   csrf = /name="_csrf" value="([^"]+)"/.exec(await res.text())[1];
@@ -1639,11 +1621,7 @@ test('account export supports direct and renewable-window emailed downloads', { 
   res = await get('/account/export', cookies);
   csrf = /name="_csrf" value="([^"]+)"/.exec(await res.text())[1];
   res = await post('/account/export/download', { _csrf: csrf }, cookies);
-  assert.equal(res.status, 200);
-  assert.match(res.headers.get('content-type'), /^application\/zip/);
-  assert.match(res.headers.get('content-disposition'), /^attachment; filename="NamelessPronouns-\d{4}\.\d{2}\.\d{2}-\d{10}\.zip"$/);
-  const direct = Buffer.from(await res.arrayBuffer());
-  assert.deepEqual(direct.subarray(0, 4), Buffer.from('PK\x03\x04', 'binary'));
+  assert.equal(res.status, 404, 'the direct-download endpoint is gone');
   const { collectUserData } = await import('../src/data-export.js');
   const collected = await collectUserData(userId);
   assert.equal(collected.account.email, email);
@@ -1702,16 +1680,84 @@ test('account export supports direct and renewable-window emailed downloads', { 
 });
 async function insertPublishedProfile({ key, display, userId }) {
   const { newId } = await import('../src/util/ids.js');
-  const wsId = newId();
   const pid = newId();
-  const mid = newId();
   const now = Date.now();
   await db.batch([
-    { sql: `INSERT INTO workspaces (id, name, slug, kind, owner_user_id, created_at, updated_at) VALUES (?, ?, ?, 'personal', ?, ?, ?)`, params: [wsId, `${display} Workspace`, `personal-${key}`, userId, now, now] },
-    { sql: `INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at) VALUES (?, ?, ?, 'owner', ?)`, params: [mid, wsId, userId, now] },
-    { sql: `INSERT INTO profiles (id, workspace_id, username, username_display, display_name, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)`, params: [pid, wsId, key, display, display, now, now] },
+    { sql: `INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)`, params: [pid, userId, key, display, display, now, now] },
   ]);
 }
+test('an account creates more profiles up to its limit, and deletion holds the username', { skip }, async () => {
+  const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const email = `multi-${suffix}@allowed-${suffix}.example`;
+  const pw = 'multi-profile-passphrase-xx';
+  const userId = await insertUser({ email, password: pw, status: 'approved', role: 'none' });
+  const first = `first${suffix}`.slice(0, 30).toLowerCase();
+  await insertPublishedProfile({ key: first, display: first, userId });
+  const cookies = jar();
+  await loginAs(cookies, email, pw);
+  let res = await get('/profiles/new', cookies);
+  assert.equal(res.status, 200);
+  let csrf = /name="_csrf" value="([^"]+)"/.exec(await res.text())[1];
+  const second = `second${suffix}`.slice(0, 30).toLowerCase();
+  res = await post('/profiles/new', { _csrf: csrf, username: second, display_name: 'Second Profile' }, cookies);
+  assert.equal(res.status, 302);
+  const editPath = res.headers.get('location');
+  assert.match(editPath, /^\/profiles\/[A-Za-z0-9_-]+\/edit$/);
+  const created = await db.query('SELECT id, owner_user_id, published FROM profiles WHERE username = ?', [second]);
+  assert.equal(created.rows[0].owner_user_id, userId, 'the new profile belongs to the account');
+  assert.equal(Number(created.rows[0].published), 0, 'a new profile starts unpublished');
+  const claim = await db.query('SELECT state, profile_id FROM public_username_claims WHERE username = ?', [second]);
+  assert.equal(claim.rows[0].state, 'active');
+  assert.equal(claim.rows[0].profile_id, created.rows[0].id);
+  res = await post('/profiles/new', { _csrf: csrf, username: second, display_name: 'Duplicate' }, cookies);
+  assert.equal(res.status, 409, 'a taken username cannot be claimed twice');
+  res = await get('/dashboard', cookies);
+  let page = await res.text();
+  assert.match(page, /Using 2 of 5 profiles\./);
+  assert.match(page, new RegExp(`/profiles/${created.rows[0].id}/delete`));
+  const profileId = created.rows[0].id;
+  csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  res = await post(`/profiles/${profileId}/delete`, { _csrf: csrf, confirmation: 'nope' }, cookies);
+  assert.equal(res.status, 400, 'the exact phrase is required');
+  assert.equal((await db.query('SELECT id FROM profiles WHERE id = ?', [profileId])).rows.length, 1);
+  res = await post(`/profiles/${profileId}/delete`, { _csrf: csrf, confirmation: 'DELETE PROFILE' }, cookies);
+  assert.equal(res.status, 302);
+  assert.equal(res.headers.get('location'), '/dashboard');
+  assert.equal((await db.query('SELECT id FROM profiles WHERE id = ?', [profileId])).rows.length, 0);
+  const held = await db.query('SELECT state, reserved_user_id, reserved_until FROM public_username_claims WHERE username = ?', [second]);
+  assert.equal(held.rows[0].state, 'reserved');
+  assert.equal(held.rows[0].reserved_user_id, userId);
+  assert.ok(Number(held.rows[0].reserved_until) - Date.now() > 6 * 24 * 60 * 60 * 1000, 'the hold lasts about seven days');
+  const otherEmail = `multi-other-${suffix}@allowed-other-${suffix}.example`;
+  await insertUser({ email: otherEmail, password: pw, status: 'approved', role: 'none' });
+  const other = jar();
+  await loginAs(other, otherEmail, pw);
+  res = await get('/profiles/new', other);
+  const otherCsrf = /name="_csrf" value="([^"]+)"/.exec(await res.text())[1];
+  res = await post('/profiles/new', { _csrf: otherCsrf, username: second, display_name: 'Taken Name' }, other);
+  assert.equal(res.status, 409, 'another account cannot take a held username');
+  assert.match(await res.text(), /held after a recent deletion/);
+  res = await get('/profiles/new', cookies);
+  csrf = /name="_csrf" value="([^"]+)"/.exec(await res.text())[1];
+  res = await post('/profiles/new', { _csrf: csrf, username: second, display_name: 'Second Again' }, cookies);
+  assert.equal(res.status, 302, 'the holding account may reclaim its own username');
+  const { releaseExpiredUsernameHolds } = await import('../src/profiles.js');
+  const thirdName = `third${suffix}`.slice(0, 30).toLowerCase();
+  await db.query(
+    `INSERT INTO public_username_claims (username, username_display, state, reserved_user_id, reserved_until, created_at)
+     VALUES (?, ?, 'reserved', ?, ?, ?)`,
+    [thirdName, thirdName, userId, Date.now() - 1000, Date.now()],
+  );
+  assert.ok(await releaseExpiredUsernameHolds(Date.now()) >= 1, 'maintenance releases expired holds');
+  assert.equal((await db.query('SELECT username FROM public_username_claims WHERE username = ?', [thirdName])).rows.length, 0);
+  await db.query('UPDATE users SET profile_limit = 2 WHERE id = ?', [userId]);
+  res = await get('/profiles/new', cookies);
+  page = await res.text();
+  assert.match(page, /This account uses 2 of its 2 profiles\./);
+  assert.doesNotMatch(page, /name="username"/, 'an Administrator override caps the account');
+  res = await post('/profiles/new', { _csrf: csrf, username: `over${suffix}`.slice(0, 30).toLowerCase(), display_name: 'Over Limit' }, cookies);
+  assert.equal(res.status, 409, 'the limit is enforced on the server too');
+});
 test('usernames are case-insensitive but the URL canonicalizes to the stored casing', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `case-${suffix}@allowed-${suffix}.example`;

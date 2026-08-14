@@ -9,6 +9,7 @@
     <p class="lede">Signed in as <%- await obfuscateEmail(user.email) %>.</p>
     <section aria-labelledby="profiles-h">
       <h2 id="profiles-h">Profiles</h2>
+      <p class="fineprint">Using <%= profiles.length %> of <%= profileLimit %> profile<%= profileLimit === 1 ? '' : 's' %>.</p>
       <% if (profiles.length === 0) { %>
         <p>No profiles are available. Yet.</p>
       <% } else { %>
@@ -18,22 +19,35 @@
               <strong><%= profile.display_name %></strong>
               <p class="fineprint">/u/<%= profile.username %></p>
               <div class="inline-actions">
-                <% if (profile.role === 'owner') { %>
-                  <a href="/profiles/<%= profile.id %>/edit" aria-label="Edit <%= profile.username %>">Edit</a>
-                <% } %>
+                <a class="button secondary compact" href="/profiles/<%= profile.id %>/edit" aria-label="Edit <%= profile.username %>">Edit</a>
                 <% if (Number(profile.published) === 1) { %>
-                  <a href="/u/<%= profile.username %>" aria-label="View the public page for <%= profile.username %>">View public page</a>
+                  <a class="button secondary compact" href="/u/<%= profile.username %>" aria-label="View the public page for <%= profile.username %>">View public page</a>
                 <% } else { %>
-                  <a href="/u/<%= profile.username %>" aria-label="Preview the unpublished page for <%= profile.username %>">Preview page</a>
+                  <a class="button secondary compact" href="/u/<%= profile.username %>" aria-label="Preview the unpublished page for <%= profile.username %>">Preview page</a>
                   <span class="status-badge">Unpublished</span>
                 <% } %>
               </div>
+              <% if (profiles.length > 1) { %>
+                <form method="post" action="/profiles/<%= profile.id %>/delete" class="inline-form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <label>Type DELETE PROFILE to remove <%= profile.username %>
+                    <input name="confirmation" autocomplete="off" required placeholder="DELETE PROFILE">
+                  </label>
+                  <button type="submit" class="secondary compact">Delete <%= profile.username %></button>
+                </form>
+              <% } %>
             </li>
           <% }); %>
         </ul>
       <% } %>
+      <p class="fineprint">A deleted profile's username stays reserved for this account for <%= usernameHoldDays %> days before anyone else can take it.</p>
     </section>
-    <div class="actions"><a class="button secondary" href="/settings">Account settings</a></div>
+    <div class="actions">
+      <% if (profiles.length < profileLimit) { %>
+        <a class="button" href="/profiles/new">Create another profile</a>
+      <% } %>
+      <a class="button secondary" href="/settings">Account settings</a>
+    </div>
   </main>
   <%- await include('partials/site-footer') %>
 </body>

@@ -80,13 +80,11 @@ router.post('/account/deletion', requireApproved, requireFreshAuth({ returnTo: '
       },
       {
         sql: `INSERT INTO deletion_profile_states (deletion_id, profile_id, was_published)
-              SELECT ?, p.id, p.published FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
-               WHERE w.owner_user_id = ? AND w.kind = 'personal'`,
+              SELECT ?, p.id, p.published FROM profiles p WHERE p.owner_user_id = ?`,
         params: [id, req.user.id],
       },
       {
-        sql: `UPDATE profiles SET published = 0, updated_at = ?
-               WHERE workspace_id IN (SELECT id FROM workspaces WHERE owner_user_id = ? AND kind = 'personal')`,
+        sql: 'UPDATE profiles SET published = 0, updated_at = ? WHERE owner_user_id = ?',
         params: [now, req.user.id],
       },
       { sql: 'UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND id <> ? AND revoked_at IS NULL', params: [now, req.user.id, req.session.id] },
@@ -137,16 +135,6 @@ router.get('/account/export', requireApproved, (req, res) => {
     linkSent: req.query.sent === '1',
   });
 });
-router.post(
-  '/account/export/download',
-  requireApproved,
-  requireFreshAuth({ returnTo: '/account/export' }),
-  async (req, res) => {
-    const acceptedAt = Date.now();
-    await audit.record({ type: 'data_export.downloaded', subjectUserId: req.user.id, ipHash: ipPrefixHash(req) });
-    await streamExport(res, req.user.id, acceptedAt);
-  },
-);
 router.post(
   '/account/export/link',
   requireApproved,

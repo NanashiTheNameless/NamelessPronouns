@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Effective date: August 11, 2026
+Effective date: August 14, 2026
 
 Operator: NamelessNanashi
 
@@ -21,8 +21,8 @@ We collect:
   password-reset challenges, and sessions.
 - Profile usernames, display names, names, pronouns, About me descriptions,
   identity notes, themes, HTTPS links, avatar-source selection, and any uploaded avatar
-  `data:` URI. Personal workspace ownership and membership records are used
-  internally to associate an account with its profile.
+  `data:` URI, per account and per profile. Each profile records the account
+  that owns it.
 - Support requests, reports, appeals, recovery cases, moderation records, bans,
   and staff audit events.
 - Rights complaints and counter-notices, legal requests and disclosures,
@@ -45,7 +45,7 @@ other verification records are stored where needed to validate expiring
 credentials.
 
 Profile content may reveal sensitive identity information. You choose what to
-provide and an authorized workspace member chooses whether to publish it.
+provide and the account that owns the profile chooses whether to publish it.
 
 ### Network, security, and analytics information
 
@@ -69,7 +69,7 @@ and navigation type. The beacon sends metrics to `/cdn-cgi/rum` without an
 analytics cookie.
 
 RUM is excluded from signup, login, verification, 2FA, recovery, account,
-dashboard, workspace, private-preview, report, and administration routes.
+dashboard, profile-editor, private-preview, report, and administration routes.
 
 Transactional email sends the recipient address and fixed message content to
 Resend for delivery. The application does not currently receive or store Resend
@@ -127,8 +127,8 @@ never another account's. Every other request, from a different account or from a
 signed-out browser alike, receives the same not-found response as an address that
 never existed.
 
-Emails, private drafts, workspace membership, authentication records, support
-notes, report identities, and staff records are not public profile data.
+Emails, private drafts, profile ownership records, authentication records,
+support notes, report identities, and staff records are not public profile data.
 
 ## 4. Service providers
 
@@ -272,9 +272,10 @@ events carry a pseudonym in place of the account identifier.
 
 An account export is generated on demand as a ZIP containing user-friendly
 UTF-8 plain-text files and machine-readable JSON files for eligible account,
-profile, policy-acceptance, internal workspace, username-claim, and audit data.
-The application does not store the ZIP. Direct downloads require a signed-in
-account and fresh authentication. An emailed reusable capability link is valid
+profile, policy-acceptance, username-claim, and audit data.
+The application does not store the ZIP. An export is collected only through an
+emailed capability link, requested from a signed-in account with fresh
+authentication. The reusable link is valid
 for 14 days before first use and then for seven days after first use. The link
 does not require login, but the site-wide policy and age gate still applies.
 Possession of the link grants download access during its validity, so it should

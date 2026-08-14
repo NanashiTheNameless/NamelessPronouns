@@ -18,7 +18,7 @@ import { createSession, rotateSession, destroyBySessionId, clearSessionCookie, S
 import { unsignValue } from '../util/cookies.js';
 import * as verifyTotp from '../auth/totp.js';
 import * as lc from '../auth/login-challenge.js';
-import { personalProfileStatements } from '../profiles.js';
+import { firstProfileStatements } from '../profiles.js';
 import { TERMS_VERSION, PRIVACY_VERSION } from '../policy.js';
 const router = express.Router();
 router.use(publicPageHeaders);
@@ -101,7 +101,7 @@ router.post('/signup', async (req, res) => {
   const userId = newId();
   const verifyToken = newToken(32);
   const bootstrapProfile = isBootstrap
-    ? personalProfileStatements({ userId, username: uname, usernameDisplay: unameDisplay, displayName, now })
+    ? firstProfileStatements({ userId, username: uname, usernameDisplay: unameDisplay, displayName, now })
     : null;
   try {
     await db.batch([

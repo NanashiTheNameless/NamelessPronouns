@@ -73,6 +73,16 @@ function identicon(userId) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5 5"><rect width="5" height="5" fill="hsl(${hue} 28% 94%)"/><g fill="hsl(${hue} 68% 42%)">${cells.join('')}</g></svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
+export function profileAvatarUrl(profile, owner) {
+  const source = profile?.avatar_source;
+  if (!source || source === 'inherit') return avatarUrl(owner);
+  return avatarUrl({
+    id: profile.id,
+    email: owner?.email,
+    avatar_source: source,
+    avatar_data_uri: profile.avatar_data_uri,
+  });
+}
 export function avatarUrl(user) {
   if (user?.avatar_source === 'data' && user.avatar_data_uri) {
     try { return validateAvatarDataUri(user.avatar_data_uri); } catch {   }

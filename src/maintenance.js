@@ -1,6 +1,7 @@
 import db from './db/index.js';
 import { keyedHash } from './util/crypto.js';
 import { hasActiveBanForAccount, targetHash } from './bans.js';
+import { releaseExpiredUsernameHolds } from './profiles.js';
 export const DENIED_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 export const DELETION_GRACE_MS = 30 * 24 * 60 * 60 * 1000;
 const CLEANUPS = [
@@ -52,7 +53,7 @@ export async function purgeDeniedSignups(now = Date.now()) {
     await db.batch([
       { sql: 'UPDATE audit_events SET actor_user_id = ? WHERE actor_user_id = ?', params: [anon, user.id] },
       { sql: 'UPDATE audit_events SET subject_user_id = ? WHERE subject_user_id = ?', params: [anon, user.id] },
-      { sql: 'DELETE FROM public_username_claims WHERE pending_user_id = ?', params: [user.id] },
+      { sql: 'DELETE FROM public_username_claims WHERE pending_user_id = ? OR reserved_user_id = ?', params: [user.id, user.id] },
       { sql: 'DELETE FROM content_suspensions WHERE user_id = ?', params: [user.id] },
       { sql: 'DELETE FROM content_flags WHERE user_id = ?', params: [user.id] },
       { sql: 'DELETE FROM content_rule_exemptions WHERE user_id = ?', params: [user.id] },
@@ -67,8 +68,7 @@ export async function purgeDeniedSignups(now = Date.now()) {
       { sql: 'DELETE FROM reauth_challenges WHERE user_id = ?', params: [user.id] },
       { sql: 'DELETE FROM sessions WHERE user_id = ?', params: [user.id] },
       { sql: 'DELETE FROM policy_acceptances WHERE user_id = ?', params: [user.id] },
-      { sql: 'DELETE FROM workspace_members WHERE user_id = ?', params: [user.id] },
-      { sql: "DELETE FROM workspaces WHERE owner_user_id = ? AND kind = 'personal'", params: [user.id] },
+      { sql: 'DELETE FROM profiles WHERE owner_user_id = ?', params: [user.id] },
       { sql: "DELETE FROM users WHERE id = ? AND signup_status = 'denied'", params: [user.id] },
     ]);
     removed += 1;
@@ -105,11 +105,10 @@ export async function purgeDeletion(deletion, now = Date.now(), { replacementAct
     { sql: 'DELETE FROM sessions WHERE user_id = ?', params: [deletion.user_id] },
     { sql: 'DELETE FROM policy_acceptances WHERE user_id = ?', params: [deletion.user_id] },
     { sql: 'DELETE FROM bans WHERE target_type = ? AND target_hash = ?', params: ['user', targetHash('user', deletion.user_id)] },
-    { sql: 'DELETE FROM workspace_members WHERE user_id = ?', params: [deletion.user_id] },
-    { sql: `DELETE FROM public_username_claims WHERE pending_user_id = ? OR profile_id IN
-              (SELECT p.id FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
-                WHERE w.owner_user_id = ? AND w.kind = 'personal')`, params: [deletion.user_id, deletion.user_id] },
-    { sql: "DELETE FROM workspaces WHERE owner_user_id = ? AND kind = 'personal'", params: [deletion.user_id] },
+    { sql: `DELETE FROM public_username_claims WHERE pending_user_id = ? OR reserved_user_id = ?
+              OR profile_id IN (SELECT id FROM profiles WHERE owner_user_id = ?)`,
+      params: [deletion.user_id, deletion.user_id, deletion.user_id] },
+    { sql: 'DELETE FROM profiles WHERE owner_user_id = ?', params: [deletion.user_id] },
     { sql: 'UPDATE users SET decided_by = NULL WHERE decided_by = ?', params: [deletion.user_id] },
     { sql: 'UPDATE recovery_cases SET decided_by = NULL WHERE decided_by = ?', params: [deletion.user_id] },
     { sql: 'DELETE FROM recovery_cases WHERE opened_by = ?', params: [deletion.user_id] },
@@ -151,6 +150,7 @@ export async function runMaintenance({ now = Date.now(), log = console.log } = {
     if (await purgeDeletion(deletion, now)) purged += 1;
   }
   summary.deletion_requests = purged;
+  summary.username_holds_released = await releaseExpiredUsernameHolds(now);
   Object.assign(summary, await purgeDeniedSignups(now));
   log(JSON.stringify({ level: 'info', msg: 'maintenance complete', summary }));
   return summary;

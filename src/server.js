@@ -29,6 +29,7 @@ import recoveryRoutes from './routes/recovery.js';
 import adminManagementRoutes from './routes/admin-management.js';
 import { obfuscateEmail, obfuscateEmails } from './email-obfuscation.js';
 import { contentFieldLabel } from './content-fields.js';
+import { profileLimitFor, USERNAME_HOLD_MS } from './profiles.js';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const TEA_STEEP_MS = 4 * 60 * 1000 + 18 * 1000;
 const PATIENCE = 'Slow down. The pronouns are not going anywhere.';
@@ -224,14 +225,18 @@ export function createApp() {
   app.get('/', (req, res) => res.render('home', { title: 'NamelessPronouns' }));
   app.get('/dashboard', requireApproved, async (req, res) => {
     const { rows } = await db.query(
-      `SELECT p.id, p.username_display AS username, p.display_name, p.published, wm.role
-         FROM profiles p
-         JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
-        WHERE wm.user_id = ?
-        ORDER BY p.username`,
+      `SELECT id, username_display AS username, display_name, published
+         FROM profiles
+        WHERE owner_user_id = ?
+        ORDER BY username`,
       [req.user.id],
     );
-    res.render('dashboard', { title: 'Dashboard', profiles: rows });
+    res.render('dashboard', {
+      title: 'Dashboard',
+      profiles: rows,
+      profileLimit: profileLimitFor(req.user),
+      usernameHoldDays: Math.round(USERNAME_HOLD_MS / 86400000),
+    });
   });
   app.get('/account/suspended', requireAuth, (req, res) => res.render('account/suspended', { title: 'Account restricted' }));
   app.use((req, res) => res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' }));

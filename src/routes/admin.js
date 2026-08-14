@@ -4,7 +4,7 @@ import audit from '../audit.js';
 import * as mail from '../mail.js';
 import { requireStaff } from '../middleware/staff.js';
 import { ipPrefixHash } from '../util/net.js';
-import { personalProfileStatements } from '../profiles.js';
+import { firstProfileStatements } from '../profiles.js';
 import { requireFreshAuth } from '../middleware/session.js';
 import { decrypt } from '../util/crypto.js';
 import config from '../config.js';
@@ -514,7 +514,7 @@ router.post('/admin/accounts/:id/approve', requireStaff('administrator'), requir
   ];
   if (target.requested_profile_username) {
     statements.push(
-      ...personalProfileStatements({
+      ...firstProfileStatements({
         userId: target.id,
         username: target.requested_profile_username,
         usernameDisplay: target.requested_profile_username_display || target.requested_profile_username,

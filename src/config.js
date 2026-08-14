@@ -100,6 +100,7 @@ const schema = z.object({
   CONTENT_RULES_SEED_PATH: z.string().default('/app/config/content-rules.json'),
   CONTENT_WARNING_THRESHOLD: z.coerce.number().int().positive().default(3),
   CONTENT_WARNING_WINDOW_HOURS: z.coerce.number().int().positive().default(24),
+  MAX_PROFILES_PER_USER: z.coerce.number().int().positive().max(100).default(5),
 });
 function fail(errors) {
   const lines = errors.map((e) => `  - ${e}`).join('\n');

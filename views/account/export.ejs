@@ -6,27 +6,19 @@
   <main class="container narrow">
     <p class="eyebrow">Account</p>
     <h1>Download my data</h1>
-    <p class="lede">Create a ZIP archive of your account, workspace, profile, and audit data. It includes a user-friendly plain-text version and a machine-readable JSON version. Password hashes, authentication secrets, sessions, bans, and encrypted moderation evidence are excluded.</p>
+    <p class="lede">Create a ZIP archive of your account, profile, and audit data. It includes a user-friendly plain-text version and a machine-readable JSON version. Password hashes, authentication secrets, sessions, bans, and encrypted moderation evidence are excluded.</p>
 
     <% if (linkSent) { %>
       <div class="notice success" role="status">A download link was sent to your email address. It is available for 14 days before first use, then for 7 days after the first download.</div>
     <% } %>
 
     <section class="panel stack">
-      <h2>Download now</h2>
-      <p>The archive is generated when you request it and is not stored on the server.</p>
-      <form method="post" action="/account/export/download">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <button type="submit">Download ZIP</button>
-      </form>
-    </section>
-
-    <section class="panel stack">
       <h2>Email a link</h2>
+      <p>The archive is generated when the link is opened and is never stored on the server. The link is sent to your verified email address and is the only way to collect an export.</p>
       <p>The emailed link can be opened without signing in, but the browser must have accepted the Terms and Privacy Policy and recorded the 18-or-older attestation. It is available for 14 days before first use, then remains available for 7 days after the first download.</p>
       <form method="post" action="/account/export/link">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <button class="secondary" type="submit">Email download link</button>
+        <button type="submit">Email download link</button>
       </form>
     </section>
 

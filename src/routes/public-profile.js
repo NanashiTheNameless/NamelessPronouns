@@ -4,7 +4,7 @@ import { allowProfileContent, publicPageHeaders } from '../middleware/security-h
 import { matchViewingBan } from '../bans.js';
 import { clientIp } from '../util/net.js';
 import * as V from '../validation.js';
-import { avatarUrl } from '../avatar.js';
+import { avatarUrl, profileAvatarUrl } from '../avatar.js';
 import { flagLabel, pronounsPageFlagUrl } from '../pronouns-page-import.js';
 import { pronounPreferenceLabel } from '../pronoun-preferences.js';
 import { opinionView } from '../opinions.js';
@@ -284,8 +284,7 @@ router.get('/u/me', async (req, res) => {
   if (!req.user) return res.redirect('/login');
   const { rows } = await db.query(
     `SELECT p.username_display FROM profiles p
-       JOIN workspaces w ON w.id = p.workspace_id
-      WHERE w.owner_user_id = ? ORDER BY p.created_at LIMIT 1`,
+      WHERE p.owner_user_id = ? ORDER BY p.created_at LIMIT 1`,
     [req.user.id],
   );
   if (!rows[0]) return res.redirect('/dashboard');
@@ -298,8 +297,7 @@ router.get('/u/self', async (req, res) => {
   }
   const { rows } = await db.query(
     `SELECT p.username_display FROM profiles p
-       JOIN workspaces w ON w.id = p.workspace_id
-      WHERE w.owner_user_id = ? ORDER BY p.created_at LIMIT 1`,
+      WHERE p.owner_user_id = ? ORDER BY p.created_at LIMIT 1`,
     [req.user.id],
   );
   if (!rows[0]) return res.redirect('/dashboard');
@@ -316,9 +314,9 @@ router.get('/u/:username', async (req, res) => {
   const { rows } = await db.query(
     `SELECT p.id, p.username_display, p.display_name, p.description, p.notes, p.theme,
             p.published,
+            p.avatar_source AS profile_avatar_source, p.avatar_data_uri AS profile_avatar_data_uri,
             u.id AS owner_id, u.email AS owner_email, u.avatar_source, u.avatar_data_uri, u.staff_role
-       FROM profiles p JOIN workspaces w ON w.id = p.workspace_id
-       JOIN users u ON u.id = w.owner_user_id
+       FROM profiles p JOIN users u ON u.id = p.owner_user_id
       WHERE p.username = ?`,
     [parsed.key],
   );
@@ -377,7 +375,10 @@ router.get('/u/:username', async (req, res) => {
     staffBadge: staffRoleLabel(profile.staff_role),
     staffBadgeLine: staffRoleDescription(profile.staff_role),
     ownerEgg: profile.staff_role === 'owner',
-    avatar: avatarUrl({ id: profile.owner_id, email: profile.owner_email, avatar_source: profile.avatar_source, avatar_data_uri: profile.avatar_data_uri }),
+    avatar: profileAvatarUrl(
+      { id: profile.id, avatar_source: profile.profile_avatar_source, avatar_data_uri: profile.profile_avatar_data_uri },
+      { id: profile.owner_id, email: profile.owner_email, avatar_source: profile.avatar_source, avatar_data_uri: profile.avatar_data_uri },
+    ),
     names: names.rows.map((row) => ({ value: row.value, opinion: opinionView(row.opinion) })),
     pronouns: pronouns.rows.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
     pronounOpinionEgg: pronounOpinionEgg(pronouns.rows.map((row) => row.opinion)),
