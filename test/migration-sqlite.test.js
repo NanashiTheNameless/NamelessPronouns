@@ -55,6 +55,20 @@ function seedLegacyProfile(db) {
     INSERT INTO profile_words (id, group_id, value, opinion, position) VALUES ('w1w', 'g1', 'enby', 'yes', 0);
     INSERT INTO profile_revisions (id, profile_id, snapshot, created_by, created_at)
       VALUES ('r1', 'p1', '{}', 'u1', ${now});
+    INSERT INTO content_rules (id, current_version_id, created_at, updated_at)
+      VALUES ('rule1', 'ver1', ${now}, ${now});
+    INSERT INTO content_rule_versions (id, rule_id, version, rule_type, match_value, category, severity, mode, created_at)
+      VALUES ('ver1', 'rule1', 1, 'exact_field', 'bad', 'test', 'warning', 'enforcing', ${now});
+    INSERT INTO content_rule_exemptions (id, rule_version_id, user_id, profile_id, reason, created_by, created_at)
+      VALUES ('e_profile', 'ver1', 'u1', 'p1', 'profile scoped', 'u1', ${now});
+    INSERT INTO content_rule_exemptions (id, rule_version_id, user_id, profile_id, reason, created_by, created_at)
+      VALUES ('e_account', 'ver1', 'u1', NULL, 'account scoped', 'u1', ${now});
+    INSERT INTO content_flags (id, user_id, profile_id, rule_version_id, field_type, attempted_ciphertext, attempted_nonce, idempotency_key_hash, policy_category, severity, mode, created_at)
+      VALUES ('flag_profile', 'u1', 'p1', 'ver1', 'display_name', 'c', 'n', 'k1', 'test', 'warning', 'shadow', ${now});
+    INSERT INTO content_flags (id, user_id, profile_id, rule_version_id, field_type, attempted_ciphertext, attempted_nonce, idempotency_key_hash, policy_category, severity, mode, created_at)
+      VALUES ('flag_account', 'u1', NULL, 'ver1', 'display_name', 'c', 'n', 'k2', 'test', 'warning', 'shadow', ${now});
+    INSERT INTO content_flag_reviews (id, flag_id, requested_by, explanation, requested_at)
+      VALUES ('review1', 'flag_account', 'u1', 'please look', ${now});
   `);
 }
 test('the D1 rebuild keeps every profile and all of its child rows', async () => {
@@ -79,6 +93,12 @@ test('the D1 rebuild keeps every profile and all of its child rows', async () =>
   assert.ok(!tables.includes('workspaces'), 'the workspaces table is gone');
   assert.ok(!tables.includes('workspace_members'), 'the membership table is gone');
   assert.equal(tables.filter((name) => name.startsWith('mig7_')).length, 0, 'no scratch tables are left behind');
+  const exemptions = db.prepare('SELECT id FROM content_rule_exemptions ORDER BY id').all().map((row) => row.id);
+  assert.deepEqual(exemptions, ['e_account', 'e_profile'], 'account-scoped rows are neither lost nor duplicated');
+  const flags = db.prepare('SELECT id FROM content_flags ORDER BY id').all().map((row) => row.id);
+  assert.deepEqual(flags, ['flag_account', 'flag_profile'], 'flags with a null profile survive exactly once');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM content_flag_reviews').get().c, 1,
+    'rows hanging off a surviving flag are untouched');
   const claim = db.prepare('SELECT state, profile_id FROM public_username_claims WHERE username = ?').get('person');
   assert.equal(claim.state, 'active');
   assert.equal(claim.profile_id, 'p1');

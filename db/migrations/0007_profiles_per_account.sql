@@ -55,18 +55,29 @@ INSERT INTO profiles_new
     FROM profiles;
 DROP TABLE profiles;
 ALTER TABLE profiles_new RENAME TO profiles;
-INSERT INTO deletion_profile_states SELECT * FROM mig7_deletion_profile_states;
-INSERT INTO profile_names SELECT * FROM mig7_profile_names;
-INSERT INTO pronoun_sets SELECT * FROM mig7_pronoun_sets;
-INSERT INTO profile_links SELECT * FROM mig7_profile_links;
-INSERT INTO profile_revisions SELECT * FROM mig7_profile_revisions;
+INSERT INTO deletion_profile_states SELECT * FROM mig7_deletion_profile_states copy
+  WHERE NOT EXISTS (SELECT 1 FROM deletion_profile_states live WHERE live.deletion_id = copy.deletion_id AND live.profile_id = copy.profile_id);
+INSERT INTO profile_names SELECT * FROM mig7_profile_names copy
+  WHERE NOT EXISTS (SELECT 1 FROM profile_names live WHERE live.id = copy.id);
+INSERT INTO pronoun_sets SELECT * FROM mig7_pronoun_sets copy
+  WHERE NOT EXISTS (SELECT 1 FROM pronoun_sets live WHERE live.id = copy.id);
+INSERT INTO profile_links SELECT * FROM mig7_profile_links copy
+  WHERE NOT EXISTS (SELECT 1 FROM profile_links live WHERE live.id = copy.id);
+INSERT INTO profile_revisions SELECT * FROM mig7_profile_revisions copy
+  WHERE NOT EXISTS (SELECT 1 FROM profile_revisions live WHERE live.id = copy.id);
 INSERT INTO content_rule_exemptions SELECT * FROM mig7_content_rule_exemptions;
-INSERT INTO content_flags SELECT * FROM mig7_content_flags;
-INSERT INTO content_suspension_profiles SELECT * FROM mig7_content_suspension_profiles;
-INSERT INTO profile_identity_flags SELECT * FROM mig7_profile_identity_flags;
-INSERT INTO profile_pronoun_preferences SELECT * FROM mig7_profile_pronoun_preferences;
-INSERT INTO profile_word_groups SELECT * FROM mig7_profile_word_groups;
-INSERT INTO profile_words SELECT * FROM mig7_profile_words;
+INSERT INTO content_flags SELECT * FROM mig7_content_flags copy
+  WHERE NOT EXISTS (SELECT 1 FROM content_flags live WHERE live.id = copy.id);
+INSERT INTO content_suspension_profiles SELECT * FROM mig7_content_suspension_profiles copy
+  WHERE NOT EXISTS (SELECT 1 FROM content_suspension_profiles live WHERE live.suspension_id = copy.suspension_id AND live.profile_id = copy.profile_id);
+INSERT INTO profile_identity_flags SELECT * FROM mig7_profile_identity_flags copy
+  WHERE NOT EXISTS (SELECT 1 FROM profile_identity_flags live WHERE live.id = copy.id);
+INSERT INTO profile_pronoun_preferences SELECT * FROM mig7_profile_pronoun_preferences copy
+  WHERE NOT EXISTS (SELECT 1 FROM profile_pronoun_preferences live WHERE live.profile_id = copy.profile_id AND live.preference_key = copy.preference_key);
+INSERT INTO profile_word_groups SELECT * FROM mig7_profile_word_groups copy
+  WHERE NOT EXISTS (SELECT 1 FROM profile_word_groups live WHERE live.id = copy.id);
+INSERT INTO profile_words SELECT * FROM mig7_profile_words copy
+  WHERE NOT EXISTS (SELECT 1 FROM profile_words live WHERE live.id = copy.id);
 DROP TABLE mig7_deletion_profile_states;
 DROP TABLE mig7_profile_names;
 DROP TABLE mig7_pronoun_sets;
