@@ -1,5 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import config from './config.js';
+import db from './db/index.js';
+import { newId } from './util/ids.js';
 import { signJson, unsignJson, cookieOptions } from './util/cookies.js';
 export const POLICY_COOKIE = 'np_policy';
 export const TERMS_VERSION = '2026-08-14.1';
@@ -29,4 +31,22 @@ export function readAcceptance(req, { now = Date.now() } = {}) {
 }
 export function hasAccepted(req, opts) {
   return readAcceptance(req, opts) != null;
+}
+export function acceptanceStatements({ userId, ipHash = null, now = Date.now() }) {
+  return [{
+    sql: `INSERT INTO policy_acceptances
+            (id, user_id, terms_version, privacy_version, age_18_attested_at, accepted_at, keyed_ip_hash)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    params: [newId(), userId, TERMS_VERSION, PRIVACY_VERSION, now, now, ipHash],
+  }];
+}
+export async function recordAcceptance({ userId, ipHash = null, now = Date.now() }) {
+  if (!userId) return false;
+  const { rows } = await db.query(
+    'SELECT id FROM policy_acceptances WHERE user_id = ? AND terms_version = ? AND privacy_version = ? LIMIT 1',
+    [userId, TERMS_VERSION, PRIVACY_VERSION],
+  );
+  if (rows[0]) return false;
+  await db.batch(acceptanceStatements({ userId, ipHash, now }));
+  return true;
 }

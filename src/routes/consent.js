@@ -1,5 +1,5 @@
 import express from 'express';
-import { buildAcceptance, setAcceptanceCookie } from '../policy.js';
+import { buildAcceptance, recordAcceptance, setAcceptanceCookie } from '../policy.js';
 import { consume } from '../ratelimit.js';
 import { ipPrefixHash } from '../util/net.js';
 import { publicPageHeaders } from '../middleware/security-headers.js';
@@ -30,6 +30,7 @@ router.post('/consent', async (req, res) => {
   }
   clearConsentReturn(res);
   setAcceptanceCookie(res, buildAcceptance());
+  if (req.user) await recordAcceptance({ userId: req.user.id, ipHash: ipPrefixHash(req) });
   res.redirect(target);
 });
 export default router;

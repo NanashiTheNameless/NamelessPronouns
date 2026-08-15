@@ -1811,6 +1811,46 @@ test('an account creates more profiles up to its limit, and deletion holds the u
   res = await post('/profiles/new', { _csrf: csrf, username: `over${suffix}`.slice(0, 30).toLowerCase(), display_name: 'Over Limit' }, cookies);
   assert.equal(res.status, 409, 'the limit is enforced on the server too');
 });
+test('accepting the policies records it for a signed-in account, once per version', { skip }, async () => {
+  const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const email = `consent-${suffix}@allowed-${suffix}.example`;
+  const pw = 'consent-record-passphrase';
+  const userId = await insertUser({ email, password: pw, status: 'approved' });
+  const { TERMS_VERSION, PRIVACY_VERSION } = await import('../src/policy.js');
+  const rowsFor = async () => (await db.query(
+    'SELECT terms_version, privacy_version, age_18_attested_at, keyed_ip_hash FROM policy_acceptances WHERE user_id = ?',
+    [userId],
+  )).rows;
+  assert.equal((await rowsFor()).length, 0, 'an account made outside signup starts with none');
+  const signedOut = jar();
+  await get('/consent', signedOut);
+  await post('/consent', { policies: 'on', age18: 'on', next: '/' }, signedOut);
+  assert.equal((await rowsFor()).length, 0, 'a signed-out browser records nothing against the account');
+  const cookies = jar();
+  await loginAs(cookies, email, pw);
+  const consentPage = await (await get('/consent', cookies)).text();
+  const consentCsrf = /name="_csrf" value="([^"]+)"/.exec(consentPage)[1];
+  const accept = () => post('/consent', { _csrf: consentCsrf, policies: 'on', age18: 'on', next: '/' }, cookies);
+  const accepted = await accept();
+  assert.equal(accepted.status, 302, 'a signed-in acceptance goes through');
+  const recorded = await rowsFor();
+  assert.equal(recorded.length, 1, 'accepting while signed in is recorded');
+  assert.equal(recorded[0].terms_version, TERMS_VERSION);
+  assert.equal(recorded[0].privacy_version, PRIVACY_VERSION);
+  assert.ok(Number(recorded[0].age_18_attested_at) > 0, 'the age attestation is stamped');
+  assert.ok(recorded[0].keyed_ip_hash, 'the acceptance keeps a keyed IP hash');
+  await accept();
+  await accept();
+  assert.equal((await rowsFor()).length, 1, 'the same version is never recorded twice');
+  await db.query(
+    `INSERT INTO policy_acceptances (id, user_id, terms_version, privacy_version, age_18_attested_at, accepted_at)
+     VALUES (?, ?, '1999-01-01.1', '1999-01-01.1', ?, ?)`,
+    [(await import('../src/util/ids.js')).newId(), userId, Date.now(), Date.now()],
+  );
+  const { recordAcceptance } = await import('../src/policy.js');
+  assert.equal(await recordAcceptance({ userId }), false, 'the current version is already on file');
+  assert.equal((await rowsFor()).filter((row) => row.terms_version === TERMS_VERSION).length, 1);
+});
 test('usernames are case-insensitive but the URL canonicalizes to the stored casing', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `case-${suffix}@allowed-${suffix}.example`;

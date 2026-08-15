@@ -1,5 +1,6 @@
 import { newId } from './util/ids.js';
 import { firstProfileStatements } from './profiles.js';
+import { acceptanceStatements } from './policy.js';
 
 export function ownerBootstrapStatements({ email, passwordHash, passwordHashVersion, username = null, now = Date.now() }) {
   const userId = newId();
@@ -32,6 +33,7 @@ export function ownerBootstrapStatements({ email, passwordHash, passwordHashVers
       }).statements,
     );
   }
+  statements.push(...acceptanceStatements({ userId, now }));
   statements.push({
     sql: `INSERT INTO audit_events (id, event_type, actor_user_id, subject_user_id, created_at)
           VALUES (?, 'owner.bootstrap_created', ?, ?, ?)`,
