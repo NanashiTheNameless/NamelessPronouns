@@ -1,9 +1,9 @@
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /app
-RUN corepack enable
+RUN npm install --global corepack@latest && corepack enable
 COPY package.json yarn.lock .yarnrc.yml ./
 RUN yarn install --immutable
-FROM node:22-alpine AS runtime-base
+FROM node:26-alpine AS runtime-base
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules

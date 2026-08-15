@@ -6,7 +6,7 @@
   "license": "SEE LICENSE IN LICENSE.md",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=26"
   },
   "scripts": {
     "start": "node src/server.js",
