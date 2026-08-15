@@ -19,7 +19,16 @@
     const input = document.querySelector('#avatar-file');
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    const waitFor = async (ready, budget = 5000) => {
+      const deadline = Date.now() + budget;
+      while (Date.now() < deadline) {
+        if (ready()) return true;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      return ready();
+    };
+    await waitFor(() => document.querySelector('#avatar-error').textContent.trim() !== ''
+      && !document.querySelector('#avatar-strip-svg').hidden);
     const before = {
       warning: document.querySelector('#avatar-error').textContent,
       refused: document.querySelector('#avatar-size').textContent,
@@ -28,8 +37,9 @@
       value: document.querySelector('#avatar-data-uri').value,
       mutations: [...window.previewMutations],
     };
+    const beforeClick = document.querySelector('#avatar-preview').getAttribute('src');
     document.querySelector('#avatar-strip-svg').click();
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await waitFor(() => document.querySelector('#avatar-preview').getAttribute('src') !== beforeClick);
     const afterUri = document.querySelector('#avatar-preview').getAttribute('src');
     let decoded = '';
     if (afterUri.startsWith('data:image/svg+xml;base64,')) decoded = atob(afterUri.split(',')[1]);

@@ -24,7 +24,7 @@ import {
   heldUsernames,
   ownedProfileCount,
   profileLimitFor,
-  MAX_USERNAME_HOLDS,
+  holdLimitFor,
   USERNAME_HOLD_MS,
 } from '../profiles.js';
 import { DELETION_GRACE_MS } from '../maintenance.js';
@@ -45,7 +45,7 @@ router.get('/settings', requireApproved, async (req, res) => {
     profileLimit: profileLimitFor(req.user),
     limitIsOverride: Boolean(req.user.profile_limit),
     heldCount: holds.length,
-    maxHolds: MAX_USERNAME_HOLDS,
+    maxHolds: holdLimitFor(req.user),
     usernameHoldDays: Math.round(USERNAME_HOLD_MS / 86400000),
   });
 });

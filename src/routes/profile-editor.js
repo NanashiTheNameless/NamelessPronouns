@@ -26,6 +26,7 @@ import {
   releaseHoldStatements,
   releaseOldestHoldStatements,
   profileLimitFor,
+  unlimitedProfiles,
   usernameAvailability,
   USERNAME_HOLD_MS,
 } from '../profiles.js';
@@ -499,7 +500,7 @@ router.post('/profiles/new', requireApproved, async (req, res) => {
       error: `This account already has its limit of ${limit} profile${limit === 1 ? '' : 's'}.`,
     }));
   }
-  const rate = await consume('profile_create', req.user.id);
+  const rate = unlimitedProfiles(req.user) ? { allowed: true } : await consume('profile_create', req.user.id);
   if (!rate.allowed) {
     return res.status(429).render('profile-new', view({ error: 'Too many profiles created. Try again later.' }));
   }
@@ -571,7 +572,7 @@ router.post('/profiles/:id/delete', requireApproved, async (req, res) => {
       message: 'This is the only profile on the account. Delete the account itself to remove it.',
     });
   }
-  const rate = await consume('profile_delete', req.user.id);
+  const rate = unlimitedProfiles(req.user) ? { allowed: true } : await consume('profile_delete', req.user.id);
   if (!rate.allowed) {
     return res.status(429).render('error', {
       title: 'Profile kept', status: 429,
@@ -583,7 +584,7 @@ router.post('/profiles/:id/delete', requireApproved, async (req, res) => {
   if (!stored) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
   const now = Date.now();
   await db.batch([
-    ...(await releaseOldestHoldStatements(req.user.id, now)),
+    ...(await releaseOldestHoldStatements(req.user, now)),
     ...deleteProfileStatements({
       profileId: profile.id,
       username: stored.username,

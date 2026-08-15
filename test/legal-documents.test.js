@@ -32,6 +32,8 @@ test('canonical Terms and Privacy documents load completely', async () => {
   assert.match(termsText, /primary profile cannot be deleted/i, 'the Terms explain the primary profile');
   assert.match(termsText, /cannot move the role themselves: ask support/i, 'the Terms say who moves the primary role');
   assert.match(termsText, /release it early/i, 'the Terms explain releasing a held username');
+  assert.match(termsText, /Administrator and\s+Owner accounts are not subject to the profile, hold, or rate limits/i,
+    'the Terms disclose that senior staff have no limits');
   assert.match(termsText, /absence of a badge is not a statement/i, 'the Terms are honest about hidden staff badges');
   assert.match(privacyText, /removed from the page before the page is sent/i, 'the Policy explains how a badge is hidden');
   assert.match(privacyText, /whether it is that account's primary profile/i);

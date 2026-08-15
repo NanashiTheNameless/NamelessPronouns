@@ -1,7 +1,9 @@
 import db from './db/index.js';
 import config from './config.js';
 import { newId } from './util/ids.js';
+import { roleAtLeast } from './middleware/staff.js';
 export const USERNAME_HOLD_MS = 7 * 24 * 60 * 60 * 1000;
+export const MAX_USERNAME_HOLDS = 5;
 export function firstProfileStatements({ userId, username, usernameDisplay = username, displayName, now = Date.now() }) {
   const profileId = newId();
   return {
@@ -73,10 +75,17 @@ export async function releaseHoldStatements({ userId, username, now = Date.now()
     params: [userId, rows[0].username],
   }];
 }
+export function unlimitedProfiles(user) {
+  return roleAtLeast(user?.staff_role ?? 'none', 'administrator');
+}
 export function profileLimitFor(user) {
+  if (unlimitedProfiles(user)) return Infinity;
   const override = Number(user?.profile_limit);
   if (Number.isFinite(override) && override > 0) return Math.trunc(override);
   return config.MAX_PROFILES_PER_USER;
+}
+export function holdLimitFor(user) {
+  return unlimitedProfiles(user) ? Infinity : MAX_USERNAME_HOLDS;
 }
 export async function ownedProfileCount(userId) {
   const { rows } = await db.query('SELECT COUNT(*) AS count FROM profiles WHERE owner_user_id = ?', [userId]);
@@ -99,7 +108,6 @@ export async function usernameAvailability(usernameKey, { userId, now = Date.now
   }
   return { available: false, reason: 'That username is unavailable.' };
 }
-export const MAX_USERNAME_HOLDS = 5;
 export async function heldUsernames(userId, now = Date.now()) {
   const { rows } = await db.query(
     `SELECT username_display, reserved_until FROM public_username_claims
@@ -113,13 +121,15 @@ export async function heldUsernames(userId, now = Date.now()) {
     daysLeft: Math.max(1, Math.ceil((Number(row.reserved_until) - now) / 86400000)),
   }));
 }
-export async function releaseOldestHoldStatements(userId, now = Date.now()) {
-  const holds = await heldUsernames(userId, now);
-  if (holds.length < MAX_USERNAME_HOLDS) return [];
-  const excess = holds.slice(0, holds.length - MAX_USERNAME_HOLDS + 1);
+export async function releaseOldestHoldStatements(user, now = Date.now()) {
+  const limit = holdLimitFor(user);
+  if (!Number.isFinite(limit)) return [];
+  const holds = await heldUsernames(user.id, now);
+  if (holds.length < limit) return [];
+  const excess = holds.slice(0, holds.length - limit + 1);
   return excess.map((hold) => ({
     sql: "DELETE FROM public_username_claims WHERE state = 'reserved' AND reserved_user_id = ? AND username_display = ?",
-    params: [userId, hold.username],
+    params: [user.id, hold.username],
   }));
 }
 export async function releaseExpiredUsernameHolds(now = Date.now()) {

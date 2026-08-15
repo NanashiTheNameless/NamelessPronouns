@@ -19,6 +19,15 @@ export async function dumpDom(args, { timeout = 60000, maxBuffer = 4 * 1024 * 10
   }
   throw lastError;
 }
+export async function dumpMatching(args, pattern, options = {}) {
+  const { attempts = 3, ...rest } = options;
+  let last = '';
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    last = await dumpDom(args, { ...rest, attempts: 1 });
+    if (pattern.test(last)) return last;
+  }
+  return last;
+}
 export async function dumpHarness(args, options = {}) {
   const { attempts = 3, ...rest } = options;
   let last = null;

@@ -15,33 +15,34 @@
           <div><dt>Email</dt><dd><%- await obfuscateEmail(user.email) %></dd></div>
           <div><dt>Rank</dt><dd><%= rank %></dd></div>
           <div><dt>Status</dt><dd><%= user.signup_status %></dd></div>
-          <div><dt>Profiles</dt><dd><%= profileCount %> of <%= profileLimit %><% if (limitIsOverride) { %> (raised for this account)<% } %></dd></div>
-          <div><dt>Held usernames</dt><dd><%= heldCount %> of <%= maxHolds %><span class="fineprint">, each kept <%= usernameHoldDays %> days after a profile is deleted</span></dd></div>
+          <div><dt>Profiles</dt><dd><%= profileCount %><% if (Number.isFinite(profileLimit)) { %> of <%= profileLimit %><% if (limitIsOverride) { %> (raised for this account)<% } %><% } else { %>, no limit<% } %></dd></div>
+          <div><dt>Held usernames</dt><dd><%= heldCount %><% if (Number.isFinite(maxHolds)) { %> of <%= maxHolds %><% } else { %>, no limit<% } %><span class="fineprint">, each kept <%= usernameHoldDays %> days after a profile is deleted</span></dd></div>
         </dl>
       </section>
       <section class="panel">
         <h2>Profiles</h2>
-        <p>Edit publishing, names, pronouns, notes, and links from your dashboard.</p>
+        <p>Your dashboard lists every profile oldest first, with the primary one at the top. From there you can open a profile editor for names, pronouns, words, links, flags, bio, identity notes, and publishing, create another profile while you are under your limit, preview an unpublished page, and delete a profile you no longer want.</p>
         <p><a class="button secondary" href="/dashboard">Open dashboard</a></p>
       </section>
       <section class="panel">
         <h2>Content flags</h2>
-        <p>Review enforcing profile-edit flags and request Administrator review.</p>
+        <p>Lists profile edits that matched an enforcing content rule, with the affected field, severity, flag status, and date. The attempted text is never shown back to you. A pending flag can be disputed there by writing why it is wrong and requesting Administrator review.</p>
         <p><a class="button secondary" href="/account/content-flags">View content flags</a></p>
       </section>
       <section class="panel">
         <h2>Security</h2>
         <p>Selected second factor: <strong><%= method === 'totp' ? 'Authenticator app' : 'Email code' %></strong></p>
+        <p>Switch between email codes and an authenticator app, replace your recovery codes, change your password, change your email address with confirmation at the new one, and review every signed-in session to sign out one or all of the others.</p>
         <p><a class="button secondary" href="/account/security">Open security settings</a></p>
       </section>
       <section class="panel">
         <h2>Recovery</h2>
-        <p>Administrative recovery is case-by-case, not guaranteed, and should be assumed denied.</p>
+        <p>Explains the two paths back into an account: self-service password reset, which needs your verified email and your second factor, and lost-second-factor recovery, which is handled case by case by an Administrator or Owner, is not guaranteed, and should be assumed denied.</p>
         <p><a href="/recover">Read the recovery policy</a></p>
       </section>
       <section class="panel">
         <h2>Your data</h2>
-        <p>Download a copy of the account and profile data associated with you.</p>
+        <p>Requests a ZIP of your account, profiles, names, pronouns, words, links, flags, policy acceptances, username claims, and audit entries, in both plain text and JSON. The archive is only ever collected through a link emailed to your verified address, valid 14 days before first use and 7 days after it.</p>
         <p><a class="button secondary" href="/account/export">Download my data</a></p>
       </section>
       <section class="panel stack" id="profile-icon">
@@ -65,7 +66,7 @@
       </section>
       <section class="panel">
         <h2>Delete account</h2>
-        <p>Request deletion with a 30-day cancellation period.</p>
+        <p>Requesting deletion unpublishes every profile and restricts the account at once, then erases it after 30 days. The whole window stays cancellable from that page, which also shows the scheduled purge date and whether a legal hold is pausing it.</p>
         <p><a class="button secondary" href="/account/deletion">Deletion settings</a></p>
       </section>
     </div>

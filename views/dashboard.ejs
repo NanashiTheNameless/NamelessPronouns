@@ -9,7 +9,7 @@
     <p class="lede">Signed in as <%- await obfuscateEmail(user.email) %>.</p>
     <section aria-labelledby="profiles-h">
       <h2 id="profiles-h">Profiles</h2>
-      <p class="fineprint">Using <%= profiles.length %> of <%= profileLimit %> profile<%= profileLimit === 1 ? '' : 's' %>.</p>
+      <p class="fineprint">Using <%= profiles.length %><% if (Number.isFinite(profileLimit)) { %> of <%= profileLimit %> profile<%= profileLimit === 1 ? '' : 's' %><% } else { %> profile<%= profiles.length === 1 ? '' : 's' %>, with no limit on this account<% } %>.</p>
       <% if (profiles.length === 0) { %>
         <p>No profiles are available. Yet.</p>
       <% } else { %>

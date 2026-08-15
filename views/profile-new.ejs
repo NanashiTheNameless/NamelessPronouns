@@ -9,7 +9,7 @@
     <div class="inline-actions">
       <a class="button secondary compact" href="/dashboard">Back to dashboard</a>
     </div>
-    <p class="lede">This account uses <%= owned %> of its <%= limit %> profile<%= limit === 1 ? '' : 's' %>.</p>
+    <p class="lede">This account uses <%= owned %><% if (Number.isFinite(limit)) { %> of its <%= limit %> profile<%= limit === 1 ? '' : 's' %><% } else { %> profile<%= owned === 1 ? '' : 's' %>, with no limit<% } %>.</p>
     <% if (error) { %><p class="error" role="alert"><%= error %></p><% } %>
     <% if (atLimit) { %>
       <p>Delete a profile before making another one, or ask an Administrator to raise the limit for this account.</p>

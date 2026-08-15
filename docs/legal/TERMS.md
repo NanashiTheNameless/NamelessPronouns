@@ -66,7 +66,8 @@ Deleting a profile keeps its username reserved to that account for seven days.
 During the hold, that account can take the name back or release it early; when
 the hold ends, or is released, the name returns to the pool for anyone. Holds
 are limited in number per account, and both creating and deleting profiles are
-rate limited, so the feature cannot be used to hoard names.
+rate limited, so the feature cannot be used to hoard names. Administrator and
+Owner accounts are not subject to the profile, hold, or rate limits.
 
 Staff accounts carry a badge on their profiles. Staff may hide that badge on any
 profile they own. A hidden badge is withheld from the page for everyone who is

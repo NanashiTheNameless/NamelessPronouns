@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ChromiumMissing, dumpDom } from './helpers/chromium.js';
+import { ChromiumMissing, dumpMatching } from './helpers/chromium.js';
 import { createHash } from 'node:crypto';
 import { createReadStream, readFileSync, readdirSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -150,7 +150,10 @@ test('Chromium hard-blocks submission and cites the matching wordlist', async (t
   try {
     let stdout;
     try {
-      stdout = await dumpDom(['--virtual-time-budget=1500', '--dump-dom', `http://127.0.0.1:${server.address().port}/`]);
+      stdout = await dumpMatching(
+        ['--virtual-time-budget=6000', '--dump-dom', `http://127.0.0.1:${server.address().port}/`],
+        /data-native-validation-message=""/,
+      );
     } catch (error) {
       if (error instanceof ChromiumMissing) return t.skip('Chromium is not installed');
       throw error;

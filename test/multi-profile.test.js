@@ -8,8 +8,10 @@ import {
   additionalProfileStatements,
   deleteProfileStatements,
   firstProfileStatements,
+  holdLimitFor,
   makePrimaryStatements,
   profileLimitFor,
+  unlimitedProfiles,
   MAX_USERNAME_HOLDS,
   USERNAME_HOLD_MS,
 } from '../src/profiles.js';
@@ -272,11 +274,68 @@ test('the account panel reads out rank, status, and current limits', async () =>
   const view = await readFile(`${viewsDir}account/settings.ejs`, 'utf8');
   assert.match(view, /<dt>Rank<\/dt><dd><%= rank %>/);
   assert.match(view, /<dt>Status<\/dt><dd><%= user\.signup_status %>/);
-  assert.match(view, /<dt>Profiles<\/dt><dd><%= profileCount %> of <%= profileLimit %>/);
+  assert.match(view, /<dt>Profiles<\/dt><dd><%= profileCount %>/);
+  assert.match(view, /of <%= profileLimit %>/);
   assert.match(view, /raised for this account/, 'an administrator override is called out');
-  assert.match(view, /<dt>Held usernames<\/dt><dd><%= heldCount %> of <%= maxHolds %>/);
+  assert.match(view, /<dt>Held usernames<\/dt><dd><%= heldCount %>/);
+  assert.match(view, /of <%= maxHolds %>/);
   const route = await readFile(new URL('../src/routes/account.js', import.meta.url), 'utf8');
   assert.match(route, /rank: staffRoleLabel\(req\.user\.staff_role\) \|\| 'Member'/, 'non-staff read as Member');
   assert.match(route, /profileLimit: profileLimitFor\(req\.user\)/);
-  assert.match(route, /maxHolds: MAX_USERNAME_HOLDS/);
+  assert.match(route, /maxHolds: holdLimitFor\(req\.user\)/);
+});
+
+test('Administrators and Owners carry no profile or username-hold limit', async () => {
+  for (const role of ['none', 'support', 'moderator']) {
+    assert.equal(unlimitedProfiles({ staff_role: role }), false, `${role} keeps the ordinary limits`);
+    assert.equal(profileLimitFor({ staff_role: role }), 5);
+    assert.equal(holdLimitFor({ staff_role: role }), MAX_USERNAME_HOLDS);
+  }
+  for (const role of ['administrator', 'owner']) {
+    assert.equal(unlimitedProfiles({ staff_role: role }), true);
+    assert.equal(profileLimitFor({ staff_role: role }), Infinity);
+    assert.equal(holdLimitFor({ staff_role: role }), Infinity);
+    assert.equal(profileLimitFor({ staff_role: role, profile_limit: 2 }), Infinity, 'an override cannot cap staff');
+  }
+  assert.equal(profileLimitFor({ staff_role: 'none', profile_limit: 9 }), 9, 'overrides still work for everyone else');
+  const { releaseOldestHoldStatements } = await import('../src/profiles.js');
+  assert.deepEqual(await releaseOldestHoldStatements({ id: 'u1', staff_role: 'owner' }), [],
+    'no hold is pruned from an unlimited account');
+  const routes = await readFile(new URL('../src/routes/profile-editor.js', import.meta.url), 'utf8');
+  for (const policy of ['profile_create', 'profile_delete']) {
+    assert.match(routes, new RegExp(`unlimitedProfiles\\(req\\.user\\) \\? \\{ allowed: true \\} : await consume\\('${policy}'`),
+      `${policy} is not rate limited for staff`);
+  }
+});
+test('an unlimited account is told so instead of being shown Infinity', async () => {
+  const dashboard = await ejs.renderFile(`${viewsDir}dashboard.ejs`, {
+    title: 'Dashboard', profiles: [{ id: 'p1', username: 'a', display_name: 'A', published: 1, is_primary: 1 }],
+    profileLimit: Infinity, user: { email: 'a@b.c' }, csrfToken: 'csrf',
+    obfuscateEmail: async () => '<span>hidden</span>',
+  }, { async: true });
+  assert.match(dashboard, /Using 1 profile, with no limit on this account\./);
+  assert.doesNotMatch(dashboard, /Infinity/);
+  assert.match(dashboard, /href="\/profiles\/new"/, 'creating another is always offered');
+  const newProfile = await ejs.renderFile(`${viewsDir}profile-new.ejs`, {
+    title: 'New profile', error: null, values: { username: '', displayName: '' },
+    limit: Infinity, owned: 7, atLimit: false, held: [], user: null, csrfToken: 'csrf',
+  }, { async: true });
+  assert.match(newProfile, /This account uses 7 profiles, with no limit\./);
+  assert.doesNotMatch(newProfile, /Infinity/);
+});
+
+test('each settings chip says what its page actually offers', async () => {
+  const view = await readFile(`${viewsDir}account/settings.ejs`, 'utf8');
+  const panel = (heading) => {
+    const start = view.indexOf(`<h2>${heading}</h2>`);
+    assert.ok(start !== -1, `${heading} panel exists`);
+    return view.slice(start, view.indexOf('</section>', start));
+  };
+  assert.match(panel('Profiles'), /create another profile[\s\S]*preview an unpublished page[\s\S]*delete a profile/);
+  assert.match(panel('Content flags'), /affected field, severity, flag status/);
+  assert.match(panel('Content flags'), /never shown back to you/, 'it repeats that attempted text stays hidden');
+  assert.match(panel('Security'), /recovery codes[\s\S]*change your password[\s\S]*change your email address[\s\S]*sign out/);
+  assert.match(panel('Recovery'), /self-service password reset[\s\S]*assumed denied/);
+  assert.match(panel('Your data'), /emailed to your verified address/);
+  assert.match(panel('Delete account'), /30 days[\s\S]*cancellable/);
 });
