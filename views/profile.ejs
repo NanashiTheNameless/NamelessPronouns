@@ -16,7 +16,7 @@
       </button>
       <div><h1<% if (locals.ownerEgg) { %> data-owner-heading<% } %>><%= profile.display_name %></h1>
     <p class="username">@<%= username %><% if (locals.staffBadge) { %>
-      <span class="staff-badge-wrap"><span class="status-badge staff-badge" tabindex="0" aria-describedby="staff-badge-description"<% if (locals.ownerEgg) { %> data-owner-badge<% } %>><%= locals.staffBadge %></span><span class="staff-badge-description" id="staff-badge-description" role="tooltip"><%= locals.staffBadgeLine %></span></span><% } %></p>
+      <span class="staff-badge-wrap"><span class="status-badge staff-badge" tabindex="0" aria-describedby="staff-badge-description"<% if (locals.ownerEgg) { %> data-owner-badge<% } %>><%= locals.staffBadge %><% if (locals.staffBadgeHidden) { %> [Status: Hidden]<% } %></span><span class="staff-badge-description" id="staff-badge-description" role="tooltip"><%= locals.staffBadgeLine %><% if (locals.staffBadgeHidden) { %> This badge is hidden from everyone who is not staff.<% } %></span></span><% } %></p>
       </div>
     </div>
     <% if (locals.descriptionHtml) { %><div class="profile-prose profile-bio"><%- locals.descriptionHtml %></div><% } %>

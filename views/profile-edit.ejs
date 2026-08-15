@@ -157,6 +157,19 @@
       <button type="submit">Save profile</button>
     </form>
 
+    <% if (isStaff) { %>
+      <section class="panel stack" id="staff-badge" aria-labelledby="staff-badge-h">
+        <h2 id="staff-badge-h">Staff badge</h2>
+        <p>This profile shows your <%= staffBadgeLabel %> badge to visitors. Hiding it removes the badge from the page entirely for everyone who is not staff, not just from view.</p>
+        <p class="fineprint">Other staff still see the badge, marked [Status: Hidden]. Each profile is set separately.</p>
+        <form method="post" action="/profiles/<%= profile.id %>/staff-badge" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label class="choice"><input type="checkbox" name="staff_badge_hidden" <%= staffBadgeHidden ? 'checked' : '' %>><span>Hide my staff badge on this profile</span></label>
+          <button type="submit" class="secondary">Save badge visibility</button>
+        </form>
+      </section>
+    <% } %>
+
     <section class="panel stack" id="profile-icon" aria-labelledby="profile-icon-h">
       <h2 id="profile-icon-h">Profile icon</h2>
       <p class="fineprint">This icon is used for <%= profile.username %> only. Leave it on the account default to follow the icon set in account settings.</p>
@@ -177,6 +190,22 @@
         <button id="avatar-save" type="submit">Save profile icon</button>
       </form>
     </section>
+
+    <% if (isPrimary) { %>
+      <p class="fineprint">This is the primary profile of the account. It keeps that role for good and cannot be deleted while the account exists.</p>
+    <% } %>
+    <% if (canDelete) { %>
+      <section class="panel stack" aria-labelledby="delete-profile-h">
+        <h2 id="delete-profile-h">Delete this profile</h2>
+        <p>Removes <%= profile.username %> and everything on it: names, pronouns, words, links, and flags. This cannot be undone.</p>
+        <p class="fineprint">The username stays reserved to this account for <%= usernameHoldDays %> days, then anyone may claim it.</p>
+        <form method="post" action="/profiles/<%= profile.id %>/delete" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>Type <%= profile.username %> exactly, capital letters included <input name="confirmation" autocomplete="off" autocapitalize="off" spellcheck="false" required placeholder="<%= profile.username %>"></label>
+          <button type="submit" class="danger">Delete profile</button>
+        </form>
+      </section>
+    <% } %>
 
     <section class="panel import-panel" aria-labelledby="import-h">
       <h2 id="import-h">Import from Pronouns.page</h2>

@@ -11,7 +11,7 @@ import { encrypt, keyedHash } from '../util/crypto.js';
 import { newId, newToken } from '../util/ids.js';
 import { filterExemptMatches } from '../content-exemptions.js';
 import { consume } from '../ratelimit.js';
-import { fullMarkdownAllowed } from '../middleware/staff.js';
+import { fullMarkdownAllowed, staffRoleLabel } from '../middleware/staff.js';
 import { hasMarkdownLink, markdownLinkUrls } from '../markdown.js';
 import { PRONOUN_PREFERENCES } from '../pronoun-preferences.js';
 import { PRONOUN_PRESETS } from '../pronoun-presets.js';
@@ -21,7 +21,9 @@ import { avatarUrl, profileAvatarUrl, validateAvatarDataUri, MAX_AVATAR_DATA_URI
 import {
   additionalProfileStatements,
   deleteProfileStatements,
+  heldUsernames,
   ownedProfileCount,
+  releaseOldestHoldStatements,
   profileLimitFor,
   usernameAvailability,
   USERNAME_HOLD_MS,
@@ -50,8 +52,14 @@ const FLAG_OPTIONS = Object.freeze(PRONOUNS_PAGE_FLAG_OPTIONS.map((key) => Objec
   label: flagLabel(key),
   imageUrl: pronounsPageFlagUrl(key),
 })));
-function editorView(profile, values, user, overrides = {}) {
+async function editorView(profile, values, user, overrides = {}) {
   return {
+    canDelete: Number(profile.is_primary) !== 1 && (await ownedProfileCount(user.id)) > 1,
+    isPrimary: Number(profile.is_primary) === 1,
+    isStaff: staffRoleLabel(user.staff_role) !== null,
+    staffBadgeHidden: Number(profile.staff_badge_hidden) === 1,
+    staffBadgeLabel: staffRoleLabel(user.staff_role),
+    usernameHoldDays: Math.round(USERNAME_HOLD_MS / 86400000),
     title: `Edit ${profile.username}`,
     profile,
     values,
@@ -229,7 +237,7 @@ export function validateProfileForm(body, { full = false, max = PROSE_MAX } = {}
 async function editableProfile(profileId, userId) {
   const { rows } = await db.query(
     `SELECT p.id, p.username_display AS username, p.display_name, p.description, p.notes, p.published,
-            p.avatar_source, p.avatar_data_uri
+            p.is_primary, p.staff_badge_hidden, p.avatar_source, p.avatar_data_uri
        FROM profiles p
       WHERE p.id = ? AND p.owner_user_id = ?`,
     [profileId, userId],
@@ -468,6 +476,7 @@ function newProfileView(overrides = {}) {
   return {
     title: 'New profile',
     error: null,
+    held: [],
     values: { username: '', displayName: '' },
     ...overrides,
   };
@@ -475,12 +484,15 @@ function newProfileView(overrides = {}) {
 router.get('/profiles/new', requireApproved, async (req, res) => {
   const limit = profileLimitFor(req.user);
   const owned = await ownedProfileCount(req.user.id);
-  res.render('profile-new', newProfileView({ limit, owned, atLimit: owned >= limit }));
+  res.render('profile-new', newProfileView({
+    limit, owned, atLimit: owned >= limit, held: await heldUsernames(req.user.id),
+  }));
 });
 router.post('/profiles/new', requireApproved, async (req, res) => {
   const limit = profileLimitFor(req.user);
   const owned = await ownedProfileCount(req.user.id);
-  const view = (overrides) => newProfileView({ limit, owned, atLimit: owned >= limit, ...overrides });
+  const held = await heldUsernames(req.user.id);
+  const view = (overrides) => newProfileView({ limit, owned, atLimit: owned >= limit, held, ...overrides });
   if (owned >= limit) {
     return res.status(409).render('profile-new', view({
       error: `This account already has its limit of ${limit} profile${limit === 1 ? '' : 's'}.`,
@@ -539,10 +551,16 @@ router.post('/profiles/new', requireApproved, async (req, res) => {
 router.post('/profiles/:id/delete', requireApproved, async (req, res) => {
   const profile = await editableProfile(req.params.id, req.user.id);
   if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
-  if (String(req.body.confirmation || '').trim() !== 'DELETE PROFILE') {
+  if (String(req.body.confirmation || '').trim() !== String(profile.username)) {
     return res.status(400).render('error', {
       title: 'Profile kept', status: 400,
-      message: 'Type DELETE PROFILE to confirm removing a profile.',
+      message: `Type ${profile.username} exactly, matching its capitalisation, to confirm removing that profile.`,
+    });
+  }
+  if (Number(profile.is_primary) === 1) {
+    return res.status(409).render('error', {
+      title: 'Profile kept', status: 409,
+      message: 'The primary profile of an account cannot be deleted. Delete the account itself to remove it.',
     });
   }
   const owned = await ownedProfileCount(req.user.id);
@@ -552,17 +570,27 @@ router.post('/profiles/:id/delete', requireApproved, async (req, res) => {
       message: 'This is the only profile on the account. Delete the account itself to remove it.',
     });
   }
+  const rate = await consume('profile_delete', req.user.id);
+  if (!rate.allowed) {
+    return res.status(429).render('error', {
+      title: 'Profile kept', status: 429,
+      message: 'Too many profiles deleted today. Try again later.',
+    });
+  }
   const { rows } = await db.query('SELECT username, username_display FROM profiles WHERE id = ?', [profile.id]);
   const stored = rows[0];
   if (!stored) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
   const now = Date.now();
-  await db.batch(deleteProfileStatements({
-    profileId: profile.id,
-    username: stored.username,
-    usernameDisplay: stored.username_display,
-    userId: req.user.id,
-    now,
-  }));
+  await db.batch([
+    ...(await releaseOldestHoldStatements(req.user.id, now)),
+    ...deleteProfileStatements({
+      profileId: profile.id,
+      username: stored.username,
+      usernameDisplay: stored.username_display,
+      userId: req.user.id,
+      now,
+    }),
+  ]);
   await audit.record({
     type: 'profile.deleted',
     actorUserId: req.user.id,
@@ -575,7 +603,7 @@ router.post('/profiles/:id/delete', requireApproved, async (req, res) => {
 router.get('/profiles/:id/edit', requireApproved, async (req, res) => {
   const profile = await editableProfile(req.params.id, req.user.id);
   if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
-  res.render('profile-edit', editorView(profile, await editorState(profile), req.user, {
+  res.render('profile-edit', await editorView(profile, await editorState(profile), req.user, {
     saved: req.query.saved === '1',
     markdown: markdownSettings(req.user.staff_role),
   }));
@@ -605,13 +633,27 @@ router.post('/profiles/:id/avatar', requireApproved, async (req, res) => {
   });
   res.redirect(`/profiles/${profile.id}/edit?saved=1#profile-icon`);
 });
+router.post('/profiles/:id/staff-badge', requireApproved, async (req, res) => {
+  const profile = await editableProfile(req.params.id, req.user.id);
+  if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
+  if (!staffRoleLabel(req.user.staff_role)) {
+    return res.status(403).render('error', { title: 'Badge unchanged', status: 403, message: 'Only staff carry a badge.' });
+  }
+  const hidden = req.body.staff_badge_hidden === 'on' ? 1 : 0;
+  await db.query('UPDATE profiles SET staff_badge_hidden = ?, updated_at = ? WHERE id = ?', [hidden, Date.now(), profile.id]);
+  await audit.record({
+    type: 'profile.staff_badge_visibility', actorUserId: req.user.id, subjectUserId: req.user.id,
+    target: profile.id, detail: { hidden: hidden === 1 },
+  });
+  res.redirect(`/profiles/${profile.id}/edit?saved=1#staff-badge`);
+});
 router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, res) => {
   const profile = await editableProfile(req.params.id, req.user.id);
   if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
   const current = await editorState(profile);
   const limit = await consume('profile_import', req.user.id);
   if (!limit.allowed) {
-    return res.status(429).render('profile-edit', editorView(profile, current, req.user, {
+    return res.status(429).render('profile-edit', await editorView(profile, current, req.user, {
       error: 'Too many import attempts. Try again later.',
       markdown: markdownSettings(req.user.staff_role),
     }));
@@ -625,12 +667,12 @@ router.post('/profiles/:id/import/pronouns-page', requireApproved, async (req, r
     if (result.skippedFlags) omissions.push(`${result.skippedFlags} unavailable built-in flag${result.skippedFlags === 1 ? '' : 's'}`);
     if (result.skippedWordGroups) omissions.push(`${result.skippedWordGroups} empty word group${result.skippedWordGroups === 1 ? '' : 's'}`);
     const suffix = omissions.length ? ` Skipped ${omissions.join(' and ')}.` : '';
-    return res.render('profile-edit', editorView(profile, result.values, req.user, {
+    return res.render('profile-edit', await editorView(profile, result.values, req.user, {
       importNotice: `Imported the ${result.locale} profile for review.${suffix} Save the profile to keep these changes.`,
       markdown: markdownSettings(req.user.staff_role),
     }));
   } catch (error) {
-    return res.status(400).render('profile-edit', editorView(profile, current, req.user, {
+    return res.status(400).render('profile-edit', await editorView(profile, current, req.user, {
       error: error.message,
       markdown: markdownSettings(req.user.staff_role),
     }));
@@ -645,7 +687,7 @@ router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
     values = validateProfileForm(req.body, markdown);
   } catch (error) {
     if (!(error instanceof V.ValidationError)) throw error;
-    return res.status(400).render('profile-edit', editorView(profile, formValues(req.body), req.user, {
+    return res.status(400).render('profile-edit', await editorView(profile, formValues(req.body), req.user, {
       error: error.message,
       markdown,
     }));
@@ -684,7 +726,7 @@ router.post('/profiles/:id/edit', requireApproved, async (req, res) => {
       mail.securityNotice(req.user.email, 'Normal account access was temporarily restricted pending content review.').catch(() => {});
       mail.adminActionNeeded('content_suspension', `admin:suspension:${suspensionId}`).catch(() => {});
     }
-    return res.status(422).render('profile-edit', editorView(profile, await editorState(profile), req.user, {
+    return res.status(422).render('profile-edit', await editorView(profile, await editorState(profile), req.user, {
       markdown,
       warning: 'That edit matched a prohibited-content rule and was reverted. Do not submit it again. You may request Administrator review if the flag is incorrect.',
     }));

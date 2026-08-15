@@ -13,6 +13,21 @@ import { renderProfileMarkdown } from '../markdown.js';
 import { collectCodeUsage, collectEmbeddedOrigins, withScriptNonce } from '../html-sanitize.js';
 import { obfuscateEmails } from '../email-obfuscation.js';
 import { groupProfileWords, PROFILE_WORD_GROUPS_SQL, PROFILE_WORDS_SQL } from '../profile-words.js';
+export function badgeView(profile, viewer) {
+  const label = staffRoleLabel(profile.staff_role);
+  if (!label) return { staffBadge: null, staffBadgeLine: null, staffBadgeHidden: false, ownerEgg: false };
+  const hidden = Number(profile.staff_badge_hidden) === 1;
+  const viewerIsStaff = roleAtLeast(viewer?.staff_role ?? 'none', 'support');
+  if (hidden && !viewerIsStaff) {
+    return { staffBadge: null, staffBadgeLine: null, staffBadgeHidden: false, ownerEgg: false };
+  }
+  return {
+    staffBadge: label,
+    staffBadgeLine: staffRoleDescription(profile.staff_role),
+    staffBadgeHidden: hidden,
+    ownerEgg: profile.staff_role === 'owner',
+  };
+}
 const router = express.Router();
 export const PLACEHOLDER_PROFILES = Object.freeze({
   null: {
@@ -315,6 +330,7 @@ router.get('/u/:username', async (req, res) => {
     `SELECT p.id, p.username_display, p.display_name, p.description, p.notes, p.theme,
             p.published,
             p.avatar_source AS profile_avatar_source, p.avatar_data_uri AS profile_avatar_data_uri,
+            p.staff_badge_hidden,
             u.id AS owner_id, u.email AS owner_email, u.avatar_source, u.avatar_data_uri, u.staff_role
        FROM profiles p JOIN users u ON u.id = p.owner_user_id
       WHERE p.username = ?`,
@@ -372,9 +388,7 @@ router.get('/u/:username', async (req, res) => {
     notesHtml,
     username: profile.username_display,
     profile,
-    staffBadge: staffRoleLabel(profile.staff_role),
-    staffBadgeLine: staffRoleDescription(profile.staff_role),
-    ownerEgg: profile.staff_role === 'owner',
+    ...badgeView(profile, req.user),
     avatar: profileAvatarUrl(
       { id: profile.id, avatar_source: profile.profile_avatar_source, avatar_data_uri: profile.profile_avatar_data_uri },
       { id: profile.owner_id, email: profile.owner_email, avatar_source: profile.avatar_source, avatar_data_uri: profile.avatar_data_uri },

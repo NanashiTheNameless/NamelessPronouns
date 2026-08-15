@@ -8,8 +8,8 @@ export function firstProfileStatements({ userId, username, usernameDisplay = use
     profileId,
     statements: [
       {
-        sql: `INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, published, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
+        sql: `INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, published, is_primary, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, 0, 1, ?, ?)`,
         params: [profileId, userId, username, usernameDisplay, displayName, now, now],
       },
       {
@@ -27,8 +27,8 @@ export function additionalProfileStatements({ userId, username, usernameDisplay 
     profileId,
     statements: [
       {
-        sql: `INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, published, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
+        sql: `INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, published, is_primary, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)`,
         params: [profileId, userId, username, usernameDisplay, displayName, now, now],
       },
       {
@@ -80,6 +80,29 @@ export async function usernameAvailability(usernameKey, { userId, now = Date.now
     return { available: false, reason: 'That username is held after a recent deletion. Try again later.' };
   }
   return { available: false, reason: 'That username is unavailable.' };
+}
+export const MAX_USERNAME_HOLDS = 5;
+export async function heldUsernames(userId, now = Date.now()) {
+  const { rows } = await db.query(
+    `SELECT username_display, reserved_until FROM public_username_claims
+      WHERE state = 'reserved' AND reserved_user_id = ? AND reserved_until > ?
+      ORDER BY reserved_until`,
+    [userId, now],
+  );
+  return rows.map((row) => ({
+    username: row.username_display,
+    heldUntil: Number(row.reserved_until),
+    daysLeft: Math.max(1, Math.ceil((Number(row.reserved_until) - now) / 86400000)),
+  }));
+}
+export async function releaseOldestHoldStatements(userId, now = Date.now()) {
+  const holds = await heldUsernames(userId, now);
+  if (holds.length < MAX_USERNAME_HOLDS) return [];
+  const excess = holds.slice(0, holds.length - MAX_USERNAME_HOLDS + 1);
+  return excess.map((hold) => ({
+    sql: "DELETE FROM public_username_claims WHERE state = 'reserved' AND reserved_user_id = ? AND username_display = ?",
+    params: [userId, hold.username],
+  }));
 }
 export async function releaseExpiredUsernameHolds(now = Date.now()) {
   const { rowCount } = await db.query(

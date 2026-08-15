@@ -14,6 +14,17 @@
     <% if (atLimit) { %>
       <p>Delete a profile before making another one, or ask an Administrator to raise the limit for this account.</p>
     <% } else { %>
+      <% if (held.length) { %>
+        <section class="panel stack" aria-labelledby="held-h">
+          <h2 id="held-h">Usernames you can reclaim</h2>
+          <p class="fineprint">These are held for this account after a deletion. Enter one below to take it back before the hold ends.</p>
+          <ul>
+            <% held.forEach(function (hold) { %>
+              <li><code><%= hold.username %></code> &mdash; <%= hold.daysLeft %> day<%= hold.daysLeft === 1 ? '' : 's' %> left</li>
+            <% }); %>
+          </ul>
+        </section>
+      <% } %>
       <form method="post" action="/profiles/new">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <label>Username

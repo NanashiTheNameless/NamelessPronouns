@@ -15,6 +15,7 @@ test('the init schema stays consolidated and later migrations are additive', asy
     '0005_drop_workspace_invites.sql',
     '0006_content_exemption_scopes.sql',
     '0007_profiles_per_account.sql',
+    '0008_staff_badge_and_primary_profile.sql',
   ]);
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\bALTER\s+TABLE\b/i);
@@ -135,4 +136,12 @@ test('content exemptions become scopeable, readable, and editable', async () => 
 test('production Compose applies pending migrations before startup', async () => {
   const compose = await readFile(new URL('../docker-compose.yml', import.meta.url), 'utf8');
   assert.match(compose, /command: \["sh", "-c", "node scripts\/migrate\.js && exec node src\/server\.js"\]/);
+});
+
+test('the badge and primary-profile migration is additive and backfills the first profile', async () => {
+  const sql = await readFile(new URL('../db/migrations/0008_staff_badge_and_primary_profile.sql', import.meta.url), 'utf8');
+  assert.match(sql, /ALTER TABLE profiles ADD COLUMN staff_badge_hidden INTEGER NOT NULL DEFAULT 0/);
+  assert.match(sql, /ALTER TABLE profiles ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 0/);
+  assert.match(sql, /UPDATE profiles SET is_primary = 1 WHERE NOT EXISTS/, 'the oldest profile of each account becomes primary');
+  assert.doesNotMatch(sql, /-- @(d1|postgres)/, 'both backends take the same statements');
 });

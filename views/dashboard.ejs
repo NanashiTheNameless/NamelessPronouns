@@ -16,7 +16,7 @@
         <ul>
           <% profiles.forEach(function (profile) { %>
             <li class="profile-card">
-              <strong><%= profile.display_name %></strong>
+              <strong><%= profile.display_name %></strong><% if (Number(profile.is_primary) === 1) { %> <span class="status-badge">Primary</span><% } %>
               <p class="fineprint">/u/<%= profile.username %></p>
               <div class="inline-actions">
                 <a class="button secondary compact" href="/profiles/<%= profile.id %>/edit" aria-label="Edit <%= profile.username %>">Edit</a>
@@ -27,20 +27,10 @@
                   <span class="status-badge">Unpublished</span>
                 <% } %>
               </div>
-              <% if (profiles.length > 1) { %>
-                <form method="post" action="/profiles/<%= profile.id %>/delete" class="inline-form">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                  <label>Type DELETE PROFILE to remove <%= profile.username %>
-                    <input name="confirmation" autocomplete="off" required placeholder="DELETE PROFILE">
-                  </label>
-                  <button type="submit" class="secondary compact">Delete <%= profile.username %></button>
-                </form>
-              <% } %>
             </li>
           <% }); %>
         </ul>
       <% } %>
-      <p class="fineprint">A deleted profile's username stays reserved for this account for <%= usernameHoldDays %> days before anyone else can take it.</p>
     </section>
     <div class="actions">
       <% if (profiles.length < profileLimit) { %>

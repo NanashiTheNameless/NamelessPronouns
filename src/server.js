@@ -225,10 +225,10 @@ export function createApp() {
   app.get('/', (req, res) => res.render('home', { title: 'NamelessPronouns' }));
   app.get('/dashboard', requireApproved, async (req, res) => {
     const { rows } = await db.query(
-      `SELECT id, username_display AS username, display_name, published
+      `SELECT id, username_display AS username, display_name, published, is_primary
          FROM profiles
         WHERE owner_user_id = ?
-        ORDER BY username`,
+        ORDER BY is_primary DESC, created_at, id`,
       [req.user.id],
     );
     res.render('dashboard', {
