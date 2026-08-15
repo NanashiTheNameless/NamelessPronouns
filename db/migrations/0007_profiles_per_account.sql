@@ -65,7 +65,8 @@ INSERT INTO profile_links SELECT * FROM mig7_profile_links copy
   WHERE NOT EXISTS (SELECT 1 FROM profile_links live WHERE live.id = copy.id);
 INSERT INTO profile_revisions SELECT * FROM mig7_profile_revisions copy
   WHERE NOT EXISTS (SELECT 1 FROM profile_revisions live WHERE live.id = copy.id);
-INSERT INTO content_rule_exemptions SELECT * FROM mig7_content_rule_exemptions;
+INSERT INTO content_rule_exemptions SELECT * FROM mig7_content_rule_exemptions copy
+  WHERE NOT EXISTS (SELECT 1 FROM content_rule_exemptions live WHERE live.id = copy.id);
 INSERT INTO content_flags SELECT * FROM mig7_content_flags copy
   WHERE NOT EXISTS (SELECT 1 FROM content_flags live WHERE live.id = copy.id);
 INSERT INTO content_suspension_profiles SELECT * FROM mig7_content_suspension_profiles copy

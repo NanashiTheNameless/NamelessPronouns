@@ -4,8 +4,14 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
 import { selectStatements, BACKENDS } from '../src/db/migrate.js';
+let DatabaseSync = null;
+try {
+  ({ DatabaseSync } = await import('node:sqlite'));
+} catch {
+  DatabaseSync = null;
+}
+const noSqlite = DatabaseSync ? false : 'node:sqlite is unavailable on this Node build';
 const MIGRATIONS_DIR = fileURLToPath(new URL('../db/migrations/', import.meta.url));
 const CHILD_TABLES = [
   'profile_names', 'pronoun_sets', 'profile_links', 'profile_identity_flags',
@@ -71,7 +77,7 @@ function seedLegacyProfile(db) {
       VALUES ('review1', 'flag_account', 'u1', 'please look', ${now});
   `);
 }
-test('the D1 rebuild keeps every profile and all of its child rows', async () => {
+test('the D1 rebuild keeps every profile and all of its child rows', { skip: noSqlite }, async () => {
   const db = new DatabaseSync(':memory:');
   db.exec('PRAGMA foreign_keys = ON');
   await applyThrough(db, '0007_profiles_per_account.sql');
