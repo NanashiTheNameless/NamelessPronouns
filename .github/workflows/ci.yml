@@ -46,6 +46,9 @@ jobs:
       - run: npm install --global corepack@latest && corepack enable
       - run: yarn install --immutable
       - run: yarn migrate
+      - name: Report the browser used by the Chromium tests
+        run: |
+          node -e "import('./test/helpers/chromium.js').then(({ resolveChromium }) => { const found = resolveChromium(); console.log(found ? 'browser tests run with ' + found : 'no browser found, Chromium tests will skip'); })"
       - run: yarn test
   container:
     runs-on: ubuntu-latest
