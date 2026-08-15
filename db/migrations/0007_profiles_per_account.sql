@@ -8,14 +8,10 @@ UPDATE profiles SET owner_user_id = (
 DELETE FROM profiles WHERE owner_user_id IS NULL;
 DROP INDEX IF EXISTS idx_profiles_workspace;
 
--- Postgres drops the column outright: the foreign key on it goes with it.
 -- @postgres
 ALTER TABLE profiles DROP COLUMN workspace_id;
 -- @end
 
--- SQLite refuses to drop a column named in a foreign key, so the table is
--- rebuilt. Dropping the old table cascades into every child table, and D1
--- cannot turn foreign keys off, so child rows are copied out and restored.
 -- @d1
 PRAGMA defer_foreign_keys = ON;
 CREATE TABLE mig7_deletion_profile_states AS SELECT * FROM deletion_profile_states;

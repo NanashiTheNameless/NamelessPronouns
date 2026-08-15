@@ -13,8 +13,36 @@
         <h2>Account</h2>
         <dl class="details">
           <div><dt>Email</dt><dd><%- await obfuscateEmail(user.email) %></dd></div>
+          <div><dt>Rank</dt><dd><%= rank %></dd></div>
           <div><dt>Status</dt><dd><%= user.signup_status %></dd></div>
+          <div><dt>Profiles</dt><dd><%= profileCount %> of <%= profileLimit %><% if (limitIsOverride) { %> (raised for this account)<% } %></dd></div>
+          <div><dt>Held usernames</dt><dd><%= heldCount %> of <%= maxHolds %><span class="fineprint">, each kept <%= usernameHoldDays %> days after a profile is deleted</span></dd></div>
         </dl>
+      </section>
+      <section class="panel">
+        <h2>Profiles</h2>
+        <p>Edit publishing, names, pronouns, notes, and links from your dashboard.</p>
+        <p><a class="button secondary" href="/dashboard">Open dashboard</a></p>
+      </section>
+      <section class="panel">
+        <h2>Content flags</h2>
+        <p>Review enforcing profile-edit flags and request Administrator review.</p>
+        <p><a class="button secondary" href="/account/content-flags">View content flags</a></p>
+      </section>
+      <section class="panel">
+        <h2>Security</h2>
+        <p>Selected second factor: <strong><%= method === 'totp' ? 'Authenticator app' : 'Email code' %></strong></p>
+        <p><a class="button secondary" href="/account/security">Open security settings</a></p>
+      </section>
+      <section class="panel">
+        <h2>Recovery</h2>
+        <p>Administrative recovery is case-by-case, not guaranteed, and should be assumed denied.</p>
+        <p><a href="/recover">Read the recovery policy</a></p>
+      </section>
+      <section class="panel">
+        <h2>Your data</h2>
+        <p>Download a copy of the account and profile data associated with you.</p>
+        <p><a class="button secondary" href="/account/export">Download my data</a></p>
       </section>
       <section class="panel stack" id="profile-icon">
         <h2>Default profile icon</h2>
@@ -39,31 +67,6 @@
         <h2>Delete account</h2>
         <p>Request deletion with a 30-day cancellation period.</p>
         <p><a class="button secondary" href="/account/deletion">Deletion settings</a></p>
-      </section>
-      <section class="panel">
-        <h2>Security</h2>
-        <p>Selected second factor: <strong><%= method === 'totp' ? 'Authenticator app' : 'Email code' %></strong></p>
-        <p><a class="button secondary" href="/account/security">Open security settings</a></p>
-      </section>
-      <section class="panel">
-        <h2>Profiles</h2>
-        <p>Edit publishing, names, pronouns, notes, and links from your dashboard.</p>
-        <p><a class="button secondary" href="/dashboard">Open dashboard</a></p>
-      </section>
-      <section class="panel">
-        <h2>Recovery</h2>
-        <p>Administrative recovery is case-by-case, not guaranteed, and should be assumed denied.</p>
-        <p><a href="/recover">Read the recovery policy</a></p>
-      </section>
-      <section class="panel">
-        <h2>Your data</h2>
-        <p>Download a copy of the account and profile data associated with you.</p>
-        <p><a class="button secondary" href="/account/export">Download my data</a></p>
-      </section>
-      <section class="panel">
-        <h2>Content flags</h2>
-        <p>Review enforcing profile-edit flags and request Administrator review.</p>
-        <p><a class="button secondary" href="/account/content-flags">View content flags</a></p>
       </section>
     </div>
 

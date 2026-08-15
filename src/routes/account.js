@@ -19,15 +19,34 @@ import { matchAccountBan } from '../bans.js';
 import { evaluateEmailDomain } from '../email-domains.js';
 import * as V from '../validation.js';
 import { avatarUrl, validateAvatarDataUri, MAX_AVATAR_DATA_URI_BYTES } from '../avatar.js';
+import { staffRoleLabel } from '../middleware/staff.js';
+import {
+  heldUsernames,
+  ownedProfileCount,
+  profileLimitFor,
+  MAX_USERNAME_HOLDS,
+  USERNAME_HOLD_MS,
+} from '../profiles.js';
 import { DELETION_GRACE_MS } from '../maintenance.js';
 const router = express.Router();
 router.get('/account', requireApproved, (req, res) => res.redirect('/settings'));
-router.get('/settings', requireApproved, (req, res) => {
+router.get('/settings', requireApproved, async (req, res) => {
+  const [profileCount, holds] = await Promise.all([
+    ownedProfileCount(req.user.id),
+    heldUsernames(req.user.id),
+  ]);
   res.render('account/settings', {
     title: 'Settings', method: req.user.twofa_method, avatar: avatarUrl(req.user),
     avatarSource: req.user.avatar_source, maxAvatarBytes: MAX_AVATAR_DATA_URI_BYTES,
     identiconAvatar: avatarUrl({ ...req.user, avatar_source: 'identicon', avatar_data_uri: null }),
     gravatarAvatar: avatarUrl({ ...req.user, avatar_source: 'gravatar', avatar_data_uri: null }),
+    rank: staffRoleLabel(req.user.staff_role) || 'Member',
+    profileCount,
+    profileLimit: profileLimitFor(req.user),
+    limitIsOverride: Boolean(req.user.profile_limit),
+    heldCount: holds.length,
+    maxHolds: MAX_USERNAME_HOLDS,
+    usernameHoldDays: Math.round(USERNAME_HOLD_MS / 86400000),
   });
 });
 router.post('/account/avatar', requireApproved, async (req, res) => {

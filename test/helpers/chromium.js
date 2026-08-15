@@ -19,6 +19,17 @@ export async function dumpDom(args, { timeout = 60000, maxBuffer = 4 * 1024 * 10
   }
   throw lastError;
 }
+export async function dumpHarness(args, options = {}) {
+  const { attempts = 3, ...rest } = options;
+  let last = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const html = await dumpDom(args, { ...rest, attempts: 1 });
+    last = html;
+    const result = harnessResult(html);
+    if (result !== null) return { html, result };
+  }
+  return { html: last, result: null };
+}
 export function harnessResult(html) {
   const encoded = /<output id="browser-result">([^<]+)<\/output>/.exec(html)?.[1];
   if (!encoded || encoded === 'pending') return null;

@@ -6,7 +6,7 @@ import { requireStaff, roleAtLeast } from '../middleware/staff.js';
 import { requireFreshAuth } from '../middleware/session.js';
 import { ipPrefixHash } from '../util/net.js';
 import { newId } from '../util/ids.js';
-import { firstProfileStatements, profileLimitFor } from '../profiles.js';
+import { firstProfileStatements, makePrimaryStatements, profileLimitFor } from '../profiles.js';
 import { DELETION_GRACE_MS, purgeDeletion } from '../maintenance.js';
 import * as V from '../validation.js';
 import * as mail from '../mail.js';
@@ -38,7 +38,7 @@ router.get('/admin/users', requireStaff('administrator'), requireFreshAuth(), as
   const page = Math.min(Math.max(1, requestedPage), totalPages);
   const { rows } = await db.query(
     `SELECT u.id, u.email, u.signup_status, u.staff_role, u.twofa_method,
-            u.email_verified_at, u.created_at, u.updated_at,
+            u.email_verified_at, u.profile_limit, u.created_at, u.updated_at,
             (SELECT p.username_display FROM profiles p
               WHERE p.owner_user_id = u.id ORDER BY p.created_at LIMIT 1) AS profile_username,
             (SELECT p.display_name FROM profiles p
@@ -59,6 +59,7 @@ router.get('/admin/users', requireStaff('administrator'), requireFreshAuth(), as
   );
   res.render('admin/users', {
     title: 'User directory', users: rows, page, totalPages, total,
+    defaultProfileLimit: config.MAX_PROFILES_PER_USER,
   });
 });
 router.get('/admin/signups', requireStaff('administrator'), requireFreshAuth(), async (req, res) => {
@@ -148,8 +149,8 @@ router.get('/admin/accounts/:id', requireStaff('support'), requireFreshAuth(), a
                     signup_ip_prefix_hash, profile_limit, created_at, updated_at
                FROM users WHERE id = ?`, [req.params.id]),
     db.query(`SELECT COUNT(*) AS count FROM sessions WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?`, [req.params.id, now]),
-    db.query(`SELECT p.id, p.username_display, p.published FROM profiles p
-              WHERE p.owner_user_id = ? ORDER BY p.created_at`, [req.params.id]),
+    db.query(`SELECT p.id, p.username_display, p.published, p.is_primary FROM profiles p
+              WHERE p.owner_user_id = ? ORDER BY p.is_primary DESC, p.created_at`, [req.params.id]),
     db.query(`SELECT id, scope, reason, created_at, expires_at FROM bans
                WHERE target_type = 'user' AND target_hash = ? AND lifted_at IS NULL
                  AND (expires_at IS NULL OR expires_at > ?)
@@ -401,6 +402,23 @@ router.post('/admin/accounts/:id/role', requireStaff('owner'), requireFreshAuth(
   await audit.record({ type: 'staff.role_changed', actorUserId: req.user.id, subjectUserId: target.id, ipHash: ipPrefixHash(req), detail: { from: target.staff_role, to: role } });
   mail.securityNotice(target.email, `Your staff role changed from ${target.staff_role} to ${role}.`).catch(() => {});
   res.redirect(`/admin/accounts/${target.id}`);
+});
+router.post('/admin/accounts/:id/primary-profile', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
+  if (req.body.confirmation !== 'MOVE PRIMARY PROFILE') return fail(res, 400, 'Type MOVE PRIMARY PROFILE exactly to continue.');
+  const profileId = String(req.body.profile_id || '');
+  const { rows } = await db.query(
+    'SELECT id, username_display, owner_user_id, is_primary FROM profiles WHERE id = ? AND owner_user_id = ?',
+    [profileId, req.params.id],
+  );
+  const profile = rows[0];
+  if (!profile) return fail(res, 404, 'That profile does not belong to that account.');
+  if (Number(profile.is_primary) === 1) return fail(res, 409, 'That profile is already the primary profile.');
+  await db.batch(makePrimaryStatements({ userId: req.params.id, profileId: profile.id }));
+  await audit.record({
+    type: 'account.primary_profile_changed', actorUserId: req.user.id, subjectUserId: req.params.id,
+    ipHash: ipPrefixHash(req), target: profile.id, detail: { username: profile.username_display },
+  });
+  res.redirect(`/admin/accounts/${req.params.id}`);
 });
 router.post('/admin/accounts/:id/profile-limit', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin' }), async (req, res) => {
   const raw = String(req.body.profile_limit ?? '').trim();

@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { ChromiumMissing, dumpDom } from './helpers/chromium.js';
+import { ChromiumMissing, dumpHarness } from './helpers/chromium.js';
 const root = fileURLToPath(new URL('..', import.meta.url));
 test('ALTCHA uses the NamelessUnSee business settings and solves in Chromium', async (t) => {
   const server = createServer((req, res) => {
@@ -22,7 +22,7 @@ test('ALTCHA uses the NamelessUnSee business settings and solves in Chromium', a
   try {
     let stdout;
     try {
-      stdout = await dumpDom(['--virtual-time-budget=4000', '--dump-dom', `http://127.0.0.1:${server.address().port}/`]);
+      stdout = (await dumpHarness(['--virtual-time-budget=6000', '--dump-dom', `http://127.0.0.1:${server.address().port}/`])).html;
     } catch (error) {
       if (error instanceof ChromiumMissing) return t.skip('Chromium is not installed');
       throw error;

@@ -435,6 +435,25 @@ test('admin management covers roles, rules, bans, audit, reports, and emergency 
   res = await post(`/admin/accounts/${targetId}/role`, { _csrf: csrf, role: 'support', confirmation: 'CHANGE STAFF ROLE' }, cookies);
   assert.equal(res.status, 302);
   assert.equal((await db.query('SELECT staff_role FROM users WHERE id = ?', [targetId])).rows[0].staff_role, 'support');
+  const firstProfile = await insertPublishedProfile({ key: `managed${suffix}`.slice(0, 30).toLowerCase(), display: `Managed${suffix}`.slice(0, 30), userId: targetId, primary: true });
+  const secondProfile = await insertPublishedProfile({ key: `managedalt${suffix}`.slice(0, 30).toLowerCase(), display: `ManagedAlt${suffix}`.slice(0, 30), userId: targetId });
+  res = await get(`/admin/accounts/${targetId}`, cookies);
+  page = await res.text();
+  assert.match(page, /Primary profile/, 'the account page offers the move');
+  csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  res = await post(`/admin/accounts/${targetId}/primary-profile`, { _csrf: csrf, profile_id: secondProfile, confirmation: 'nope' }, cookies);
+  assert.equal(res.status, 400, 'the confirmation phrase is required');
+  res = await post(`/admin/accounts/${targetId}/primary-profile`, { _csrf: csrf, profile_id: firstProfile, confirmation: 'MOVE PRIMARY PROFILE' }, cookies);
+  assert.equal(res.status, 409, 'moving it to the profile that already holds it is refused');
+  res = await post(`/admin/accounts/${targetId}/primary-profile`, { _csrf: csrf, profile_id: secondProfile, confirmation: 'MOVE PRIMARY PROFILE' }, cookies);
+  assert.equal(res.status, 302);
+  const moved = await db.query('SELECT id, is_primary FROM profiles WHERE owner_user_id = ?', [targetId]);
+  assert.equal(moved.rows.filter((row) => Number(row.is_primary) === 1).length, 1, 'exactly one profile is primary');
+  assert.equal(Number(moved.rows.find((row) => row.id === secondProfile).is_primary), 1);
+  const strangerId = await insertUser({ email: `stranger-${suffix}@allowed-stranger-${suffix}.example`, password });
+  const strangerProfile = await insertPublishedProfile({ key: `stranger${suffix}`.slice(0, 30).toLowerCase(), display: `Stranger${suffix}`.slice(0, 30), userId: strangerId, primary: true });
+  res = await post(`/admin/accounts/${targetId}/primary-profile`, { _csrf: csrf, profile_id: strangerProfile, confirmation: 'MOVE PRIMARY PROFILE' }, cookies);
+  assert.equal(res.status, 404, 'a profile of another account cannot be made primary here');
   res = await get('/admin/users', cookies); page = await res.text();
   assert.equal(res.status, 200);
   assert.match(page, /User directory/);
@@ -464,6 +483,7 @@ test('admin management covers roles, rules, bans, audit, reports, and emergency 
   page = await res.text();
   assert.match(page, /staff\.role_changed/);
   assert.match(page, /account\.sessions_emergency_revoked/);
+  assert.match(page, /account\.primary_profile_changed/);
 });
 test('content-rule changes are immutable, previewed, and shadowed unless urgent', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
@@ -1678,13 +1698,14 @@ test('account export is emailed only, with a renewable download window', { skip 
   const unused = await db.query('SELECT used_at FROM data_export_tokens WHERE token_hash = ?', [(await import('../src/util/crypto.js')).keyedHash(blockedPath.split('/').at(-1))]);
   assert.equal(unused.rows[0].used_at, null);
 });
-async function insertPublishedProfile({ key, display, userId }) {
+async function insertPublishedProfile({ key, display, userId, primary = false }) {
   const { newId } = await import('../src/util/ids.js');
   const pid = newId();
   const now = Date.now();
   await db.batch([
-    { sql: `INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)`, params: [pid, userId, key, display, display, now, now] },
+    { sql: `INSERT INTO profiles (id, owner_user_id, username, username_display, display_name, published, is_primary, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)`, params: [pid, userId, key, display, display, primary ? 1 : 0, now, now] },
   ]);
+  return pid;
 }
 test('an account creates more profiles up to its limit, and deletion holds the username', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
@@ -1692,7 +1713,7 @@ test('an account creates more profiles up to its limit, and deletion holds the u
   const pw = 'multi-profile-passphrase-xx';
   const userId = await insertUser({ email, password: pw, status: 'approved', role: 'none' });
   const first = `first${suffix}`.slice(0, 30).toLowerCase();
-  await insertPublishedProfile({ key: first, display: first, userId });
+  await insertPublishedProfile({ key: first, display: first, userId, primary: true });
   const cookies = jar();
   await loginAs(cookies, email, pw);
   let res = await get('/profiles/new', cookies);
@@ -1755,10 +1776,37 @@ test('an account creates more profiles up to its limit, and deletion holds the u
   );
   assert.ok(await releaseExpiredUsernameHolds(Date.now()) >= 1, 'maintenance releases expired holds');
   assert.equal((await db.query('SELECT username FROM public_username_claims WHERE username = ?', [thirdName])).rows.length, 0);
-  await db.query('UPDATE users SET profile_limit = 2 WHERE id = ?', [userId]);
+  const reclaimed = await db.query('SELECT id, is_primary FROM profiles WHERE username = ?', [second]);
+  assert.equal(Number(reclaimed.rows[0].is_primary), 0, 'a reclaimed profile is not primary');
+  const firstRow = await db.query('SELECT id, is_primary FROM profiles WHERE username = ?', [first]);
+  assert.equal(Number(firstRow.rows[0].is_primary), 1, 'the original profile still leads');
+  res = await get(`/profiles/${reclaimed.rows[0].id}/edit`, cookies);
+  const editorPage = await res.text();
+  csrf = /name="_csrf" value="([^"]+)"/.exec(editorPage)[1];
+  assert.match(editorPage, /contact support if you need this profile to hold it/, 'the owner is told to contact support');
+  res = await post(`/profiles/${reclaimed.rows[0].id}/primary`, { _csrf: csrf }, cookies);
+  assert.equal(res.status, 404, 'an account cannot move the primary role itself');
+  const { makePrimaryStatements } = await import('../src/profiles.js');
+  await db.batch(makePrimaryStatements({ userId, profileId: reclaimed.rows[0].id }));
+  const after = await db.query('SELECT id, is_primary FROM profiles WHERE owner_user_id = ? ORDER BY created_at', [userId]);
+  assert.equal(after.rows.filter((row) => Number(row.is_primary) === 1).length, 1, 'exactly one profile stays primary');
+  assert.equal(Number(after.rows.find((row) => row.id === reclaimed.rows[0].id).is_primary), 1, 'the role moved');
+  res = await post(`/profiles/${firstRow.rows[0].id}/delete`, { _csrf: csrf, confirmation: first }, cookies);
+  assert.equal(res.status, 302, 'the former primary can now be deleted');
+  res = await get('/profiles/new', cookies);
+  let newPage = await res.text();
+  assert.match(newPage, new RegExp(first), 'its username is offered back');
+  csrf = /name="_csrf" value="([^"]+)"/.exec(newPage)[1];
+  res = await post('/profiles/holds/release', { _csrf: csrf, username: first }, cookies);
+  assert.equal(res.status, 302, 'a hold can be released early');
+  const gone = await db.query('SELECT username FROM public_username_claims WHERE username = ?', [first]);
+  assert.equal(gone.rows.length, 0, 'the username returns to the pool at once');
+  res = await post('/profiles/holds/release', { _csrf: csrf, username: `never${suffix}` }, cookies);
+  assert.equal(res.status, 404, 'a username this account never held cannot be released');
+  await db.query('UPDATE users SET profile_limit = 1 WHERE id = ?', [userId]);
   res = await get('/profiles/new', cookies);
   page = await res.text();
-  assert.match(page, /This account uses 2 of its 2 profiles\./);
+  assert.match(page, /This account uses 1 of its 1 profile\./);
   assert.doesNotMatch(page, /name="username"/, 'an Administrator override caps the account');
   res = await post('/profiles/new', { _csrf: csrf, username: `over${suffix}`.slice(0, 30).toLowerCase(), display_name: 'Over Limit' }, cookies);
   assert.equal(res.status, 409, 'the limit is enforced on the server too');

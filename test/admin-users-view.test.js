@@ -42,7 +42,7 @@ test('admin user directory lists ranks and account information without plaintext
       twofa_method: 'totp', email_verified_at: 1, created_at: 1, updated_at: 2,
       profile_username: 'Example', profile_display_name: 'Example User', profile_count: 2, active_sessions: 1,
     }],
-    page: 1, totalPages: 2, total: 101, user: null,
+    page: 1, totalPages: 2, total: 101, user: null, defaultProfileLimit: 5,
     obfuscateEmail: async () => '<span data-email-hidden>Protected email</span>',
   }, { async: true });
   assert.match(html, /User directory/);
@@ -66,7 +66,7 @@ test('admin user directory marks accounts queued for deletion', async () => {
       profile_username: 'Example', profile_display_name: 'Example User', profile_count: 1, active_sessions: 0,
       ...overrides,
     }],
-    page: 1, totalPages: 1, total: 1, user: null,
+    page: 1, totalPages: 1, total: 1, user: null, defaultProfileLimit: 5,
     obfuscateEmail: async () => '<span data-email-hidden>Protected email</span>',
   }, { async: true });
   const queued = await render({ deletion_status: 'pending', deletion_purge_after: 1702592000000 });

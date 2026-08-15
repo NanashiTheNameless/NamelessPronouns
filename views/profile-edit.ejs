@@ -153,10 +153,41 @@
         <template><section data-repeater-row data-row-label="Flag" class="repeat-row"><%- await include('partials/flag-picker', { selected: '', heading: 'Flag', flagOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
       </fieldset>
 
-      <label class="choice"><input type="checkbox" name="published" <%= values.published ? 'checked' : '' %>><span>Publish this profile</span></label>
-      <button type="submit">Save profile</button>
+      <div class="form-actions">
+        <label class="choice"><input type="checkbox" name="published" <%= values.published ? 'checked' : '' %>><span>Publish this profile</span></label>
+        <button type="submit">Save profile</button>
+      </div>
     </form>
 
+    <% if (isPrimary) { %>
+      <p class="fineprint">This is the primary profile of the account. It heads the dashboard and cannot be deleted. Contact support if you need the role moved to another profile.</p>
+    <% } else { %>
+      <p class="fineprint">The primary profile heads the dashboard and cannot be deleted. Only one profile holds that role at a time, and it is moved on request: contact support if you need this profile to hold it.</p>
+    <% } %>
+    <% if (canDelete) { %>
+      <section class="panel stack" aria-labelledby="delete-profile-h">
+        <h2 id="delete-profile-h">Delete this profile</h2>
+        <p>Removes <%= profile.username %> and everything on it: names, pronouns, words, links, and flags. This cannot be undone.</p>
+        <p class="fineprint">The username stays reserved to this account for <%= usernameHoldDays %> days, then anyone may claim it.</p>
+        <form method="post" action="/profiles/<%= profile.id %>/delete" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>Type <%= profile.username %> exactly, capital letters included <input name="confirmation" autocomplete="off" autocapitalize="off" spellcheck="false" required placeholder="<%= profile.username %>"></label>
+          <button type="submit" class="danger">Delete profile</button>
+        </form>
+      </section>
+    <% } %>
+
+    <section class="panel import-panel" aria-labelledby="import-h">
+      <h2 id="import-h">Import from Pronouns.page</h2>
+      <p>Enter a username, <code>u/username</code> path, or profile URL. You can review the imported values before saving.</p>
+      <form method="post" action="/profiles/<%= profile.id %>/import/pronouns-page" class="inline-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Pronouns.page profile
+          <input name="pronouns_page_profile" maxlength="300" required placeholder="A Pronouns.page username or profile URL to copy fields from">
+        </label>
+        <button type="submit" class="secondary">Import for review</button>
+      </form>
+    </section>
     <% if (isStaff) { %>
       <section class="panel stack" id="staff-badge" aria-labelledby="staff-badge-h">
         <h2 id="staff-badge-h">Staff badge</h2>
@@ -191,33 +222,6 @@
       </form>
     </section>
 
-    <% if (isPrimary) { %>
-      <p class="fineprint">This is the primary profile of the account. It keeps that role for good and cannot be deleted while the account exists.</p>
-    <% } %>
-    <% if (canDelete) { %>
-      <section class="panel stack" aria-labelledby="delete-profile-h">
-        <h2 id="delete-profile-h">Delete this profile</h2>
-        <p>Removes <%= profile.username %> and everything on it: names, pronouns, words, links, and flags. This cannot be undone.</p>
-        <p class="fineprint">The username stays reserved to this account for <%= usernameHoldDays %> days, then anyone may claim it.</p>
-        <form method="post" action="/profiles/<%= profile.id %>/delete" class="stack">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <label>Type <%= profile.username %> exactly, capital letters included <input name="confirmation" autocomplete="off" autocapitalize="off" spellcheck="false" required placeholder="<%= profile.username %>"></label>
-          <button type="submit" class="danger">Delete profile</button>
-        </form>
-      </section>
-    <% } %>
-
-    <section class="panel import-panel" aria-labelledby="import-h">
-      <h2 id="import-h">Import from Pronouns.page</h2>
-      <p>Enter a username, <code>u/username</code> path, or profile URL. You can review the imported values before saving.</p>
-      <form method="post" action="/profiles/<%= profile.id %>/import/pronouns-page" class="inline-form">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <label>Pronouns.page profile
-          <input name="pronouns_page_profile" maxlength="300" required placeholder="A Pronouns.page username or profile URL to copy fields from">
-        </label>
-        <button type="submit" class="secondary">Import for review</button>
-      </form>
-    </section>
   </main>
   <%- await include('partials/site-footer') %>
   <script src="/static/js/profile-editor.js"></script>

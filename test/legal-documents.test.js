@@ -29,6 +29,13 @@ test('canonical Terms and Privacy documents load completely', async () => {
   assert.doesNotMatch(privacyText, /workspace/i, 'the Privacy Policy speaks only of accounts and profiles');
   assert.match(termsText, /may create more/i, 'the Terms describe more than one profile per account');
   assert.match(termsText, /reserved to that account for seven days/i);
+  assert.match(termsText, /primary profile cannot be deleted/i, 'the Terms explain the primary profile');
+  assert.match(termsText, /cannot move the role themselves: ask support/i, 'the Terms say who moves the primary role');
+  assert.match(termsText, /release it early/i, 'the Terms explain releasing a held username');
+  assert.match(termsText, /absence of a badge is not a statement/i, 'the Terms are honest about hidden staff badges');
+  assert.match(privacyText, /removed from the page before the page is sent/i, 'the Policy explains how a badge is hidden');
+  assert.match(privacyText, /whether it is that account's primary profile/i);
+  assert.match(privacyText, /Username claims, including a username held for seven days/i);
   assert.match(privacyText, /Cloudflare Web Analytics and RUM/i);
   assert.match(privacyText, /generated in memory on demand/i);
   assert.match(privacyText, /does not currently receive or store Resend webhook events/i);

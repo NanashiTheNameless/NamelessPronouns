@@ -17,10 +17,17 @@
       <% if (held.length) { %>
         <section class="panel stack" aria-labelledby="held-h">
           <h2 id="held-h">Usernames you can reclaim</h2>
-          <p class="fineprint">These are held for this account after a deletion. Enter one below to take it back before the hold ends.</p>
+          <p class="fineprint">These are held for this account after a deletion. Enter one below to take it back, or release it early so anyone may claim it.</p>
           <ul>
             <% held.forEach(function (hold) { %>
-              <li><code><%= hold.username %></code> &mdash; <%= hold.daysLeft %> day<%= hold.daysLeft === 1 ? '' : 's' %> left</li>
+              <li>
+                <code><%= hold.username %></code> &mdash; <%= hold.daysLeft %> day<%= hold.daysLeft === 1 ? '' : 's' %> left
+                <form method="post" action="/profiles/holds/release" class="inline-form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="username" value="<%= hold.username %>">
+                  <button type="submit" class="secondary compact">Release <%= hold.username %> now</button>
+                </form>
+              </li>
             <% }); %>
           </ul>
         </section>

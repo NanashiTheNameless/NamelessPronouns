@@ -25,7 +25,7 @@
                     <br><span class="fineprint">Purge <%= new Date(Number(account.deletion_purge_after)).toISOString() %></span>
                   <% } %>
                 </td>
-                <td><% if (account.profile_username) { %><strong><%= account.profile_display_name %></strong><br>@<%= account.profile_username %><% } else { %>No profile<% } %><br><span class="fineprint"><%= account.profile_count %> total</span></td>
+                <td><% if (account.profile_username) { %><strong><%= account.profile_display_name %></strong><br>@<%= account.profile_username %><% } else { %>No profile<% } %><br><span class="fineprint"><%= account.profile_count %> of <%= account.profile_limit || defaultProfileLimit %><% if (account.profile_limit) { %> (override)<% } %></span></td>
                 <td><%= account.twofa_method %> 2FA<br><span class="fineprint"><%= account.active_sessions %> active session<%= Number(account.active_sessions) === 1 ? '' : 's' %></span></td>
                 <td><span class="fineprint">Updated <%= new Date(Number(account.updated_at)).toISOString() %></span></td>
                 <td><a href="/admin/accounts/<%= account.id %>">Open</a></td>

@@ -20,7 +20,8 @@ export async function collectUserData(userId, { generatedAt = new Date().toISOSt
   const profiles = await db.query(
     `SELECT id, owner_user_id, username, username_display, display_name,
             description, notes, theme, published, accepted_revision_id,
-            avatar_source, avatar_data_uri, created_at, updated_at
+            avatar_source, avatar_data_uri, is_primary, staff_badge_hidden,
+            created_at, updated_at
        FROM profiles
       WHERE owner_user_id = ?
       ORDER BY created_at, id`,

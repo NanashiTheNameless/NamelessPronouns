@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
-import { ChromiumMissing, dumpDom } from './helpers/chromium.js';
+import { ChromiumMissing, dumpHarness } from './helpers/chromium.js';
 test('Chromium refuses unsafe SVG preview and offers explicit stripping', async (t) => {
   let html;
   try {
-    html = await dumpDom([
-      '--allow-file-access-from-files', '--virtual-time-budget=1500', '--dump-dom',
+    html = (await dumpHarness([
+      '--allow-file-access-from-files', '--virtual-time-budget=6000', '--dump-dom',
       fileURLToPath(new URL('./fixtures/avatar-upload-harness.html', import.meta.url)),
-    ]);
+    ])).html;
   } catch (error) {
     if (error instanceof ChromiumMissing) return t.skip('Chromium is not installed');
     throw error;

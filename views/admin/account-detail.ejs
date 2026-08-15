@@ -154,6 +154,23 @@
       </section>
     <% } %>
 
+    <% if (canAction && profiles.length > 1) { %>
+      <section class="panel">
+        <h2>Primary profile</h2>
+        <p>The primary profile heads the account dashboard and cannot be deleted by its owner. Accounts cannot move this themselves.</p>
+        <form method="post" action="/admin/accounts/<%= account.id %>/primary-profile" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>Profile
+            <select name="profile_id">
+              <% profiles.forEach(function (profile) { %><option value="<%= profile.id %>" <%= Number(profile.is_primary) === 1 ? 'selected' : '' %>>@<%= profile.username_display %><%= Number(profile.is_primary) === 1 ? ' (primary)' : '' %></option><% }) %>
+            </select>
+          </label>
+          <label>Type MOVE PRIMARY PROFILE <input name="confirmation" autocomplete="off" required placeholder="MOVE PRIMARY PROFILE"></label>
+          <button type="submit">Move primary profile</button>
+        </form>
+      </section>
+    <% } %>
+
     <% if (canAction) { %>
       <section class="panel">
         <h2>Profile limit</h2>

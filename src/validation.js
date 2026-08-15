@@ -2,7 +2,7 @@ import { z } from 'zod';
 const RESERVED_USERNAMES = new Set([
   'admin', 'administrator', 'root', 'system', 'staff', 'owner', 'support', 'moderator',
   'about', 'contact', 'terms', 'privacy', 'legal', 'login', 'logout', 'signup', 'register',
-  'account', 'dashboard', 'settings', 'profiles', 'profile', 'workspaces', 'workspace',
+  'account', 'dashboard', 'settings', 'profiles', 'profile',
   'u', 'user', 'users', 'api', 'static', 'assets', 'healthz', 'readyz', 'consent', 'recover',
   'verify-email', 'null', 'undefined', 'anonymous', 'someone', 'something', 'unknown', 'else',
   'everyone', 'everything', 'nobody', 'nothing', 'epoch',

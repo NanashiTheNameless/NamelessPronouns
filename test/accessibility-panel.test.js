@@ -7,7 +7,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import ejs from 'ejs';
 import path from 'node:path';
-import { ChromiumMissing, dumpDom } from './helpers/chromium.js';
+import { ChromiumMissing, dumpHarness } from './helpers/chromium.js';
 const root = fileURLToPath(new URL('..', import.meta.url));
 test('accessibility settings apply before paint, persist locally, and reset', async (t) => {
   const footer = await ejs.renderFile(path.join(root, 'views/partials/site-footer.ejs'), {}, { async: true });
@@ -31,7 +31,7 @@ test('accessibility settings apply before paint, persist locally, and reset', as
   try {
     let stdout;
     try {
-      stdout = await dumpDom(['--virtual-time-budget=4000', '--dump-dom', `http://127.0.0.1:${server.address().port}/`]);
+      stdout = (await dumpHarness(['--virtual-time-budget=6000', '--dump-dom', `http://127.0.0.1:${server.address().port}/`])).html;
     } catch (error) {
       if (error instanceof ChromiumMissing) return t.skip('Chromium is not installed');
       throw error;

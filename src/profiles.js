@@ -55,6 +55,24 @@ export function deleteProfileStatements({ profileId, username, usernameDisplay, 
     },
   ];
 }
+export function makePrimaryStatements({ userId, profileId, now = Date.now() }) {
+  return [
+    { sql: 'UPDATE profiles SET is_primary = 0, updated_at = ? WHERE owner_user_id = ? AND is_primary = 1', params: [now, userId] },
+    { sql: 'UPDATE profiles SET is_primary = 1, updated_at = ? WHERE id = ? AND owner_user_id = ?', params: [now, profileId, userId] },
+  ];
+}
+export async function releaseHoldStatements({ userId, username, now = Date.now() }) {
+  const { rows } = await db.query(
+    `SELECT username FROM public_username_claims
+      WHERE state = 'reserved' AND reserved_user_id = ? AND username_display = ? AND reserved_until > ?`,
+    [userId, username, now],
+  );
+  if (!rows[0]) return null;
+  return [{
+    sql: "DELETE FROM public_username_claims WHERE state = 'reserved' AND reserved_user_id = ? AND username = ?",
+    params: [userId, rows[0].username],
+  }];
+}
 export function profileLimitFor(user) {
   const override = Number(user?.profile_limit);
   if (Number.isFinite(override) && override > 0) return Math.trunc(override);

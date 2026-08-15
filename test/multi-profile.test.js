@@ -8,6 +8,7 @@ import {
   additionalProfileStatements,
   deleteProfileStatements,
   firstProfileStatements,
+  makePrimaryStatements,
   profileLimitFor,
   MAX_USERNAME_HOLDS,
   USERNAME_HOLD_MS,
@@ -175,7 +176,7 @@ test('the first profile is primary for good, and never deletable', () => {
   const extra = additionalProfileStatements({ userId: 'u1', username: 'second', displayName: 'Second', now: 1 });
   assert.ok(extra.statements[0].sql.includes('0, 0,'), 'later profiles are not');
   const editor = fsSync.readFileSync(`${viewsDir}profile-edit.ejs`, 'utf8');
-  assert.match(editor, /keeps that role for good and cannot be deleted/);
+  assert.match(editor, /heads the dashboard and cannot be deleted/);
 });
 test('username holds are capped and reclaimable by their own account', async () => {
   assert.equal(MAX_USERNAME_HOLDS, 5);
@@ -185,4 +186,97 @@ test('username holds are capped and reclaimable by their own account', async () 
   const newProfile = await readFile(`${viewsDir}profile-new.ejs`, 'utf8');
   assert.match(newProfile, /Usernames you can reclaim/);
   assert.match(newProfile, /day<%= hold\.daysLeft === 1 \? '' : 's' %> left/);
+});
+
+test('the editor puts the save row with the form, and the side panels after it', async () => {
+  const editor = await readFile(`${viewsDir}profile-edit.ejs`, 'utf8');
+  const at = (needle) => {
+    const index = editor.indexOf(needle);
+    assert.ok(index !== -1, `${needle} is in the editor`);
+    return index;
+  };
+  assert.ok(at('class="form-actions"') < at('</form>'), 'the save row closes the profile form');
+  assert.ok(at('Publish this profile') < at('Save profile'), 'publish sits beside save, not adrift above it');
+  const saveRow = at('class="form-actions"');
+  for (const panel of ['id="staff-badge"', 'id="profile-icon"']) {
+    assert.ok(saveRow < at(panel), `${panel} comes after the profile form`);
+  }
+  assert.ok(at('delete-profile-h') < at('id="staff-badge"'), 'badge and icon sit at the very bottom');
+  assert.ok(at('import-h') < at('id="staff-badge"'));
+});
+test('the save row stays reachable on a long form', async () => {
+  const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
+  assert.match(css, /\.form-actions \{[^}]*position: sticky;[^}]*bottom: 0;/s, 'the save row follows the reader down');
+  assert.match(css, /\.form-actions \{[^}]*justify-content: space-between;/s);
+});
+
+test('the primary role moves to exactly one profile at a time', () => {
+  const statements = makePrimaryStatements({ userId: 'u1', profileId: 'p2', now: 5 });
+  assert.equal(statements.length, 2);
+  assert.match(statements[0].sql, /SET is_primary = 0.*owner_user_id = \? AND is_primary = 1/s, 'the old primary steps down first');
+  assert.match(statements[1].sql, /SET is_primary = 1.*WHERE id = \? AND owner_user_id = \?/s, 'and only a profile of that account takes over');
+  assert.deepEqual(statements[1].params, [5, 'p2', 'u1']);
+});
+test('accounts cannot move the primary role themselves', async () => {
+  const editor = await readFile(`${viewsDir}profile-edit.ejs`, 'utf8');
+  assert.doesNotMatch(editor, /action="\/profiles\/[^"]*\/primary"/, 'no self-service control exists');
+  assert.match(editor, /it is moved on request: contact support/);
+  const routes = await readFile(new URL('../src/routes/profile-editor.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(routes, /profiles\/:id\/primary/, 'and no route accepts it');
+});
+test('an Administrator can move the primary role for an account', async () => {
+  const admin = await readFile(new URL('../src/routes/admin-management.js', import.meta.url), 'utf8');
+  assert.match(admin, /admin\/accounts\/:id\/primary-profile/);
+  assert.match(admin, /requireStaff\('administrator'\)[\s\S]{0,120}primary-profile|primary-profile[\s\S]{0,120}requireStaff\('administrator'\)/,
+    'moving it is an Administrator action');
+  assert.match(admin, /That profile does not belong to that account/, 'the profile must be the account own');
+  assert.match(admin, /account\.primary_profile_changed/, 'the move is audited');
+  const view = await readFile(`${viewsDir}admin/account-detail.ejs`, 'utf8');
+  assert.match(view, /action="\/admin\/accounts\/<%= account\.id %>\/primary-profile"/);
+  assert.ok(view.includes('Type MOVE PRIMARY PROFILE'));
+  assert.ok(view.includes('placeholder="MOVE PRIMARY PROFILE"'));
+});
+test('a held username can be released early by the account holding it', async () => {
+  const view = await readFile(`${viewsDir}profile-new.ejs`, 'utf8');
+  assert.match(view, /action="\/profiles\/holds\/release"/);
+  assert.match(view, /name="username" value="<%= hold\.username %>"/);
+  assert.match(view, /Release <%= hold\.username %> now/);
+});
+test('an export carries every profile field the account owns', async () => {
+  const source = await readFile(new URL('../src/data-export.js', import.meta.url), 'utf8');
+  for (const column of ['avatar_source', 'avatar_data_uri', 'is_primary', 'staff_badge_hidden']) {
+    assert.match(source, new RegExp(`\\b${column}\\b`), `${column} is exported`);
+  }
+});
+test('the admin directory shows each account profile limit', async () => {
+  const view = await readFile(`${viewsDir}admin/users.ejs`, 'utf8');
+  assert.match(view, /account\.profile_count %> of <%= account\.profile_limit \|\| defaultProfileLimit/);
+  assert.match(view, /\(override\)/, 'an overridden limit is called out');
+});
+test('nothing in the interface still reserves or mentions workspaces', async () => {
+  const validation = await readFile(new URL('../src/validation.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(validation, /workspace/i, 'workspace usernames are free again');
+  const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
+  assert.doesNotMatch(css, /^nav a \{/m, 'the unused nav pill rule is gone');
+});
+
+test('settings lead with the account readout and end with the icon', async () => {
+  const view = await readFile(`${viewsDir}account/settings.ejs`, 'utf8');
+  const order = [...view.matchAll(/<h2>([^<]+)<\/h2>/g)].map((match) => match[1]);
+  assert.deepEqual(order, [
+    'Account', 'Profiles', 'Content flags', 'Security', 'Recovery', 'Your data',
+    'Default profile icon', 'Delete account',
+  ]);
+});
+test('the account panel reads out rank, status, and current limits', async () => {
+  const view = await readFile(`${viewsDir}account/settings.ejs`, 'utf8');
+  assert.match(view, /<dt>Rank<\/dt><dd><%= rank %>/);
+  assert.match(view, /<dt>Status<\/dt><dd><%= user\.signup_status %>/);
+  assert.match(view, /<dt>Profiles<\/dt><dd><%= profileCount %> of <%= profileLimit %>/);
+  assert.match(view, /raised for this account/, 'an administrator override is called out');
+  assert.match(view, /<dt>Held usernames<\/dt><dd><%= heldCount %> of <%= maxHolds %>/);
+  const route = await readFile(new URL('../src/routes/account.js', import.meta.url), 'utf8');
+  assert.match(route, /rank: staffRoleLabel\(req\.user\.staff_role\) \|\| 'Member'/, 'non-staff read as Member');
+  assert.match(route, /profileLimit: profileLimitFor\(req\.user\)/);
+  assert.match(route, /maxHolds: MAX_USERNAME_HOLDS/);
 });

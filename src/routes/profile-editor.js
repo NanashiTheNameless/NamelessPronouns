@@ -23,6 +23,7 @@ import {
   deleteProfileStatements,
   heldUsernames,
   ownedProfileCount,
+  releaseHoldStatements,
   releaseOldestHoldStatements,
   profileLimitFor,
   usernameAvailability,
@@ -632,6 +633,21 @@ router.post('/profiles/:id/avatar', requireApproved, async (req, res) => {
     target: profile.id, detail: { source },
   });
   res.redirect(`/profiles/${profile.id}/edit?saved=1#profile-icon`);
+});
+router.post('/profiles/holds/release', requireApproved, async (req, res) => {
+  const username = String(req.body.username ?? '').trim();
+  const statements = await releaseHoldStatements({ userId: req.user.id, username });
+  if (!statements) {
+    return res.status(404).render('error', {
+      title: 'Hold kept', status: 404, message: 'That username is not held by this account.',
+    });
+  }
+  await db.batch(statements);
+  await audit.record({
+    type: 'profile.username_hold_released', actorUserId: req.user.id, subjectUserId: req.user.id,
+    target: username, detail: { username },
+  });
+  res.redirect('/profiles/new');
 });
 router.post('/profiles/:id/staff-badge', requireApproved, async (req, res) => {
   const profile = await editableProfile(req.params.id, req.user.id);

@@ -16,6 +16,7 @@ test('the init schema stays consolidated and later migrations are additive', asy
     '0006_content_exemption_scopes.sql',
     '0007_profiles_per_account.sql',
     '0008_staff_badge_and_primary_profile.sql',
+    '0009_profile_owner_constraint.sql',
   ]);
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\bALTER\s+TABLE\b/i);
@@ -144,4 +145,16 @@ test('the badge and primary-profile migration is additive and backfills the firs
   assert.match(sql, /ALTER TABLE profiles ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 0/);
   assert.match(sql, /UPDATE profiles SET is_primary = 1 WHERE NOT EXISTS/, 'the oldest profile of each account becomes primary');
   assert.doesNotMatch(sql, /-- @(d1|postgres)/, 'both backends take the same statements');
+});
+
+test('Postgres gains the profile owner constraint SQLite already had', async () => {
+  const sql = await readFile(new URL('../db/migrations/0009_profile_owner_constraint.sql', import.meta.url), 'utf8');
+  const postgres = selectStatements(sql, 'postgres').join('\n');
+  const d1 = selectStatements(sql, 'd1').join('\n');
+  assert.match(postgres, /ALTER COLUMN owner_user_id SET NOT NULL/);
+  assert.match(postgres, /FOREIGN KEY \(owner_user_id\) REFERENCES users \(id\) ON DELETE CASCADE/);
+  assert.doesNotMatch(d1, /ALTER (COLUMN|TABLE profiles ADD CONSTRAINT)/, 'SQLite built the constraint into the rebuilt table');
+  for (const both of ['DELETE FROM profiles WHERE owner_user_id IS NULL']) {
+    assert.ok(postgres.includes(both) && d1.includes(both), 'orphan cleanup runs on both backends');
+  }
 });

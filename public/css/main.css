@@ -185,6 +185,9 @@ h2 {
 .panel h3 {
   margin-top: 0;
 }
+.container > .panel + .panel {
+  margin-top: 1rem;
+}
 .details {
   margin: 0;
 }
@@ -380,6 +383,28 @@ fieldset {
 .import-panel {
   margin-block: 1.5rem;
 }
+.form-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  padding: 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+.form-actions .choice {
+  flex: 1 1 16rem;
+  padding: 0.6rem 0.75rem;
+}
+.form-actions button {
+  flex: 0 0 auto;
+}
 .inline-form {
   display: flex;
   gap: 0.75rem;
@@ -388,6 +413,11 @@ fieldset {
 }
 .inline-form label {
   flex: 1 1 22rem;
+  margin-bottom: 0;
+}
+.inline-form button {
+  padding-block: 0.72rem;
+  border: 1px solid transparent;
 }
 .repeat-rows {
   display: grid;
@@ -840,13 +870,6 @@ nav ul {
   gap: 0.65rem;
   padding: 0;
   list-style: none;
-}
-nav a {
-  display: inline-block;
-  padding: 0.55rem 0.8rem;
-  background: var(--accent-soft);
-  border-radius: 999px;
-  text-decoration: none;
 }
 section > ul {
   display: grid;

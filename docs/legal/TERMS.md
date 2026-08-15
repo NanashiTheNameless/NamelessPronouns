@@ -56,8 +56,24 @@ Each approved account receives a first profile on approval and may create more,
 up to a per-account limit an Administrator can adjust. Every profile is owned by
 one account. Collaborative profile management is not offered.
 
-Deleting a profile keeps its username reserved to that account for seven days
-before the name returns to the pool.
+One profile on each account is its primary profile. The first profile approved
+for an account starts in that role and exactly one profile holds it. Accounts
+cannot move the role themselves: ask support, and an Administrator can move it
+to another profile of the same account. The primary profile cannot be deleted
+while it holds that role.
+
+Deleting a profile keeps its username reserved to that account for seven days.
+During the hold, that account can take the name back or release it early; when
+the hold ends, or is released, the name returns to the pool for anyone. Holds
+are limited in number per account, and both creating and deleting profiles are
+rate limited, so the feature cannot be used to hoard names.
+
+Staff accounts carry a badge on their profiles. Staff may hide that badge on any
+profile they own. A hidden badge is withheld from the page for everyone who is
+not staff, so the absence of a badge is not a statement that an account is not
+staff. Other staff continue to see the badge, marked as hidden. Hiding a badge
+changes nothing about that account's staff powers or its accountability for
+using them.
 
 Published profiles are visible to visitors who complete the policy and age
 gate. Every page of the service is sent with instructions asking search engines

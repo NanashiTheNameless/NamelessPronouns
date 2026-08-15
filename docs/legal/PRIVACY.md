@@ -22,7 +22,10 @@ We collect:
 - Profile usernames, display names, names, pronouns, About me descriptions,
   identity notes, themes, HTTPS links, avatar-source selection, and any uploaded avatar
   `data:` URI, per account and per profile. Each profile records the account
-  that owns it.
+  that owns it, whether it is that account's primary profile, and whether it
+  hides a staff badge.
+- Username claims, including a username held for seven days after a profile is
+  deleted and the account that holds it.
 - Support requests, reports, appeals, recovery cases, moderation records, bans,
   and staff audit events.
 - Rights complaints and counter-notices, legal requests and disclosures,
@@ -127,6 +130,12 @@ never another account's. Every other request, from a different account or from a
 signed-out browser alike, receives the same not-found response as an address that
 never existed.
 
+A staff account's badge appears on its profiles unless that profile hides it.
+When a badge is hidden, it is removed from the page before the page is sent, so
+a visitor who is not staff receives no indication that the account holds a staff
+role. Other staff still see the badge, marked as hidden. Whether a badge is
+hidden is stored per profile and is included in an account export.
+
 Emails, private drafts, profile ownership records, authentication records,
 support notes, report identities, and staff records are not public profile data.
 
@@ -210,6 +219,10 @@ when doing so is lawful and does not materially risk identifying a person.
   hash and timestamps. An unused record expires 14 days after creation; first
   use changes its expiry to seven days after that use. Expired records are
   removed by scheduled maintenance.
+- Deleted profiles: removed at once, along with the names, pronouns, words,
+  links, and flags on them. The username is held for the deleting account for
+  seven days, or until that account releases it early, and scheduled maintenance
+  then removes the expired hold. Deleting the account removes its holds too.
 - Account deletion requests: 30-day grace period, then the account record,
   including its email address, is deleted from the live database along with the
   deletion request itself. Security and staff audit events are retained under
