@@ -1,4 +1,5 @@
 export const SUPPORTERS = [
+  { name: 'RandoTechNerd', url: 'https://randotechnerd.com/', note: 'One-time contribution on August 16, 2026, covering six months of running the server' },
 ];
 export const SUPPORT_LINKS = [
   { name: 'GitHub Sponsors', url: 'https://github.com/sponsors/NanashiTheNameless', note: 'monthly or one-time' },
