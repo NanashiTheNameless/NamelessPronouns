@@ -1,6 +1,6 @@
 import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
+import { sha, solveChallenge } from 'altcha/lib';
 const DB_URL = process.env.NP_TEST_DATABASE_URL;
 const skip = !DB_URL;
 const secret = (s) => `${s}${'x'.repeat(Math.max(0, 32 - s.length))}`;
@@ -62,16 +62,9 @@ async function solveAltcha(html) {
   const res = await get(`/altcha/challenge?for=${ALTCHA_FORM_ENDPOINTS[action]}`);
   assert.equal(res.status, 200);
   const challenge = await res.json();
-  let number = -1;
-  for (let n = 0; n <= challenge.maxnumber; n++) {
-    if (createHash('sha256').update(challenge.salt + n).digest('hex') === challenge.challenge) {
-      number = n;
-      break;
-    }
-  }
-  return Buffer.from(
-    JSON.stringify({ algorithm: challenge.algorithm, challenge: challenge.challenge, number, salt: challenge.salt, signature: challenge.signature }),
-  ).toString('base64');
+  const solution = await solveChallenge({ challenge, deriveKey: sha.deriveKey });
+  assert.ok(solution, 'proof of work solved');
+  return Buffer.from(JSON.stringify({ challenge, solution })).toString('base64');
 }
 before(async () => {
   if (skip) return;

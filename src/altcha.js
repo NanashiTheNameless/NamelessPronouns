@@ -1,8 +1,8 @@
-import { createHash, randomInt } from 'node:crypto';
+import { randomInt } from 'node:crypto';
+import { createChallenge as createAltchaChallenge, sha, verifySolution } from 'altcha/lib';
 import config from './config.js';
-import { hmac, safeEqual } from './util/crypto.js';
+import { hmac } from './util/crypto.js';
 import { ipPrefixHash } from './util/net.js';
-import { newId } from './util/ids.js';
 const ALGORITHM = 'SHA-256';
 const MAX_NUMBER = config.ALTCHA_MAX_NUMBER;
 const TTL_MS = 10 * 60 * 1000;
@@ -20,33 +20,19 @@ function claim(challenge, expiresAt, now) {
   used.set(challenge, expiresAt);
   return true;
 }
-function sha256Hex(s) {
-  return createHash('sha256').update(s).digest('hex');
-}
 export function binding(req, endpoint) {
   const ua = String(req.headers['user-agent'] || '');
   return hmac(config.ALTCHA_HMAC_KEY, `${endpoint}|${ipPrefixHash(req) || ''}|${ua}`);
 }
-function signature(challenge, bind, expires) {
-  return hmac(config.ALTCHA_HMAC_KEY, `${challenge}|${bind}|${expires}`);
-}
-export function createChallenge(req, endpoint, { now = Date.now() } = {}) {
-  const expires = Math.floor((now + TTL_MS) / 1000);
-  const secretNumber = randomInt(0, MAX_NUMBER);
-  const salt = `${newId().replace(/-/g, '')}?expires=${expires}`;
-  const challenge = sha256Hex(salt + secretNumber);
-  const bind = binding(req, endpoint);
-  return {
+export async function createChallenge(req, endpoint, { now = Date.now() } = {}) {
+  return createAltchaChallenge({
     algorithm: ALGORITHM,
-    challenge,
-    salt,
-    signature: signature(challenge, bind, expires),
-    maxnumber: MAX_NUMBER,
-  };
-}
-function parseExpires(salt) {
-  const m = /[?&]expires=(\d+)/.exec(salt || '');
-  return m ? Number(m[1]) : 0;
+    cost: 1,
+    counter: randomInt(0, MAX_NUMBER + 1),
+    deriveKey: sha.deriveKey,
+    expiresAt: new Date(now + TTL_MS),
+    hmacSignatureSecret: binding(req, endpoint),
+  });
 }
 export async function verify(req, endpoint, payloadB64, { now = Date.now() } = {}) {
   let payload;
@@ -55,16 +41,25 @@ export async function verify(req, endpoint, payloadB64, { now = Date.now() } = {
   } catch {
     return false;
   }
-  const { algorithm, challenge, number, salt, signature: sig } = payload || {};
-  if (algorithm !== ALGORITHM || !challenge || !salt || typeof number !== 'number' || !sig) return false;
-  if (number < 0 || number > MAX_NUMBER || !Number.isInteger(number)) return false;
-  const expires = parseExpires(salt);
-  const expiresAt = expires * 1000;
-  if (!expires || now > expiresAt) return false;
-  const bind = binding(req, endpoint);
-  if (!safeEqual(sig, signature(challenge, bind, expires))) return false;
-  if (!safeEqual(challenge, sha256Hex(salt + number))) return false;
-  return claim(challenge, expiresAt, now);
+  const { challenge, solution } = payload || {};
+  const { parameters, signature } = challenge || {};
+  const { counter } = solution || {};
+  if (parameters?.algorithm !== ALGORITHM || !signature || !Number.isInteger(counter)) return false;
+  if (counter < 0 || counter > MAX_NUMBER) return false;
+  const expiresAt = Number(parameters.expiresAt) * 1000;
+  if (!expiresAt || now > expiresAt) return false;
+  let result;
+  try {
+    result = await verifySolution({
+      challenge,
+      deriveKey: sha.deriveKey,
+      hmacSignatureSecret: binding(req, endpoint),
+      solution,
+    });
+  } catch {
+    return false;
+  }
+  return result.verified && claim(signature, expiresAt, now);
 }
 export function _reset() {
   used.clear();

@@ -11,6 +11,7 @@ test('ALTCHA uses the NamelessUnSee business settings and solves in Chromium', a
     const files = {
       '/': 'test/fixtures/altcha-widget-harness.html',
       '/static/css/main.css': 'public/css/main.css',
+      '/static/vendor/altcha/business.css': 'node_modules/altcha/dist/themes/business.min.css',
       '/static/vendor/altcha/widget.js': 'node_modules/altcha/dist/main/altcha.min.js',
     };
     const file = files[req.url];
@@ -30,7 +31,7 @@ test('ALTCHA uses the NamelessUnSee business settings and solves in Chromium', a
     const encoded = /<output id="browser-result">([^<]+)<\/output>/.exec(stdout)?.[1];
     assert.ok(encoded && encoded !== 'pending', 'widget completed proof-of-work');
     const result = JSON.parse(encoded.replaceAll('&quot;', '"').replaceAll('&amp;', '&'));
-    assert.deepEqual(result, { solved: true, theme: 'business', logoVisible: false, footerVisible: true });
+    assert.deepEqual(result, { solved: true, theme: 'business', businessThemeApplied: true, logoVisible: false, footerVisible: true });
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

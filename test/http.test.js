@@ -265,6 +265,15 @@ test('legal and contact pages contain their real public content before consent',
     assert.doesNotMatch(html, /server-rendered placeholder/i, path);
   }
 });
+test('Open Source acknowledgements describe the current ALTCHA v3 integration', async () => {
+  const res = await fetch(`${base}/acknowledgements`);
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /ALTCHA v3/);
+  assert.match(html, /Proof-of-work checkbox widgets, business theme, challenge generation and server-side verification/);
+  assert.match(html, /ALTCHA Lib[\s\S]+Server-side email-address obfuscation payload generation/);
+  assert.doesNotMatch(html, /ALTCHA Lib[\s\S]+challenge generation and server-side verification/);
+});
 test('rendered informational pages never expose the operator email', async () => {
   for (const path of ['/terms', '/privacy', '/contact', '/legal-requests', '/acknowledgements', '/supporters']) {
     const res = await fetch(`${base}${path}`);
@@ -273,12 +282,16 @@ test('rendered informational pages never expose the operator email', async () =>
     assert.match(html, /\/static\/js\/email-obfuscation\.js/, path);
   }
 });
-test('self-hosted ALTCHA obfuscation assets are available', async () => {
+test('self-hosted official ALTCHA assets are available', async () => {
   for (const path of ['/static/vendor/altcha/obfuscation.js', '/static/vendor/altcha/widget.js']) {
     const res = await fetch(`${base}${path}`);
     assert.equal(res.status, 200, path);
     assert.match(res.headers.get('content-type') || '', /javascript/, path);
   }
+  const theme = await fetch(`${base}/static/vendor/altcha/business.css`);
+  assert.equal(theme.status, 200);
+  assert.match(theme.headers.get('content-type') || '', /css/);
+  assert.match(await theme.text(), /altcha-widget\[theme=(?:['"])?business(?:['"])?\]/);
 });
 test('GET /healthz returns 503 when database is unreachable', async () => {
   const res = await fetch(`${base}/healthz`);
@@ -358,10 +371,11 @@ test('the ALTCHA challenge endpoint answers JSON without any session or consent'
   assert.match(res.headers.get('content-type') || '', /application\/json/);
   assert.equal(res.headers.get('cache-control'), 'private, no-store');
   const challenge = await res.json();
-  for (const field of ['algorithm', 'challenge', 'salt', 'signature', 'maxnumber']) {
-    assert.ok(challenge[field] !== undefined, `challenge carries ${field}`);
+  assert.ok(challenge.signature, 'challenge carries its v3 signature');
+  for (const field of ['algorithm', 'cost', 'expiresAt', 'keyLength', 'keyPrefix', 'nonce', 'salt']) {
+    assert.ok(challenge.parameters[field] !== undefined, `v3 challenge parameters carry ${field}`);
   }
-  const expires = Number(new URLSearchParams(challenge.salt.split('?')[1]).get('expires'));
+  const expires = Number(challenge.parameters.expiresAt);
   assert.ok(expires > Math.floor(Date.now() / 1000), 'challenge expiry is in the future');
   assert.ok(expires < Math.floor(Date.now() / 1000) + 700, 'challenge expiry uses Unix seconds');
   const unknown = await fetch(`${base}/altcha/challenge?for=nonsense`, { redirect: 'manual' });

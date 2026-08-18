@@ -37,7 +37,7 @@ router.get('/altcha/challenge', async (req, res) => {
   const limit = await consume('altcha_challenge', ipPrefixHash(req) || 'unknown');
   if (!limit.allowed) return res.status(429).json({ error: 'too many challenges' });
   res.setHeader('Cache-Control', 'private, no-store');
-  return res.json(altcha.createChallenge(req, endpoint));
+  return res.json(await altcha.createChallenge(req, endpoint));
 });
 async function accountBanForUser(req, userId) {
   const { rows } = await db.query('SELECT email FROM users WHERE id = ?', [userId]);

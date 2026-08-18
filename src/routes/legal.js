@@ -16,8 +16,8 @@ router.get('/acknowledgements', (req, res) => res.render('legal/acknowledgements
   title: 'Open Source Acknowledgements',
   packages: [
     { name: '@node-rs/argon2', purpose: 'Argon2id password hashing', license: 'MIT', url: 'https://github.com/napi-rs/node-rs' },
-    { name: 'ALTCHA', purpose: 'Privacy-preserving email-address obfuscation widgets', license: 'MIT', url: 'https://github.com/altcha-org/altcha' },
-    { name: 'ALTCHA Lib', purpose: 'Server-side email-address obfuscation payloads', license: 'MIT', url: 'https://github.com/altcha-org/altcha-lib' },
+    { name: 'ALTCHA v3', purpose: 'Proof-of-work checkbox widgets, business theme, challenge generation and server-side verification, plus email-reveal widgets', license: 'MIT', url: 'https://github.com/altcha-org/altcha' },
+    { name: 'ALTCHA Lib', purpose: 'Server-side email-address obfuscation payload generation', license: 'MIT', url: 'https://github.com/altcha-org/altcha-lib' },
     { name: 'cookie-parser', purpose: 'HTTP cookie parsing', license: 'MIT', url: 'https://github.com/expressjs/cookie-parser' },
     { name: 'EJS', purpose: 'Escaped server-rendered templates', license: 'Apache-2.0', url: 'https://ejs.co/' },
     { name: 'Express', purpose: 'HTTP application framework', license: 'MIT', url: 'https://expressjs.com/' },

@@ -41,27 +41,17 @@ test('rate limiter: consume increments and blocks past the limit', { skip }, asy
 });
 test('altcha: issued challenge verifies once, replay rejected', { skip }, async () => {
   const altcha = await import('../src/altcha.js');
-  const { createHash } = await import('node:crypto');
+  const { sha, solveChallenge } = await import('altcha/lib');
   const db = (await import('../src/db/index.js')).default;
   const req = { headers: { 'user-agent': 'test-agent', 'cf-connecting-ip': '203.0.113.7' } };
   const endpoint = 'signup';
-  const challenge = altcha.createChallenge(req, endpoint);
-  let number = -1;
-  for (let n = 0; n <= challenge.maxnumber; n++) {
-    if (createHash('sha256').update(challenge.salt + n).digest('hex') === challenge.challenge) {
-      number = n;
-      break;
-    }
-  }
-  assert.ok(number >= 0, 'proof of work solved');
-  const payload = Buffer.from(
-    JSON.stringify({ algorithm: 'SHA-256', challenge: challenge.challenge, number, salt: challenge.salt, signature: challenge.signature }),
-  ).toString('base64');
+  const challenge = await altcha.createChallenge(req, endpoint);
+  const solution = await solveChallenge({ challenge, deriveKey: sha.deriveKey });
+  assert.ok(solution, 'proof of work solved');
+  const payload = Buffer.from(JSON.stringify({ challenge, solution })).toString('base64');
   assert.equal(await altcha.verify(req, endpoint, payload), true, 'valid proof accepted');
   assert.equal(await altcha.verify(req, endpoint, payload), false, 'replay rejected');
-  const tampered = Buffer.from(
-    JSON.stringify({ algorithm: 'SHA-256', challenge: challenge.challenge, number, salt: challenge.salt, signature: 'deadbeef' }),
-  ).toString('base64');
+  const tampered = Buffer.from(JSON.stringify({ challenge: { ...challenge, signature: 'deadbeef' }, solution })).toString('base64');
   assert.equal(await altcha.verify(req, endpoint, tampered), false, 'bad signature rejected');
 });
 test('bans: exact email, domain, and CIDR matching by scope', { skip }, async () => {

@@ -1,7 +1,7 @@
-<!doctype html><html><head><link rel="stylesheet" href="/static/css/main.css"></head><body>
+<!doctype html><html><head><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/vendor/altcha/business.css"></head><body>
 <form>
   <altcha-widget
-    challenge='{"algorithm":"SHA-256","challenge":"f48314c451ffd5b86d4340db260d1fe40d08a12e26fc4655964ae0977beafce0","salt":"widget-test?expires=4102444800","signature":"test","maxnumber":10}'
+    challenge='{"parameters":{"algorithm":"SHA-256","cost":1,"expiresAt":4102444800,"keyLength":32,"keyPrefix":"12ce2f8f7e94e42b75654cd30febc6d5","nonce":"b4c99bec23175c4a67f19769962b7059","salt":"e895b87b5e4548164ebfc56fe1734d71"}}'
     name="altcha" type="checkbox" display="standard" auto="onsubmit" language="en" theme="business"
     configuration='{"codeChallengeDisplay":"standard","hideFooter":false,"hideLogo":true}'></altcha-widget>
   <button type="submit">Submit</button>
@@ -20,6 +20,7 @@
       document.querySelector('#browser-result').textContent = JSON.stringify({
         solved: true,
         theme: widget.getAttribute('theme'),
+        businessThemeApplied: getComputedStyle(widget).getPropertyValue('--altcha-border-radius').trim() === '6px',
         logoVisible: Boolean(widget.querySelector('.altcha-logo')),
         footerVisible: Boolean(widget.querySelector('.altcha-footer')),
       });

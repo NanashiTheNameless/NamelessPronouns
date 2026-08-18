@@ -195,6 +195,7 @@ export function createApp() {
     },
   }));
   app.get('/static/vendor/altcha/obfuscation.js', (req, res) => res.sendFile(path.join(root, 'node_modules/altcha/dist/plugins/obfuscation.plugin.min.js')));
+  app.get('/static/vendor/altcha/business.css', (req, res) => res.sendFile(path.join(root, 'node_modules/altcha/dist/themes/business.min.css')));
   app.get('/static/vendor/altcha/widget.js', (req, res) => res.sendFile(path.join(root, 'node_modules/altcha/dist/main/altcha.min.js')));
   app.use(staticProfileRouter);
   app.use(cookieParser());
