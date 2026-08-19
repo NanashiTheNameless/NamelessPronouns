@@ -79,6 +79,12 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.equal(result.imported.inlineFont, 'Verdana, sans-serif, "0xProto", monospace');
     assert.deepEqual(JSON.parse(result.imported.stored), { bg: '#204020', text: '#ffffff' });
     assert.match(result.badImport.message, /not valid settings text/);
+    assert.deepEqual(
+      { theme: result.pasted.theme, stored: result.pasted.stored },
+      { theme: 'light', stored: 'light' },
+      'settings pasted into the box are the ones applied, even after the field fires change on blur',
+    );
+    assert.match(result.pasted.message, /Settings applied\./);
     assert.equal(result.badImport.inlineBg, '#204020', 'a failed import changes nothing');
     assert.deepEqual(result.timeMachine, {
       message: '1998 theme unlocked.', theme: null, unlocked: 'unlocked', revealed: true,

@@ -280,9 +280,10 @@ function wirePanel() {
     dialog.showModal();
   });
   form.addEventListener('change', (event) => {
+    const field = event.target;
+    if (field === transfer) return;
     resetCount = 0;
     copyCount = 0;
-    const field = event.target;
     if (field.name === 'accessibility_theme' && THEMES.includes(field.value)) {
       write(THEME_KEY, field.value);
       if (['default', 'light', 'contrast', 'contrast-light'].includes(field.value)) {

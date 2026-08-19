@@ -102,7 +102,8 @@ export const EASTER_EGGS = Object.freeze([
   {
     "name": "Owner admin greeting",
     "activation": "Open Admin while signed in as Owner",
-    "effect": "Says everything is somehow still running"
+    "effect": "Says everything is somehow still running",
+    "staff": true
   },
   {
     "name": "Staff badge descriptions",
@@ -112,37 +113,44 @@ export const EASTER_EGGS = Object.freeze([
   {
     "name": "Quiet queue",
     "activation": "Open the content flag reviews with none pending",
-    "effect": "Adds \"Nothing to moderate. Suspicious.\""
+    "effect": "Adds \"Nothing to moderate. Suspicious.\"",
+    "staff": true
   },
   {
     "name": "Staff egg catalog",
     "activation": "Visit /admin/easter-eggs as any staff member",
-    "effect": "Lists every documented Easter egg and how to activate it"
+    "effect": "Lists every documented Easter egg and how to activate it",
+    "staff": true
   },
   {
     "name": "Admin Nanashi",
     "activation": "Enter nanashi in the admin account lookup",
-    "effect": "Responds \"That account is looking back.\""
+    "effect": "Responds \"That account is looking back.\"",
+    "staff": true
   },
   {
     "name": "Admin placeholders",
     "activation": "Enter null or undefined in the admin account lookup",
-    "effect": "Responds \"Both already have profiles. See /u/null and /u/undefined.\""
+    "effect": "Responds \"Both already have profiles. See /u/null and /u/undefined.\"",
+    "staff": true
   },
   {
     "name": "Admin root",
     "activation": "Enter root in the admin account lookup",
-    "effect": "Responds \"Wrong tree.\""
+    "effect": "Responds \"Wrong tree.\"",
+    "staff": true
   },
   {
     "name": "Admin sudo",
     "activation": "Enter sudo in the admin account lookup",
-    "effect": "Responds \"Nice try. This is not a shell.\""
+    "effect": "Responds \"Nice try. This is not a shell.\"",
+    "staff": true
   },
   {
     "name": "Admin SQL",
     "activation": "Enter select * in the admin account lookup",
-    "effect": "Responds \"Please step away from the database.\""
+    "effect": "Responds \"Please step away from the database.\"",
+    "staff": true
   },
   {
     "name": "Keyboard shortcuts",

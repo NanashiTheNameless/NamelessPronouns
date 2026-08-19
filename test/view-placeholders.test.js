@@ -40,7 +40,7 @@ test('signup fields say what belongs in them', async () => {
   const source = await readFile(new URL('../views/auth/signup.ejs', import.meta.url), 'utf8');
   const placeholderFor = (name) => new RegExp(`name="${name}"(?:<%.*?%>|[^>])*placeholder="([^"]+)"`).exec(source)?.[1];
   assert.match(placeholderFor('email'), /address you will verify and sign in with/);
-  assert.match(placeholderFor('password'), /At least 12 characters with an uppercase letter, a lowercase letter, a number, and a symbol/);
+  assert.match(placeholderFor('password'), /At least 12 characters/);
   assert.match(placeholderFor('profile_username'), /single hyphens between them/, 'the username rule is spelled out');
   assert.match(placeholderFor('display_name'), /shown on your profile/);
   assert.match(placeholderFor('reason'), /invited you/);
@@ -61,6 +61,21 @@ test('confirmation fields show the exact phrase they demand', async () => {
     const source = await readFile(path.join(viewsDir, view), 'utf8');
     assert.ok(source.includes(`Type ${phrase}`), `${view} still asks for ${phrase}`);
     assert.ok(source.includes(`placeholder="${phrase}"`), `${view} shows ${phrase} as the placeholder`);
+  }
+});
+test('every password form states its rules in the label, like the username field', async () => {
+  const rules = '(12 to 256 characters, with an uppercase letter, a lowercase letter, a number, and a symbol)';
+  for (const view of [
+    'auth/signup.ejs', 'auth/password-reset.ejs', 'account/security.ejs',
+    'account/recovery-reset.ejs', 'account/password-reset-required.ejs',
+  ]) {
+    const source = await readFile(path.join(viewsDir, view), 'utf8');
+    assert.ok(source.includes(rules), `${view} spells the rules out in the label`);
+    assert.doesNotMatch(
+      source,
+      /placeholder="[^"]*uppercase letter[^"]*"/,
+      `${view} keeps the rules out of the placeholder`,
+    );
   }
 });
 test('placeholder text is dimmer than typed text', async () => {

@@ -297,7 +297,16 @@ test('every staff role can open the complete Easter egg catalog', async () => {
   }, { async: true });
   assert.equal(new Set(EASTER_EGGS.map((egg) => egg.name)).size, EASTER_EGGS.length);
   assert.equal((html.match(/<tr>/g) || []).length, EASTER_EGGS.length + 1);
-  for (const phrase of [`All ${EASTER_EGGS.length} documented Easter eggs`, 'Empty-state optimism', 'Staff egg catalog',
+  const staffOnly = EASTER_EGGS.filter((egg) => egg.staff);
+  const findable = EASTER_EGGS.filter((egg) => !egg.staff);
+  assert.ok(staffOnly.length >= 8, 'the staff-page eggs are marked');
+  assert.match(html, new RegExp(`All ${findable.length} documented Easter eggs anyone can find`));
+  assert.match(html, new RegExp(`${staffOnly.length} more only exist inside staff pages`));
+  assert.equal((html.match(/Staff only, not counted/g) || []).length, staffOnly.length);
+  for (const egg of staffOnly) {
+    assert.match(egg.activation, /admin|content flag reviews/i, `${egg.name} really is reachable only from a staff page`);
+  }
+  for (const phrase of ['Empty-state optimism', 'Staff egg catalog',
     'Staff profile', 'Visit /u/staff', 'Owner profile', 'Visit /u/owner',
     'Nanashi shortcut', 'Visit /u/nanashi', 'Titles are not people', 'Recursive 404',
     'Coffee endpoint', 'Status endpoint', 'Security contact', 'Patient rate limit',

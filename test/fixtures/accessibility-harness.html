@@ -185,6 +185,18 @@
       revealed: dialog.querySelector('[data-konami-theme]').hidden === false,
     };
 
+    const pasteAndApply = (value) => {
+      const field = dialog.querySelector('[data-accessibility-transfer]');
+      field.focus();
+      field.value = value;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      field.dispatchEvent(new Event('change', { bubbles: true }));
+      field.blur();
+      clickAction('import');
+    };
+    pasteAndApply(JSON.stringify({ version: 1, theme: 'light', font: 'serif', colors: {}, fontFamily: '' }));
+    const pasted = { message: status(), theme: root.getAttribute('data-theme'), stored: localStorage.getItem('np-accessibility-theme') };
+
     clickAction('reset');
     const reset = {
       theme: root.getAttribute('data-theme'),
@@ -268,6 +280,7 @@
       decade,
       rejectedFamily,
       imported,
+      pasted,
       badImport,
       timeMachine,
       reset,

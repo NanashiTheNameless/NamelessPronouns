@@ -6,7 +6,7 @@
     <p>This removes authenticator 2FA and recovery codes, selects email-code 2FA, and signs out every session.</p>
     <% if (error) { %><p class="error"><%= error %></p><% } %>
     <form method="post" action="/account/recovery/<%= token %>" class="panel stack" data-common-password-check>
-      <label>New password <input type="password" name="password" minlength="12" maxlength="256" autocomplete="new-password" required placeholder="At least 12 characters with an uppercase letter, a lowercase letter, a number, and a symbol, and not a known leaked password"></label>
+      <label>New password (12 to 256 characters, with an uppercase letter, a lowercase letter, a number, and a symbol) <input type="password" name="password" minlength="12" maxlength="256" autocomplete="new-password" required placeholder="At least 12 characters"></label>
       <label>Confirm password <input type="password" name="confirm_password" minlength="12" maxlength="256" autocomplete="new-password" required placeholder="Repeat the new password"></label>
       <p class="error" role="alert" data-common-password-message></p>
       <p class="muted">Common-password screening uses lists from <a href="https://github.com/danielmiessler/SecLists" rel="noreferrer">SecLists</a>. Thank you to its maintainers and contributors.</p>

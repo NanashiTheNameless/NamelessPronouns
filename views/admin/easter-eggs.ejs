@@ -6,14 +6,15 @@
   <main class="container wide">
     <p class="eyebrow">Staff tools</p>
     <h1>Easter eggs</h1>
-    <p>All <%= eggs.length %> documented Easter eggs, ordered from most mundane to least mundane.</p>
+    <% const findable = eggs.filter((egg) => !egg.staff); const staffOnly = eggs.filter((egg) => egg.staff); %>
+    <p>All <%= findable.length %> documented Easter eggs anyone can find, ordered from most mundane to least mundane. <%= staffOnly.length %> more only exist inside staff pages and are marked below; they do not count.</p>
     <p><a href="/admin">Back to Administration</a></p>
     <div class="table-scroll" tabindex="0" role="region" aria-label="Easter egg catalog">
       <table>
         <thead><tr><th scope="col">Easter egg</th><th scope="col">How to activate</th><th scope="col">What it does</th></tr></thead>
         <tbody>
           <% for (const egg of eggs) { %>
-            <tr><th scope="row"><%= egg.name %></th><td><%= egg.activation %></td><td><%= egg.effect %></td></tr>
+            <tr><th scope="row"><%= egg.name %><% if (egg.staff) { %><br><span class="fineprint">Staff only, not counted</span><% } %></th><td><%= egg.activation %></td><td><%= egg.effect %></td></tr>
           <% } %>
         </tbody>
       </table>

@@ -12,7 +12,7 @@
       <p><label for="email">Email</label><br>
         <input id="email" name="email" type="email" autocomplete="email" required value="<%= values.email || '' %>" placeholder="The address you will verify and sign in with"></p>
       <p><label for="password">Password (12 to 256 characters, with an uppercase letter, a lowercase letter, a number, and a symbol)</label><br>
-        <input id="password" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="256" placeholder="At least 12 characters with an uppercase letter, a lowercase letter, a number, and a symbol, and not a known leaked password"></p>
+        <input id="password" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="256" placeholder="At least 12 characters"></p>
       <p class="error" role="alert" data-common-password-message></p>
       <p><label for="profile_username">Profile username (3 to 32 characters, a to z, A to Z, 0 to 9, and hyphens)</label><br>
         <input id="profile_username" name="profile_username" required value="<%= values.profile_username || '' %>" placeholder="The name in your profile address: letters, numbers, and single hyphens between them"></p>
