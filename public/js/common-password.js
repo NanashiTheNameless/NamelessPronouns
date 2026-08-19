@@ -43,8 +43,8 @@
     return null;
   }
   const QUIPS = {
-    password1234: ' Bold, classic, and already in every list.',
-    correcthorsebatterystaple: ' xkcd approved. Also in the list now.',
+    'Password@123': ' Bold, classic, and already in every list.',
+    'g00dPa$$w0rD': ' Leetspeak fools no one. Also in the list.',
   };
   function falseMatchOdds(list) {
     const rate = Number(list.falsePositiveRate);
@@ -63,7 +63,7 @@
       try {
         const source = await sourceFor(input.value);
         if (source) {
-          const text = `That password was found in a common password wordlist ${source.name}. Choose another password.${falseMatchOdds(source)}${QUIPS[input.value.toLowerCase()] || ''}`;
+          const text = `That password was found in a common password wordlist ${source.name}. Choose another password.${falseMatchOdds(source)}${QUIPS[input.value] || ''}`;
           message.textContent = text;
           input.setAttribute('aria-invalid', 'true');
           input.focus();

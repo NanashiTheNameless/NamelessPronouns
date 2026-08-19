@@ -12,6 +12,7 @@ export const POLICIES = {
   profile_import: { max: 10, window: HOUR },
   profile_create: { max: 5, window: HOUR },
   profile_delete: { max: 3, window: 24 * HOUR },
+  forced_password_change: { max: 10, window: 15 * MIN },
   altcha_challenge: { max: 120, window: HOUR },
 };
 const counters = new Map();

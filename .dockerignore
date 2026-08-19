@@ -9,3 +9,5 @@ node_modules
 backups
 coverage
 *.log
+data/Known-Passwords
+data/Known-Passwords/*

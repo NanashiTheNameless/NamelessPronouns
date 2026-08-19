@@ -180,6 +180,14 @@ export function dataExportLink(to, link, idempotencyKey) {
     critical: true,
   });
 }
+export function forcedPasswordResetNotice(to, reason, idempotencyKey) {
+  return sendEmail({
+    to,
+    subject: 'Set a new password at your next sign-in',
+    text: `Every account on NamelessPronouns must choose a new password.\n\nReason given by the Administrator who required it:\n\n${reason}\n\nEvery session was signed out, so the site will ask you to sign in again. Your current password still works for that sign-in, and immediately after it you will be asked to choose a new password:\n${config.BASE_URL}/login\n\nNamelessPronouns staff will never ask you for your password.`,
+    idempotencyKey,
+  });
+}
 export function securityNotice(to, summary) {
   return sendEmail({
     to,

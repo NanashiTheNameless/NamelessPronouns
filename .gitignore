@@ -12,3 +12,4 @@ coverage/
 *.nogit.*
 *.githide.*
 *.gitignore.*
+githide/

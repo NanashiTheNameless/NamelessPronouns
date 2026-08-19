@@ -3,6 +3,7 @@ import db from '../db/index.js';
 import audit from '../audit.js';
 import { createBan, targetHash } from '../bans.js';
 import { requireStaff, roleAtLeast } from '../middleware/staff.js';
+import { clearSessionCookie } from '../auth/session.js';
 import { requireFreshAuth } from '../middleware/session.js';
 import { ipPrefixHash } from '../util/net.js';
 import { newId } from '../util/ids.js';
@@ -10,6 +11,8 @@ import { firstProfileStatements, makePrimaryStatements, profileLimitFor } from '
 import { DELETION_GRACE_MS, purgeDeletion } from '../maintenance.js';
 import * as V from '../validation.js';
 import * as mail from '../mail.js';
+import { forcePasswordResetForEveryone, notifyPasswordResetMandate } from '../password-mandates.js';
+import logger from '../logger.js';
 import config from '../config.js';
 import { isIP } from 'node:net';
 const router = express.Router();
@@ -524,6 +527,36 @@ router.post('/admin/email-rules/:id/delete', requireStaff('administrator'), requ
   await db.query('DELETE FROM email_domain_rules WHERE id = ?', [req.params.id]);
   await audit.record({ type: 'email_domain_rule.deleted', actorUserId: req.user.id, target: rows[0].domain, ipHash: ipPrefixHash(req), detail: { ruleType: rows[0].rule_type } });
   res.redirect('/admin/email-rules');
+});
+router.get('/admin/password-resets', requireStaff('administrator'), requireFreshAuth(), async (req, res) => {
+  const { rows } = await db.query(
+    `SELECT id, reason, accounts, sessions_revoked, notified, notify_failed, created_at, completed_at
+       FROM password_reset_mandates ORDER BY created_at DESC LIMIT 50`,
+  );
+  const outstanding = await db.query(
+    "SELECT COUNT(*) AS count FROM users WHERE signup_status = 'approved' AND password_reset_required_at IS NOT NULL",
+  );
+  res.render('admin/password-resets', {
+    title: 'Forced password resets',
+    mandates: rows,
+    outstanding: Number(outstanding.rows[0]?.count || 0),
+  });
+});
+router.post('/admin/password-resets', requireStaff('administrator'), requireFreshAuth({ returnTo: '/admin/password-resets' }), async (req, res) => {
+  if (req.body.confirmation !== 'FORCE PASSWORD RESET') return fail(res, 400, 'Type FORCE PASSWORD RESET exactly to continue.');
+  let reason;
+  try { reason = prose(req.body.reason); } catch (error) { if (error instanceof V.ValidationError) return fail(res, 400, error.message); throw error; }
+  const { mandateId, accounts, sessionsRevoked } = await forcePasswordResetForEveryone({ reason, actorUserId: req.user.id });
+  await audit.record({
+    type: 'account.password_reset_forced_all',
+    actorUserId: req.user.id,
+    target: mandateId,
+    ipHash: ipPrefixHash(req),
+    detail: { reason, accounts, sessionsRevoked },
+  });
+  notifyPasswordResetMandate(mandateId).catch((error) => logger.error('password mandate notices failed', { error: error.message }));
+  clearSessionCookie(res);
+  res.redirect('/login');
 });
 router.get('/admin/audit', requireStaff('administrator'), requireFreshAuth(), async (req, res) => {
   const eventType = typeof req.query.type === 'string' ? req.query.type.trim() : '';

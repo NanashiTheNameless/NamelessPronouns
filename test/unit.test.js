@@ -16,6 +16,7 @@ import config, { DEFAULT_EMAIL_DOMAIN_ALLOWLIST } from '../src/config.js';
 import { matchesEmailDomain } from '../src/email-domains.js';
 import { createD1Backend } from '../src/db/d1.js';
 import { ownerBootstrapStatements } from '../src/owner-bootstrap.js';
+import { passwordResetGate } from '../src/middleware/password-reset-gate.js';
 test('rewrite: ? placeholders become $1..$n', () => {
   assert.equal(rewrite('SELECT * FROM t WHERE a = ? AND b = ?'), 'SELECT * FROM t WHERE a = $1 AND b = $2');
 });
@@ -261,4 +262,27 @@ test('the pronoun opinion egg needs at least two sets that agree', async () => {
   assert.equal(pronounOpinionEgg(['jokingly']), null);
   assert.equal(pronounOpinionEgg(['nope', 'yes']), null);
   assert.equal(pronounOpinionEgg([]), null);
+});
+
+test('the password-reset gate holds a flagged account on the reset page and nowhere else', () => {
+  const gate = passwordResetGate();
+  const run = (user, path) => {
+    let redirected = null;
+    let passed = false;
+    gate(
+      { user, path },
+      { redirect: (to) => { redirected = to; } },
+      () => { passed = true; },
+    );
+    return { redirected, passed };
+  };
+  const flagged = { password_reset_required_at: 1700000000000 };
+  assert.equal(run(flagged, '/dashboard').redirected, '/account/password-reset-required');
+  assert.equal(run(flagged, '/settings').redirected, '/account/password-reset-required');
+  assert.equal(run(flagged, '/admin').redirected, '/account/password-reset-required');
+  for (const path of ['/account/password-reset-required', '/logout', '/terms', '/privacy', '/consent', '/static/js/common-password.js', '/login', '/forgot-password/abc']) {
+    assert.ok(run(flagged, path).passed, `${path} stays reachable while a reset is owed`);
+  }
+  assert.ok(run({ password_reset_required_at: null }, '/dashboard').passed, 'an unflagged account is untouched');
+  assert.ok(run(null, '/dashboard').passed, 'a signed-out visitor is untouched');
 });

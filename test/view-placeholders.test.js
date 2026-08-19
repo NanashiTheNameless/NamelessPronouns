@@ -40,7 +40,7 @@ test('signup fields say what belongs in them', async () => {
   const source = await readFile(new URL('../views/auth/signup.ejs', import.meta.url), 'utf8');
   const placeholderFor = (name) => new RegExp(`name="${name}"(?:<%.*?%>|[^>])*placeholder="([^"]+)"`).exec(source)?.[1];
   assert.match(placeholderFor('email'), /address you will verify and sign in with/);
-  assert.match(placeholderFor('password'), /At least 12 characters/);
+  assert.match(placeholderFor('password'), /At least 12 characters with an uppercase letter, a lowercase letter, a number, and a symbol/);
   assert.match(placeholderFor('profile_username'), /single hyphens between them/, 'the username rule is spelled out');
   assert.match(placeholderFor('display_name'), /shown on your profile/);
   assert.match(placeholderFor('reason'), /invited you/);
@@ -55,6 +55,7 @@ test('confirmation fields show the exact phrase they demand', async () => {
     ['admin/legal-holds.ejs', 'CREATE LEGAL HOLD'],
     ['admin/account-detail.ejs', 'REVOKE ALL SESSIONS'],
     ['admin/suspensions.ejs', 'TERMINATE ACCOUNT'],
+    ['admin/password-resets.ejs', 'FORCE PASSWORD RESET'],
   ];
   for (const [view, phrase] of cases) {
     const source = await readFile(path.join(viewsDir, view), 'utf8');

@@ -26,13 +26,13 @@ export const EASTER_EGGS = Object.freeze([
   },
   {
     "name": "Classic password",
-    "activation": "Submit password1234 as a new password",
+    "activation": "Submit Password@123 as a new password",
     "effect": "Adds \"Bold, classic, and already in every list.\" to the common-password refusal"
   },
   {
-    "name": "Battery staple",
-    "activation": "Submit correcthorsebatterystaple as a new password",
-    "effect": "Adds \"xkcd approved. Also in the list now.\" to the common-password refusal"
+    "name": "Leetspeak classic",
+    "activation": "Submit g00dPa$$w0rD as a new password",
+    "effect": "Adds \"Leetspeak fools no one. Also in the list.\" to the common-password refusal"
   },
   {
     "name": "Nobody signs up",

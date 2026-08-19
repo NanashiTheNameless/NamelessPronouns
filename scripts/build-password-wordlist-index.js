@@ -59,11 +59,13 @@ async function eachLine(file, visit) {
 }
 const MIN_PASSWORD_LENGTH = 12;
 const MAX_PASSWORD_LENGTH = 256;
+const COMPOSITION = [/\p{Lu}/u, /\p{Ll}/u, /\p{Nd}/u, /[^\p{Lu}\p{Ll}\p{Nd}]/u];
 function eligible(line) {
   const text = line.toString('utf8');
   if (!Buffer.from(text, 'utf8').equals(line)) return false;
   const length = [...text].length;
-  return length >= MIN_PASSWORD_LENGTH && length <= MAX_PASSWORD_LENGTH;
+  if (length < MIN_PASSWORD_LENGTH || length > MAX_PASSWORD_LENGTH) return false;
+  return COMPOSITION.every((rule) => rule.test(text));
 }
 function dedupeKey(line) {
   return createHash('sha256').update(line).digest('base64').slice(0, 22);
@@ -96,7 +98,7 @@ function falsePositiveRate(bits, bitCount) {
 mkdirSync(output, { recursive: true });
 const started = Date.now();
 console.log(`Indexing ${names.length} wordlists at ${BITS_PER_ENTRY} bits/entry with ${HASH_COUNT} probes.`);
-console.log(`Pass 1 of 2: counting entries and removing cross-list duplicates. Only ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} character entries are eligible, because the password policy rejects anything shorter or longer.`);
+console.log(`Pass 1 of 2: counting entries and removing cross-list duplicates. Only ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} character entries holding an uppercase letter, a lowercase letter, a number, and a symbol are eligible, because the password policy rejects everything else.`);
 let seen = new Set();
 const counts = [];
 const eligibleCounts = [];
@@ -122,10 +124,10 @@ for (const [index, name] of names.entries()) {
   eligibleTotal += scanned;
   counts.push(unique);
   eligibleCounts.push(scanned);
-  const tooShort = lines - scanned;
+  const rejected = lines - scanned;
   const parts = [`${lines.toLocaleString('en')} lines`];
-  parts.push(`${scanned.toLocaleString('en')} within policy length`);
-  if (tooShort) parts.push(`${tooShort.toLocaleString('en')} skipped`);
+  parts.push(`${scanned.toLocaleString('en')} accepted by the policy`);
+  if (rejected) parts.push(`${rejected.toLocaleString('en')} skipped`);
   if (scanned !== unique) parts.push(`${(scanned - unique).toLocaleString('en')} already covered`);
   parts.push(`${unique.toLocaleString('en')} new`);
   step(index, name, `${parts.join(', ')} in ${seconds(listStarted)}`);
@@ -133,7 +135,7 @@ for (const [index, name] of names.entries()) {
 const uniqueTotal = seen.size;
 seen = null;
 const duplicateShare = eligibleTotal ? ((1 - uniqueTotal / eligibleTotal) * 100).toFixed(1) : '0.0';
-console.log(`Pass 1 complete: ${lineTotal.toLocaleString('en')} lines read, ${eligibleTotal.toLocaleString('en')} within policy length, ${uniqueTotal.toLocaleString('en')} unique (${duplicateShare}% duplicates) in ${seconds(started)}.`);
+console.log(`Pass 1 complete: ${lineTotal.toLocaleString('en')} lines read, ${eligibleTotal.toLocaleString('en')} accepted by the policy, ${uniqueTotal.toLocaleString('en')} unique (${duplicateShare}% duplicates) in ${seconds(started)}.`);
 console.log('Pass 2 of 2: building filters.');
 const manifest = {
   version: 3,

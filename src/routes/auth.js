@@ -293,7 +293,9 @@ router.post('/forgot-password/:token', async (req, res) => {
   );
   if (consumed.rows.length === 0) return invalid();
   await db.batch([
-    { sql: 'UPDATE users SET password_hash = ?, password_hash_version = ?, updated_at = ? WHERE id = ?', params: [hashed.hash, hashed.version, now, reset.user_id] },
+    { sql: `UPDATE users SET password_hash = ?, password_hash_version = ?,
+                   password_reset_required_at = NULL, password_reset_required_reason = NULL, updated_at = ?
+             WHERE id = ?`, params: [hashed.hash, hashed.version, now, reset.user_id] },
     { sql: 'UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL', params: [now, reset.user_id] },
     { sql: 'DELETE FROM login_challenges WHERE user_id = ?', params: [reset.user_id] },
     { sql: 'DELETE FROM reauth_challenges WHERE user_id = ?', params: [reset.user_id] },

@@ -76,7 +76,7 @@ before(async () => {
   (await import('../src/altcha.js'))._reset();
   const { rows } = await db.query('SELECT COUNT(*) AS c FROM users');
   if (Number(rows[0].c) === 0) {
-    await insertUser({ email: `seed-${Date.now()}@seed.example`, password: 'seed-account-passphrase', status: 'approved' });
+    await insertUser({ email: `seed-${Date.now()}@seed.example`, password: 'seed-account-Passphrase1!', status: 'approved' });
   }
   server = createApp().listen(0);
   await new Promise((r) => server.once('listening', r));
@@ -95,7 +95,7 @@ test('full signup -> verify -> login -> email 2FA -> dashboard', { skip }, async
   const cookies = jar();
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `flow-${suffix}@allowed-${suffix}.example`;
-  const password = 'a-sufficiently-long-passphrase';
+  const password = 'a-sufficiently-long-Passphrase1!';
   const uname = `flow${suffix}`.slice(0, 20);
   await get('/consent', cookies);
   let res = await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);
@@ -147,7 +147,7 @@ test('server accepts a common password when the client deterrent is bypassed', {
   const page = await (await get('/signup', cookies)).text();
   const res = await post('/signup', {
     email,
-    password: 'PolniyPizdec0211',
+    password: 'g00dPa$$w0rD',
     profile_username: `common${suffix}`.slice(0, 20),
     display_name: 'Common Password Test',
     reason: 'I want a personal profile.',
@@ -186,7 +186,7 @@ async function insertUser({ email, password, status = 'approved', role = 'none' 
 test('a pending account is told it is awaiting approval after valid credentials', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `pending-login-${suffix}@example.com`;
-  const password = `pending-login-passphrase-${suffix}`;
+  const password = `pending-login-Passphrase1!-${suffix}`;
   await insertUser({ email, password, status: 'pending' });
   const cookies = jar();
   await post('/consent', { policies: 'on', age18: 'on', next: '/login' }, cookies);
@@ -207,8 +207,8 @@ test('a pending account is told it is awaiting approval after valid credentials'
 test('self-service password reset requires two distinct email proofs and revokes sessions', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `password-reset-${suffix}@example.com`;
-  const oldPassword = `old-reset-passphrase-${suffix}`;
-  const newPassword = `new-reset-passphrase-${suffix}`;
+  const oldPassword = `old-reset-Passphrase1!-${suffix}`;
+  const newPassword = `new-reset-Passphrase1!-${suffix}`;
   const userId = await insertUser({ email, password: oldPassword });
   const signedIn = jar();
   await loginAs(signedIn, email, oldPassword);
@@ -264,7 +264,7 @@ test('admin approves a pending account (staff + CSRF + audit)', { skip }, async 
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const adminEmail = `admin-${suffix}@allowed-${suffix}.example`;
   const pendingEmail = `pending-${suffix}@allowed-${suffix}.example`;
-  const pw = 'admin-account-passphrase';
+  const pw = 'admin-account-Passphrase1!';
   await insertUser({ email: adminEmail, password: pw, status: 'approved', role: 'administrator' });
   const pendingId = await insertUser({ email: pendingEmail, password: pw, status: 'pending', role: 'none' });
   const cookies = jar();
@@ -293,7 +293,7 @@ test('an Administrator can delete an account, cancel it, and let the purge compl
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const adminEmail = `deleter-${suffix}@allowed-${suffix}.example`;
   const targetEmail = `doomed-${suffix}@allowed-${suffix}.example`;
-  const pw = 'admin-deletion-passphrase';
+  const pw = 'admin-deletion-Passphrase1!';
   await insertUser({ email: adminEmail, password: pw, status: 'approved', role: 'administrator' });
   const targetId = await insertUser({ email: targetEmail, password: pw, status: 'approved', role: 'none' });
   const cookies = jar();
@@ -372,7 +372,7 @@ test('an Administrator can delete an account immediately with no grace period', 
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const adminEmail = `nuker-${suffix}@allowed-${suffix}.example`;
   const targetEmail = `instant-${suffix}@allowed-${suffix}.example`;
-  const pw = 'admin-immediate-passphrase';
+  const pw = 'admin-immediate-Passphrase1!';
   await insertUser({ email: adminEmail, password: pw, status: 'approved', role: 'administrator' });
   const targetId = await insertUser({ email: targetEmail, password: pw, status: 'approved', role: 'none' });
   const cookies = jar();
@@ -412,7 +412,7 @@ test('admin management covers roles, rules, bans, audit, reports, and emergency 
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const ownerEmail = `owner-admin-${suffix}@allowed-${suffix}.example`;
   const targetEmail = `managed-${suffix}@allowed-${suffix}.example`;
-  const password = 'management-test-passphrase';
+  const password = 'management-test-Passphrase1!';
   await insertUser({ email: ownerEmail, password, role: 'owner' });
   const targetId = await insertUser({ email: targetEmail, password });
   const cookies = jar();
@@ -481,7 +481,7 @@ test('admin management covers roles, rules, bans, audit, reports, and emergency 
 test('content-rule changes are immutable, previewed, and shadowed unless urgent', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `rule-admin-${suffix}@allowed-${suffix}.example`;
-  const password = 'content-rule-admin-passphrase';
+  const password = 'content-rule-admin-Passphrase1!';
   const adminId = await insertUser({ email, password, status: 'approved', role: 'administrator' });
   const cookies = jar();
   await loginAs(cookies, email, password);
@@ -595,8 +595,8 @@ test('content flag review creates a narrow effective exemption', { skip }, async
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const userEmail = `flag-user-${suffix}@allowed-${suffix}.example`;
   const adminEmail = `flag-admin-${suffix}@allowed-${suffix}.example`;
-  const userPw = 'content-flag-user-passphrase';
-  const adminPw = 'content-flag-admin-passphrase';
+  const userPw = 'content-flag-user-Passphrase1!';
+  const adminPw = 'content-flag-admin-Passphrase1!';
   const userId = await insertUser({ email: userEmail, password: userPw, status: 'approved' });
   const adminId = await insertUser({ email: adminEmail, password: adminPw, status: 'approved', role: 'administrator' });
   const { newId } = await import('../src/util/ids.js');
@@ -742,9 +742,9 @@ test('an administrator creates and edits per-account and per-value exemptions', 
   const termEmail = `exempt-term-${suffix}@allowed-${suffix}.example`;
   const accountEmail = `exempt-account-${suffix}@allowed-${suffix}.example`;
   const adminEmail = `exempt-admin-${suffix}@allowed-${suffix}.example`;
-  const adminPw = 'exemption-admin-passphrase';
-  const termUserId = await insertUser({ email: termEmail, password: 'exemption-term-passphrase', status: 'approved' });
-  const accountUserId = await insertUser({ email: accountEmail, password: 'exemption-account-passphrase', status: 'approved' });
+  const adminPw = 'exemption-admin-Passphrase1!';
+  const termUserId = await insertUser({ email: termEmail, password: 'exemption-term-Passphrase1!', status: 'approved' });
+  const accountUserId = await insertUser({ email: accountEmail, password: 'exemption-account-Passphrase1!', status: 'approved' });
   const adminId = await insertUser({ email: adminEmail, password: adminPw, status: 'approved', role: 'administrator' });
   const { newId } = await import('../src/util/ids.js');
   const { matchIsExempt } = await import('../src/content-exemptions.js');
@@ -868,8 +868,8 @@ test('three distinct enforcing edits suspend and Administrator restoration recov
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `suspend-${suffix}@allowed-${suffix}.example`;
   const adminEmail = `suspend-admin-${suffix}@allowed-${suffix}.example`;
-  const pw = 'suspension-user-passphrase';
-  const adminPw = 'suspension-admin-passphrase';
+  const pw = 'suspension-user-Passphrase1!';
+  const adminPw = 'suspension-admin-Passphrase1!';
   const userId = await insertUser({ email, password: pw, status: 'approved' });
   await insertUser({ email: adminEmail, password: adminPw, status: 'approved', role: 'administrator' });
   const { newId } = await import('../src/util/ids.js');
@@ -1055,7 +1055,7 @@ test('TOTP enrollment then TOTP-only login', { skip }, async () => {
   const { generate } = await import('../src/auth/totp.js');
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `totp-${suffix}@allowed-${suffix}.example`;
-  const pw = 'totp-user-passphrase-xx';
+  const pw = 'totp-user-Passphrase1!-xx';
   await insertUser({ email, password: pw, status: 'approved', role: 'none' });
   const cookies = jar();
   await loginAs(cookies, email, pw);
@@ -1144,7 +1144,7 @@ test('a used TOTP code cannot be replayed on a second login', { skip }, async ()
   const { generateSecret, generate, currentStep } = await import('../src/auth/totp.js');
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `replay-${suffix}@allowed-${suffix}.example`;
-  const pw = 'replay-user-passphrase-x';
+  const pw = 'replay-user-Passphrase1!-x';
   const userId = await insertUser({ email, password: pw, status: 'approved', role: 'none' });
   const secret = generateSecret();
   await enrollTotpDirectly(userId, secret);
@@ -1165,7 +1165,7 @@ test('an Account ban blocks email verification without disclosing the ban', { sk
   const cookies = jar();
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `banned-${suffix}@allowed-${suffix}.example`;
-  const password = 'banned-user-passphrase-x';
+  const password = 'banned-user-Passphrase1!-x';
   const uname = `banned${suffix}`.slice(0, 20);
   await get('/consent', cookies);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);
@@ -1191,14 +1191,14 @@ test('an Account ban blocks email verification without disclosing the ban', { sk
 test('support is a valid staff role in the schema', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `support-${suffix}@allowed-${suffix}.example`;
-  const id = await insertUser({ email, password: 'support-user-passphrase', status: 'approved', role: 'support' });
+  const id = await insertUser({ email, password: 'support-user-Passphrase1!', status: 'approved', role: 'support' });
   const row = await db.query('SELECT staff_role FROM users WHERE id = ?', [id]);
   assert.equal(row.rows[0].staff_role, 'support');
 });
 test('non-staff cannot reach /admin (404, no existence leak)', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `plain-${suffix}@allowed-${suffix}.example`;
-  const pw = 'plain-user-passphrase-xx';
+  const pw = 'plain-user-Passphrase1!-xx';
   await insertUser({ email, password: pw, status: 'approved', role: 'none' });
   const cookies = jar();
   await loginAs(cookies, email, pw);
@@ -1208,7 +1208,7 @@ test('non-staff cannot reach /admin (404, no existence leak)', { skip }, async (
 test('sensitive action needs a fresh step-up (email second factor)', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `fresh-${suffix}@allowed-${suffix}.example`;
-  const pw = 'freshness-user-passphrase';
+  const pw = 'freshness-user-Passphrase1!';
   const userId = await insertUser({ email, password: pw, status: 'approved', role: 'none' });
   const cookies = jar();
   await loginAs(cookies, email, pw);
@@ -1223,7 +1223,7 @@ test('sensitive action needs a fresh step-up (email second factor)', { skip }, a
   const codeMail = outbox.find((m) => m.to === email && /confirm a sensitive change/i.test(m.subject));
   assert.ok(codeMail, 'reauth code email sent');
   const code = /code is:\s*(\d{6})/.exec(codeMail.text)[1];
-  res = await post('/account/reauth', { _csrf: csrf, password: 'not-the-password', code, next: '/account/security' }, cookies);
+  res = await post('/account/reauth', { _csrf: csrf, password: 'Not-the-password1!', code, next: '/account/security' }, cookies);
   assert.equal(res.status, 401);
   res = await post('/account/reauth', { _csrf: csrf, password: pw, code, next: '/account/security' }, cookies);
   assert.equal(res.status, 302);
@@ -1242,7 +1242,7 @@ test('step-up with a TOTP second factor (no email sent)', { skip }, async () => 
   const { generateSecret, generate } = await import('../src/auth/totp.js');
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `freshtotp-${suffix}@allowed-${suffix}.example`;
-  const pw = 'freshness-totp-passphrase';
+  const pw = 'freshness-totp-Passphrase1!';
   const userId = await insertUser({ email, password: pw, status: 'approved', role: 'none' });
   const secret = generateSecret();
   await enrollTotpDirectly(userId, secret);
@@ -1288,8 +1288,8 @@ test('step-up with a TOTP second factor (no email sent)', { skip }, async () => 
 test('password change preserves the current session and revokes other sessions', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `password-change-${suffix}@allowed-${suffix}.example`;
-  const oldPassword = 'old-password-change-passphrase';
-  const newPassword = 'new-password-change-passphrase';
+  const oldPassword = 'old-password-change-Passphrase1!';
+  const newPassword = 'new-password-change-Passphrase1!';
   const userId = await insertUser({ email, password: oldPassword, status: 'approved' });
   const current = jar();
   const other = jar();
@@ -1327,7 +1327,7 @@ test('password change preserves the current session and revokes other sessions',
 test('avatar source selection stores only bounded safe image data URIs', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `avatar-${suffix}@allowed-${suffix}.example`;
-  const password = 'avatar-source-test-passphrase';
+  const password = 'avatar-source-test-Passphrase1!';
   const userId = await insertUser({ email, password, status: 'approved' });
   const { newId } = await import('../src/util/ids.js');
   const profileId = newId();
@@ -1372,7 +1372,7 @@ test('an unpublished profile is visible to its owner and to staff only', { skip 
   const email = `draft-${suffix}@allowed-${suffix}.example`;
   const otherEmail = `nosy-${suffix}@allowed-nosy-${suffix}.example`;
   const staffEmail = `staff-${suffix}@allowed-staff-${suffix}.example`;
-  const password = 'unpublished-preview-passphrase';
+  const password = 'unpublished-preview-Passphrase1!';
   const userId = await insertUser({ email, password, status: 'approved' });
   await insertUser({ email: otherEmail, password, status: 'approved' });
   await insertUser({ email: staffEmail, password, status: 'approved', role: 'support' });
@@ -1428,7 +1428,7 @@ test('email change requires new-address confirmation and revokes every session',
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const oldEmail = `email-old-${suffix}@allowed-${suffix}.example`;
   const newEmail = `email-new-${suffix}@allowed-new-${suffix}.example`;
-  const password = 'email-change-test-passphrase';
+  const password = 'email-change-test-Passphrase1!';
   const userId = await insertUser({ email: oldEmail, password, status: 'approved' });
   const cookies = jar();
   await loginAs(cookies, oldEmail, password);
@@ -1469,9 +1469,9 @@ test('Administrator recovery resets credentials and authentication state once', 
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `recovery-target-${suffix}@allowed-${suffix}.example`;
   const adminEmail = `recovery-admin-${suffix}@allowed-${suffix}.example`;
-  const oldPassword = 'recovery-old-password-passphrase';
-  const newPassword = 'recovery-new-password-passphrase';
-  const adminPassword = 'recovery-admin-passphrase';
+  const oldPassword = 'recovery-old-password-Passphrase1!';
+  const newPassword = 'recovery-new-password-Passphrase1!';
+  const adminPassword = 'recovery-admin-Passphrase1!';
   const userId = await insertUser({ email, password: oldPassword, status: 'approved' });
   await insertUser({ email: adminEmail, password: adminPassword, status: 'approved', role: 'administrator' });
   const targetSession = jar();
@@ -1535,7 +1535,7 @@ test('account deletion restricts immediately, cancels freshly, and purges after 
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `delete-${suffix}@allowed-${suffix}.example`;
   const adminEmail = `delete-owner-${suffix}@allowed-${suffix}.example`;
-  const password = 'account-deletion-test-passphrase';
+  const password = 'account-deletion-test-Passphrase1!';
   const userId = await insertUser({ email, password, status: 'approved' });
   const ownerId = await insertUser({ email: adminEmail, password: password, status: 'approved', role: 'owner' });
   const { newId } = await import('../src/util/ids.js');
@@ -1598,7 +1598,7 @@ test('account deletion restricts immediately, cancels freshly, and purges after 
 test('reauth return path rejects an off-site redirect', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `redir-${suffix}@allowed-${suffix}.example`;
-  const pw = 'open-redirect-passphrase';
+  const pw = 'open-redirect-Passphrase1!';
   await insertUser({ email, password: pw, status: 'approved', role: 'none' });
   const cookies = jar();
   await loginAs(cookies, email, pw);
@@ -1611,7 +1611,7 @@ test('reauth return path rejects an off-site redirect', { skip }, async () => {
 test('account export is emailed only, with a renewable download window', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `export-${suffix}@allowed-${suffix}.example`;
-  const pw = 'export-user-passphrase-xx';
+  const pw = 'export-user-Passphrase1!-xx';
   const userId = await insertUser({ email, password: pw, status: 'approved', role: 'none' });
   const cookies = jar();
   await loginAs(cookies, email, pw);
@@ -1703,7 +1703,7 @@ async function insertPublishedProfile({ key, display, userId, primary = false })
 test('an account creates more profiles up to its limit, and deletion holds the username', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `multi-${suffix}@allowed-${suffix}.example`;
-  const pw = 'multi-profile-passphrase-xx';
+  const pw = 'multi-profile-Passphrase1!-xx';
   const userId = await insertUser({ email, password: pw, status: 'approved', role: 'none' });
   const first = `first${suffix}`.slice(0, 30).toLowerCase();
   await insertPublishedProfile({ key: first, display: first, userId, primary: true });
@@ -1807,7 +1807,7 @@ test('an account creates more profiles up to its limit, and deletion holds the u
 test('accepting the policies records it for a signed-in account, once per version', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `consent-${suffix}@allowed-${suffix}.example`;
-  const pw = 'consent-record-passphrase';
+  const pw = 'consent-record-Passphrase1!';
   const userId = await insertUser({ email, password: pw, status: 'approved' });
   const { TERMS_VERSION, PRIVACY_VERSION } = await import('../src/policy.js');
   const rowsFor = async () => (await db.query(
@@ -1847,7 +1847,7 @@ test('accepting the policies records it for a signed-in account, once per versio
 test('usernames are case-insensitive but the URL canonicalizes to the stored casing', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `case-${suffix}@allowed-${suffix}.example`;
-  const userId = await insertUser({ email, password: 'case-user-passphrase-xx', status: 'approved', role: 'none' });
+  const userId = await insertUser({ email, password: 'case-user-Passphrase1!-xx', status: 'approved', role: 'none' });
   const display = `CaseUser${suffix}`.slice(0, 32);
   const key = display.toLowerCase();
   await insertPublishedProfile({ key, display, userId });
@@ -1877,7 +1877,7 @@ test('signup stores the username casing while enforcing case-insensitive uniquen
   const cookies = jar();
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `mc-${suffix}@allowed-${suffix}.example`;
-  const password = 'mixed-case-passphrase-x';
+  const password = 'mixed-case-Passphrase1!-x';
   const display = `MixedCase${suffix}`.slice(0, 32);
   await get('/consent', cookies);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);
@@ -1899,7 +1899,7 @@ test('magic link is inert without the matching pending cookie', { skip }, async 
   const cookies = jar();
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `magic-${suffix}@allowed-${suffix}.example`;
-  const password = 'another-long-enough-passphrase';
+  const password = 'another-long-enough-Passphrase1!';
   const uname = `magic${suffix}`.slice(0, 20);
   await get('/consent', cookies);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);
@@ -1922,4 +1922,83 @@ test('magic link is inert without the matching pending cookie', { skip }, async 
   const code = /code is:\s*(\d{6})/.exec(codeMail.text)[1];
   const done = await post('/login/2fa', { code }, cookies);
   assert.equal(done.headers.get('location'), '/dashboard');
+});
+async function reauthFor(cookies, email, password, next) {
+  let page = await (await get(`/account/reauth?next=${encodeURIComponent(next)}`, cookies)).text();
+  const csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  const mail = [...outbox].reverse().find((m) => m.to === email && /confirm a sensitive change/i.test(m.subject));
+  const code = /code is:\s*(\d{6})/.exec(mail.text)[1];
+  await post('/account/reauth', { _csrf: csrf, password, code, next }, cookies);
+}
+test('an Administrator can require every account to choose a new password', { skip }, async () => {
+  const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const adminEmail = `mandate-admin-${suffix}@allowed-${suffix}.example`;
+  const userEmail = `mandate-user-${suffix}@allowed-${suffix}.example`;
+  const adminPw = 'mandate-admin-Passphrase1!';
+  const userPw = 'mandate-user-Passphrase1!';
+  const newPw = 'Mandate-fresh-Passphrase2!';
+  await insertUser({ email: adminEmail, password: adminPw, status: 'approved', role: 'administrator' });
+  const userId = await insertUser({ email: userEmail, password: userPw, status: 'approved' });
+  const admin = jar();
+  await loginAs(admin, adminEmail, adminPw);
+  await reauthFor(admin, adminEmail, adminPw, '/admin/password-resets');
+  let page = await (await get('/admin/password-resets', admin)).text();
+  const csrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  const reason = 'The session signing key was rotated after a vendor breach.';
+  let res = await post('/admin/password-resets', { _csrf: csrf, reason, confirmation: 'nope' }, admin);
+  assert.equal(res.status, 400, 'the confirmation phrase is required');
+  const userBefore = jar();
+  await loginAs(userBefore, userEmail, userPw);
+  assert.equal((await get('/dashboard', userBefore)).status, 200, 'the account is signed in before the mandate');
+  res = await post('/admin/password-resets', { _csrf: csrf, reason, confirmation: 'FORCE PASSWORD RESET' }, admin);
+  assert.equal(res.status, 302);
+  assert.equal(res.headers.get('location'), '/login', 'the acting Administrator is signed out too');
+  assert.equal((await get('/dashboard', userBefore)).headers.get('location'), '/login', 'every live session was signed out');
+  assert.equal((await get('/admin/password-resets', admin)).headers.get('location'), '/login');
+  const liveSessions = await db.query(
+    "SELECT COUNT(*) AS count FROM sessions WHERE revoked_at IS NULL AND user_id IN (SELECT id FROM users WHERE signup_status = 'approved')",
+  );
+  assert.equal(Number(liveSessions.rows[0].count), 0, 'no approved account keeps a session');
+  const flagged = (await db.query('SELECT password_reset_required_at, password_reset_required_reason FROM users WHERE id = ?', [userId])).rows[0];
+  assert.ok(Number(flagged.password_reset_required_at) > 0, 'the account owes a new password');
+  assert.equal(flagged.password_reset_required_reason, reason);
+  const mandate = (await db.query('SELECT reason, accounts, sessions_revoked FROM password_reset_mandates ORDER BY created_at DESC LIMIT 1')).rows[0];
+  assert.equal(mandate.reason, reason);
+  assert.ok(Number(mandate.accounts) >= 2, 'every approved account was counted');
+  assert.ok(Number(mandate.sessions_revoked) >= 2, 'the sign-out is recorded with the mandate');
+  let notice = null;
+  for (let attempt = 0; attempt < 50 && !notice; attempt += 1) {
+    notice = outbox.find((m) => m.to === userEmail && /set a new password/i.test(m.subject));
+    if (!notice) await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  assert.ok(notice, 'the account was emailed about the required reset');
+  assert.match(notice.text, new RegExp(reason.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), 'the notice carries the reason');
+  const user = jar();
+  await loginAs(user, userEmail, userPw);
+  res = await get('/dashboard', user);
+  assert.equal(res.headers.get('location'), '/account/password-reset-required', 'the site stays closed until the reset');
+  page = await (await get('/account/password-reset-required', user)).text();
+  assert.match(page, /session signing key was rotated/);
+  const userCsrf = /name="_csrf" value="([^"]+)"/.exec(page)[1];
+  res = await post('/account/password-reset-required', {
+    _csrf: userCsrf, current_password: 'Wrong-current-Passphrase1!', password: newPw, confirm_password: newPw,
+  }, user);
+  assert.equal(res.status, 400);
+  assert.match(await res.text(), /current password is incorrect/i);
+  res = await post('/account/password-reset-required', {
+    _csrf: userCsrf, current_password: userPw, password: 'nosymbolsorcaps1', confirm_password: 'nosymbolsorcaps1',
+  }, user);
+  assert.equal(res.status, 400);
+  assert.match(await res.text(), /uppercase letter/i);
+  res = await post('/account/password-reset-required', {
+    _csrf: userCsrf, current_password: userPw, password: newPw, confirm_password: newPw,
+  }, user);
+  assert.equal(res.status, 302);
+  assert.equal(res.headers.get('location'), '/settings');
+  const cleared = (await db.query('SELECT password_reset_required_at FROM users WHERE id = ?', [userId])).rows[0];
+  assert.equal(cleared.password_reset_required_at, null);
+  assert.equal((await get('/dashboard', user)).status, 200, 'the account is free again');
+  const again = jar();
+  await loginAs(again, userEmail, newPw);
+  assert.equal((await get('/dashboard', again)).status, 200);
 });

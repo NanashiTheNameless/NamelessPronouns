@@ -9,6 +9,7 @@ import path from 'node:path';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const INDEX_VERSION = 3;
 const REBUILD = 'Run: yarn build-password-index';
+const COMPOSITION = [/\p{Lu}/u, /\p{Ll}/u, /\p{Nd}/u, /[^\p{Lu}\p{Ll}\p{Nd}]/u];
 function loadIndex() {
   try {
     return {
@@ -50,7 +51,7 @@ async function firstEligible(file) {
       let line = data.subarray(start, newline);
       if (line.at(-1) === 13) line = line.subarray(0, -1);
       const text = line.toString('utf8');
-      if (Buffer.from(text).equals(line) && [...text].length >= 12 && [...text].length <= 256) return text;
+      if (Buffer.from(text).equals(line) && [...text].length >= 12 && [...text].length <= 256 && COMPOSITION.every((rule) => rule.test(text))) return text;
       start = newline + 1;
     }
     carry = data.subarray(start);
@@ -169,7 +170,7 @@ test('Chromium hard-blocks submission and cites the matching wordlist', async (t
 test('every quipped password is actually in the shipped index', (t) => {
   if (missing) return t.skip(STALE);
   const script = readFileSync(path.join(root, 'public/js/common-password.js'), 'utf8');
-  const quips = [...script.matchAll(/^\s{4}([A-Za-z0-9]+):\s'/gm)].map((match) => match[1]);
+  const quips = [...script.matchAll(/^\s{4}'([^']+)':\s'/gm)].map((match) => match[1]);
   assert.ok(quips.length >= 2, `the quip list was found in the script (saw ${quips.length})`);
   for (const password of quips) {
     assert.ok(

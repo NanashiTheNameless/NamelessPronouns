@@ -17,6 +17,7 @@ test('the init schema stays consolidated and later migrations are additive', asy
     '0007_profiles_per_account.sql',
     '0008_staff_badge_and_primary_profile.sql',
     '0009_profile_owner_constraint.sql',
+    '0010_forced_password_resets.sql',
   ]);
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\bALTER\s+TABLE\b/i);
@@ -147,6 +148,15 @@ test('the badge and primary-profile migration is additive and backfills the firs
   assert.doesNotMatch(sql, /-- @(d1|postgres)/, 'both backends take the same statements');
 });
 
+test('the forced-reset migration flags accounts and records every mandate', async () => {
+  const sql = await readFile(new URL('../db/migrations/0010_forced_password_resets.sql', import.meta.url), 'utf8');
+  assert.match(sql, /ALTER TABLE users ADD COLUMN password_reset_required_at BIGINT/);
+  assert.match(sql, /ALTER TABLE users ADD COLUMN password_reset_required_reason TEXT/);
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS password_reset_mandates/);
+  assert.match(sql, /sessions_revoked INTEGER NOT NULL DEFAULT 0/);
+  assert.match(sql, /FOREIGN KEY \(created_by\) REFERENCES users \(id\)/);
+  assert.doesNotMatch(sql, /DROP TABLE/i, 'the migration stays additive');
+});
 test('Postgres gains the profile owner constraint SQLite already had', async () => {
   const sql = await readFile(new URL('../db/migrations/0009_profile_owner_constraint.sql', import.meta.url), 'utf8');
   const postgres = selectStatements(sql, 'postgres').join('\n');

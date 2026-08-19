@@ -7,7 +7,8 @@ import { isFresh, safeNextPath } from '../auth/reauth.js';
 async function fetchUser(userId) {
   const { rows } = await db.query(
     `SELECT id, email, staff_role, signup_status, twofa_method, email_verified_at,
-            avatar_source, avatar_data_uri, profile_limit
+            avatar_source, avatar_data_uri, profile_limit,
+            password_reset_required_at, password_reset_required_reason
        FROM users WHERE id = ?`,
     [userId],
   );

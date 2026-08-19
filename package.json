@@ -21,12 +21,12 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@node-rs/argon2": "^2.0.0",
+    "@node-rs/argon2": "^2.1.0",
     "altcha": "^3.2.1",
     "altcha-lib": "^2.3.2",
     "cookie-parser": "^1.4.7",
     "ejs": "^6.0.1",
-    "express": "^5.0.0",
+    "express": "^5.2.1",
     "pg": "^8.23.0",
     "qrcode": "^1.5.4",
     "yazl": "^3.3.1",

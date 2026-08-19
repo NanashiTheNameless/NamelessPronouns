@@ -12,6 +12,7 @@ import { policyGate } from './middleware/policy-gate.js';
 import { csrfProtection } from './middleware/csrf.js';
 import { restrictedSessionGate } from './middleware/restricted-session.js';
 import { deletionSessionGate } from './middleware/deletion-session.js';
+import { passwordResetGate } from './middleware/password-reset-gate.js';
 import { scheduleMaintenance } from './maintenance.js';
 import { scheduleCommunityRefresh } from './email-domains.js';
 import { scheduleMailDrain } from './mail.js';
@@ -211,6 +212,7 @@ export function createApp() {
   app.use(policyGate());
   app.use(restrictedSessionGate());
   app.use(deletionSessionGate());
+  app.use(passwordResetGate());
   app.use(csrfProtection());
   app.use(consentRoutes);
   app.use(legalRoutes);

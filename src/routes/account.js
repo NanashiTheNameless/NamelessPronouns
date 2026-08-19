@@ -282,6 +282,56 @@ async function preserveCurrentSession(userId, sessionId) {
   await revokeAllForUser(userId);
   await db.query('UPDATE sessions SET revoked_at = NULL WHERE id = ? AND user_id = ?', [sessionId, userId]);
 }
+function mandateView(req, error = null) {
+  return {
+    title: 'Choose a new password',
+    reason: req.user.password_reset_required_reason || null,
+    error,
+  };
+}
+router.get('/account/password-reset-required', requireApproved, (req, res) => {
+  if (!req.user.password_reset_required_at) return res.redirect('/settings');
+  res.render('account/password-reset-required', mandateView(req));
+});
+router.post('/account/password-reset-required', requireApproved, async (req, res) => {
+  if (!req.user.password_reset_required_at) return res.redirect('/settings');
+  const renderError = (message) => res.status(400).render('account/password-reset-required', mandateView(req, message));
+  const limit = await consume('forced_password_change', req.user.id);
+  if (!limit.allowed) {
+    return res.status(429).render('error', { title: 'Slow down', status: 429, message: 'Too many attempts. Try again later.' });
+  }
+  const password = String(req.body.password || '');
+  if (password !== String(req.body.confirm_password || '')) return renderError('The new passwords do not match.');
+  const current = (await db.query('SELECT password_hash FROM users WHERE id = ?', [req.user.id])).rows[0];
+  if (!(await verifyPassword(String(req.body.current_password || ''), current.password_hash))) {
+    return renderError('The current password is incorrect.');
+  }
+  if (await verifyPassword(password, current.password_hash)) {
+    return renderError('Choose a password different from the current password.');
+  }
+  let result;
+  try {
+    result = await hashPassword(password);
+  } catch (error) {
+    if (!(error instanceof PasswordPolicyError)) throw error;
+    return renderError(error.message);
+  }
+  const now = Date.now();
+  await db.batch([
+    {
+      sql: `UPDATE users SET password_hash = ?, password_hash_version = ?,
+                   password_reset_required_at = NULL, password_reset_required_reason = NULL, updated_at = ?
+             WHERE id = ?`,
+      params: [result.hash, result.version, now, req.user.id],
+    },
+    { sql: 'DELETE FROM login_challenges WHERE user_id = ?', params: [req.user.id] },
+    { sql: 'DELETE FROM reauth_challenges WHERE user_id = ?', params: [req.user.id] },
+  ]);
+  await preserveCurrentSession(req.user.id, req.session.id);
+  await audit.record({ type: 'account.password_changed_on_mandate', actorUserId: req.user.id, subjectUserId: req.user.id, ipHash: ipPrefixHash(req) });
+  mail.securityNotice(req.user.email, 'Your account password was changed to satisfy a required reset, and other sessions were signed out.').catch(() => {});
+  res.redirect('/settings');
+});
 router.get('/account/security', requireApproved, requireFreshAuth(), async (req, res) => {
   const [sessions, codes] = await Promise.all([
     db.query(
@@ -319,7 +369,9 @@ router.post('/account/security/password', requireApproved, requireFreshAuth({ re
   }
   const now = Date.now();
   await db.batch([
-    { sql: 'UPDATE users SET password_hash = ?, password_hash_version = ?, updated_at = ? WHERE id = ?', params: [result.hash, result.version, now, req.user.id] },
+    { sql: `UPDATE users SET password_hash = ?, password_hash_version = ?,
+                   password_reset_required_at = NULL, password_reset_required_reason = NULL, updated_at = ?
+             WHERE id = ?`, params: [result.hash, result.version, now, req.user.id] },
     { sql: 'DELETE FROM login_challenges WHERE user_id = ?', params: [req.user.id] },
     { sql: 'DELETE FROM reauth_challenges WHERE user_id = ?', params: [req.user.id] },
   ]);
