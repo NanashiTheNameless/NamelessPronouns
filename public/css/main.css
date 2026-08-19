@@ -1383,17 +1383,6 @@ altcha-widget.email-obfuscation .email-reveal:hover,
 .site-footer nav .button {
   margin-top: 0;
 }
-button.owner-signature {
-  padding: 0;
-  color: inherit;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  font: inherit;
-  font-size: inherit;
-  font-weight: inherit;
-  text-decoration: none;
-}
 .profile-prose a {
   color: var(--link);
 }

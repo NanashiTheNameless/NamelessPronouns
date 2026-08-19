@@ -176,8 +176,9 @@ test('the footer offers the panel and the head applies it early', async () => {
   assert.match(head, /<script src="\/static\/js\/accessibility\.js"><\/script>/);
   assert.match(footer, /data-konami-theme hidden[^>]*><input[^>]+value="1998"/);
   assert.match(footer, /data-shortcuts-panel/);
-  assert.match(footer, /<span data-owner-prefix>Operated by<\/span> <button type="button" class="owner-signature" data-owner-signature>NamelessNanashi<\/button>/);
-  assert.doesNotMatch(footer, /<a[^>]+data-owner-signature/);
+  assert.match(footer, /<span data-owner-prefix>Operated by<\/span> <span class="owner-signature" data-owner-signature>NamelessNanashi<\/span>/);
+  assert.doesNotMatch(footer, /<a[^>]+data-owner-signature/, 'the signature never navigates');
+  assert.doesNotMatch(footer, /<button[^>]+data-owner-signature/, 'a button would render inline-block, so it would wrap and highlight unlike the words around it');
   assert.match(footer, /<kbd>Shift<\/kbd> \+ <kbd>\?<\/kbd>/);
   for (const shortcut of ['Tab', 'Enter', 'Space', 'Arrow keys', 'Escape']) {
     assert.match(footer, new RegExp(`<kbd>${shortcut}<\\/kbd>`));
