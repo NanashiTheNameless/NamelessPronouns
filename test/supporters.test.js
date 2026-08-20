@@ -9,7 +9,6 @@ test('support page uses the canonical funding links', () => {
     { name: 'Buy Me a Coffee', url: 'https://buymeacoffee.com/NamelessNanashi' },
     { name: 'Ko-fi', url: 'https://ko-fi.com/NanashiTheNameless' },
     { name: 'Liberapay', url: 'https://liberapay.com/NamelessNanashi' },
-    { name: 'thanks.dev', url: 'https://thanks.dev/u/gh/NanashiTheNameless' },
     { name: 'Throne', url: 'https://throne.com/NamelessNanashi' },
   ]);
 });
