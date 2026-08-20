@@ -3,9 +3,11 @@ export const SUPPORTERS = [
 ];
 export const SUPPORT_LINKS = [
   { name: 'GitHub Sponsors', url: 'https://github.com/sponsors/NanashiTheNameless', note: 'monthly or one-time' },
-  { name: 'Ko-fi', url: 'https://ko-fi.com/nanashithenameless', note: 'one-time or monthly' },
-  { name: 'Buy Me a Coffee', url: 'https://buymeacoffee.com/namelessnanashi', note: 'one-time or monthly' },
-  { name: 'Throne', url: 'https://throne.com/namelessnanashi', note: 'wishlist, gifts instead of money' },
+  { name: 'Buy Me a Coffee', url: 'https://buymeacoffee.com/NamelessNanashi', note: 'one-time or monthly' },
+  { name: 'Ko-fi', url: 'https://ko-fi.com/NanashiTheNameless', note: 'one-time or monthly' },
+  { name: 'Liberapay', url: 'https://liberapay.com/NamelessNanashi', note: 'recurring' },
+  { name: 'thanks.dev', url: 'https://thanks.dev/u/gh/NanashiTheNameless', note: 'recurring' },
+  { name: 'Throne', url: 'https://throne.com/NamelessNanashi', note: 'wishlist, gifts instead of money' },
 ];
 export function listSupportLinks() {
   return SUPPORT_LINKS.map((link) => ({
