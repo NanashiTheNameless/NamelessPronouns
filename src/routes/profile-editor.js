@@ -253,6 +253,7 @@ function avatarView(profile, user) {
     accountAvatar: avatarUrl(user),
     identiconAvatar: avatarUrl({ id: profile.id, avatar_source: 'identicon' }),
     gravatarAvatar: avatarUrl({ ...user, avatar_source: 'gravatar', avatar_data_uri: null }),
+    libravatarAvatar: avatarUrl({ ...user, avatar_source: 'libravatar', avatar_data_uri: null }),
     maxAvatarBytes: MAX_AVATAR_DATA_URI_BYTES,
   };
 }
@@ -614,7 +615,7 @@ router.post('/profiles/:id/avatar', requireApproved, async (req, res) => {
   const profile = await editableProfile(req.params.id, req.user.id);
   if (!profile) return res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' });
   const source = String(req.body.avatar_source || '');
-  if (!['inherit', 'gravatar', 'identicon', 'data'].includes(source)) {
+  if (!['inherit', 'gravatar', 'libravatar', 'identicon', 'data'].includes(source)) {
     return res.status(400).render('error', { title: 'Icon unchanged', status: 400, message: 'Choose a valid profile icon source.' });
   }
   let dataUri = null;

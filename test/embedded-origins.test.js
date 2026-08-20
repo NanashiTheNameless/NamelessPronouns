@@ -26,7 +26,7 @@ test('a profile that embeds nothing keeps the closed policy', () => {
   const res = fakeResponse();
   const csp = cspFor(res, { rum: true });
   assert.match(csp, /frame-src 'none'/);
-  assert.match(csp, /img-src 'self' data: https:\/\/www\.gravatar\.com/);
+  assert.match(csp, /img-src 'self' data: https:\/\/www\.gravatar\.com https:\/\/seccdn\.libravatar\.org/);
   assert.doesNotMatch(csp, / https:;/);
 });
 test('a profile that embeds media widens the policy to exactly those hosts', () => {
@@ -36,7 +36,7 @@ test('a profile that embeds media widens the policy to exactly those hosts', () 
     '<img src="https://cdn.example/a.png"><iframe src="https://www.youtube.com/embed/x"></iframe>',
   ), null, { permitted: true });
   const csp = res.headers['content-security-policy'];
-  assert.match(csp, /img-src 'self' data: https:\/\/www\.gravatar\.com https:\/\/cdn\.example;/);
+  assert.match(csp, /img-src 'self' data: https:\/\/www\.gravatar\.com https:\/\/seccdn\.libravatar\.org https:\/\/cdn\.example;/);
   assert.match(csp, /frame-src https:\/\/www\.youtube\.com;/);
   assert.match(csp, /media-src 'self' data:;/, 'a directive with nothing embedded stays closed');
   assert.match(csp, /script-src 'self' 'nonce-[^']+' https:\/\/static\.cloudflareinsights\.com/, 'public pages keep RUM');
@@ -51,7 +51,7 @@ test('bad or excessive origins never reach the header', () => {
   const directive = /img-src ([^;]*)/.exec(res.headers['content-security-policy'])[1];
   assert.doesNotMatch(directive, /insecure|unsafe-inline|javascript:|\/path/);
   assert.ok(directive.includes('https://a-ok.example'), 'a valid host still makes the list');
-  assert.ok(directive.split(' ').length <= 27, `the list is capped, saw ${directive.split(' ').length} sources`);
+  assert.ok(directive.split(' ').length <= 28, `the list is capped, saw ${directive.split(' ').length} sources`);
 });
 
 const EMBEDS = [

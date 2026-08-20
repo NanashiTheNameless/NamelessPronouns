@@ -1,6 +1,6 @@
 # Terms of Service
 
-Effective date: August 14, 2026
+Effective date: August 20, 2026
 
 Operator: NamelessNanashi
 
@@ -134,7 +134,7 @@ the viewer's address and request details to the site being embedded, which is
 outside NamelessNanashi's control and is not covered by this service's
 protections. The only image upload-like feature is the account avatar
 tool. An avatar may use
-Gravatar, a locally generated deterministic identicon, or a size-limited PNG,
+Gravatar, Libravatar, a locally generated deterministic identicon, or a size-limited PNG,
 JPEG, WebP, or restricted SVG `data:` URI prepared in the browser. Unsafe SVG
 features are refused unless you explicitly choose to strip them; an unsafe SVG
 is not previewed before that cleanup. No other user uploads are supported.
@@ -224,8 +224,8 @@ The service uses Cloudflare for network delivery, security, Tunnel, traffic
 Analytics, Web Analytics, RUM, and optional D1 storage. It uses Resend for
 transactional email and may use Docker-managed PostgreSQL for storage. ALTCHA
 proof-of-work and email-address obfuscation run from self-hosted application
-assets. If you select Gravatar, your browser requests an avatar from Gravatar
-using a hash derived from your normalized email address.
+assets. If you select Gravatar or Libravatar, your browser requests an avatar
+from that provider using a hash derived from your normalized email address.
 
 External profile links are outside NamelessNanashi's control. Use them at your
 own risk.

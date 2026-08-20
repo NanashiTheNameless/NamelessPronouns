@@ -159,6 +159,7 @@
       if (radio.value === 'inherit' && form.dataset.inherit) preview.src = form.dataset.inherit;
       if (radio.value === 'identicon') preview.src = form.dataset.identicon;
       if (radio.value === 'gravatar') preview.src = form.dataset.gravatar;
+      if (radio.value === 'libravatar') preview.src = form.dataset.libravatar;
       if (radio.value === 'data' && processed) preview.src = processed;
     });
   });

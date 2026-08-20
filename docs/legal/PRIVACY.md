@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Effective date: August 14, 2026
+Effective date: August 20, 2026
 
 Operator: NamelessNanashi
 
@@ -150,6 +150,10 @@ Information may be processed by:
   sends Gravatar an MD5 hash of the normalized account email as part of the
   image URL, along with ordinary request metadata such as the IP address and
   user agent. The raw email address is not placed in the URL.
+- Libravatar, only when an account selects it as the avatar source. The browser
+  sends Libravatar a SHA-256 hash of the normalized account email as part of the
+  image URL, along with the same ordinary request metadata. The raw email
+  address is not placed in the URL.
 - The hosting provider and Docker-managed PostgreSQL environment.
 - Authorized staff according to their permissions.
 - Authorities or advisers when required by law or needed to protect rights and
@@ -243,7 +247,7 @@ when doing so is lawful and does not materially risk identifying a person.
 - Encrypted database backups: the operational rotation retains at least 30
   daily archives. Data removed from the live database may therefore remain in
   encrypted backups until those archives rotate out or are otherwise deleted.
-- Cloudflare, Resend, Gravatar, and infrastructure providers retain provider-side
+- Cloudflare, Resend, Gravatar, Libravatar, and infrastructure providers retain provider-side
   records according to their own current policies and legal obligations. Their
   retention is not controlled by the application.
 

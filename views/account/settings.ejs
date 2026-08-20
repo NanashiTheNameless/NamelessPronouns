@@ -49,10 +49,11 @@
         <h2>Default profile icon</h2>
         <p class="fineprint">Every profile uses this icon unless that profile sets its own in the profile editor.</p>
         <img id="avatar-preview" class="avatar avatar-large" src="<%= avatar %>" alt="Avatar preview" width="96" height="96">
-        <form method="post" action="/account/avatar" id="avatar-form" class="stack" data-max-bytes="<%= maxAvatarBytes %>" data-current-source="<%= avatarSource %>" data-identicon="<%= identiconAvatar %>" data-gravatar="<%= gravatarAvatar %>">
+        <form method="post" action="/account/avatar" id="avatar-form" class="stack" data-max-bytes="<%= maxAvatarBytes %>" data-current-source="<%= avatarSource %>" data-identicon="<%= identiconAvatar %>" data-gravatar="<%= gravatarAvatar %>" data-libravatar="<%= libravatarAvatar %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <label><input type="radio" name="avatar_source" value="identicon" <%= avatarSource === 'identicon' ? 'checked' : '' %>> Deterministic identicon</label>
           <label><input type="radio" name="avatar_source" value="gravatar" <%= avatarSource === 'gravatar' ? 'checked' : '' %>> Gravatar for the verified email</label>
+          <label><input type="radio" name="avatar_source" value="libravatar" <%= avatarSource === 'libravatar' ? 'checked' : '' %>> Libravatar for the verified email</label>
           <label><input type="radio" name="avatar_source" value="data" <%= avatarSource === 'data' ? 'checked' : '' %>> Uploaded image stored as a small data URI</label>
           <label>Choose image
             <input id="avatar-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">

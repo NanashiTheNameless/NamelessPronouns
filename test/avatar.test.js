@@ -14,6 +14,12 @@ test('avatar Gravatar uses the normalized email hash without exposing email', ()
   assert.match(url, /^https:\/\/www\.gravatar\.com\/avatar\/[a-f0-9]{32}\?/);
   assert.doesNotMatch(url, /example|user@/i);
 });
+test('avatar Libravatar hashes the same normalized email with SHA-256', () => {
+  const url = avatarUrl({ id: 'x', email: ' User@Example.COM ', avatar_source: 'libravatar' });
+  assert.match(url, /^https:\/\/seccdn\.libravatar\.org\/avatar\/[a-f0-9]{64}\?/);
+  assert.doesNotMatch(url, /example|user@/i);
+  assert.notEqual(url, avatarUrl({ id: 'x', email: 'other@example.com', avatar_source: 'libravatar' }));
+});
 test('avatar data URI accepts bounded raster and sanitized SVG data', () => {
   assert.equal(validateAvatarDataUri(PNG), PNG);
   const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="#456"><circle cx="12" cy="12" r="10"/><path d="M8 12h8" stroke="#fff" stroke-width="2"/></g></svg>').toString('base64');

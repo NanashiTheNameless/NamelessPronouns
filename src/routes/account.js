@@ -40,6 +40,7 @@ router.get('/settings', requireApproved, async (req, res) => {
     avatarSource: req.user.avatar_source, maxAvatarBytes: MAX_AVATAR_DATA_URI_BYTES,
     identiconAvatar: avatarUrl({ ...req.user, avatar_source: 'identicon', avatar_data_uri: null }),
     gravatarAvatar: avatarUrl({ ...req.user, avatar_source: 'gravatar', avatar_data_uri: null }),
+    libravatarAvatar: avatarUrl({ ...req.user, avatar_source: 'libravatar', avatar_data_uri: null }),
     rank: staffRoleLabel(req.user.staff_role) || 'Member',
     profileCount,
     profileLimit: profileLimitFor(req.user),
@@ -51,7 +52,7 @@ router.get('/settings', requireApproved, async (req, res) => {
 });
 router.post('/account/avatar', requireApproved, async (req, res) => {
   const source = String(req.body.avatar_source || '');
-  if (!['gravatar', 'identicon', 'data'].includes(source)) {
+  if (!['gravatar', 'libravatar', 'identicon', 'data'].includes(source)) {
     return res.status(400).render('error', { title: 'Avatar unchanged', status: 400, message: 'Choose a valid avatar source.' });
   }
   let dataUri = null;

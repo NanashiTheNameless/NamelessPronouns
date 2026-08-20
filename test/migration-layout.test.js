@@ -18,6 +18,7 @@ test('the init schema stays consolidated and later migrations are additive', asy
     '0008_staff_badge_and_primary_profile.sql',
     '0009_profile_owner_constraint.sql',
     '0010_forced_password_resets.sql',
+    '0011_libravatar_avatar_source.sql',
   ]);
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\bALTER\s+TABLE\b/i);
@@ -166,5 +167,23 @@ test('Postgres gains the profile owner constraint SQLite already had', async () 
   assert.doesNotMatch(d1, /ALTER (COLUMN|TABLE profiles ADD CONSTRAINT)/, 'SQLite built the constraint into the rebuilt table');
   for (const both of ['DELETE FROM profiles WHERE owner_user_id IS NULL']) {
     assert.ok(postgres.includes(both) && d1.includes(both), 'orphan cleanup runs on both backends');
+  }
+});
+test('the Libravatar migration widens the avatar CHECK on both backends', async () => {
+  const sql = await readFile(new URL('../db/migrations/0011_libravatar_avatar_source.sql', import.meta.url), 'utf8');
+  const postgres = selectStatements(sql, 'postgres').join('\n');
+  const d1 = selectStatements(sql, 'd1').join('\n');
+  assert.match(postgres, /ALTER TABLE users DROP CONSTRAINT IF EXISTS users_avatar_source_check/);
+  assert.match(postgres, /CHECK \(avatar_source IN \('gravatar', 'libravatar', 'identicon', 'data'\)\)/);
+  assert.doesNotMatch(postgres, /mig11_|DROP TABLE users/, 'Postgres alters the constraint in place');
+  assert.match(d1, /DROP TABLE users/, 'SQLite rebuilds the table instead');
+  assert.match(d1, /CHECK \(avatar_source IN \('gravatar', 'libravatar', 'identicon', 'data'\)\)/);
+  for (const child of ['profiles', 'sessions', 'content_flags', 'deletion_profile_states']) {
+    assert.match(d1, new RegExp(`CREATE TABLE mig11_${child} AS SELECT \\* FROM ${child}`), `${child} is copied out first`);
+    assert.match(d1, new RegExp(`INSERT INTO ${child} SELECT \\* FROM mig11_${child}`), `${child} is restored after`);
+    assert.match(d1, new RegExp(`DROP TABLE mig11_${child}`), `the ${child} scratch copy is removed`);
+  }
+  for (const index of ['idx_users_signup_status', 'idx_users_signup_ip_prefix', 'idx_users_password_reset_required']) {
+    assert.match(d1, new RegExp(`CREATE INDEX ${index} ON users`), `${index} is rebuilt`);
   }
 });

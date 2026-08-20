@@ -205,11 +205,12 @@
       <h2 id="profile-icon-h">Profile icon</h2>
       <p class="fineprint">This icon is used for <%= profile.username %> only. Leave it on the account default to follow the icon set in account settings.</p>
       <img id="avatar-preview" class="avatar avatar-large" src="<%= avatar %>" alt="Profile icon preview" width="96" height="96">
-      <form method="post" action="/profiles/<%= profile.id %>/avatar" id="avatar-form" class="stack" data-max-bytes="<%= maxAvatarBytes %>" data-current-source="<%= avatarSource %>" data-identicon="<%= identiconAvatar %>" data-gravatar="<%= gravatarAvatar %>" data-inherit="<%= accountAvatar %>">
+      <form method="post" action="/profiles/<%= profile.id %>/avatar" id="avatar-form" class="stack" data-max-bytes="<%= maxAvatarBytes %>" data-current-source="<%= avatarSource %>" data-identicon="<%= identiconAvatar %>" data-gravatar="<%= gravatarAvatar %>" data-libravatar="<%= libravatarAvatar %>" data-inherit="<%= accountAvatar %>">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <label><input type="radio" name="avatar_source" value="inherit" <%= avatarSource === 'inherit' ? 'checked' : '' %>> The account default set in <a href="/settings#profile-icon">account settings</a></label>
         <label><input type="radio" name="avatar_source" value="identicon" <%= avatarSource === 'identicon' ? 'checked' : '' %>> Deterministic identicon for this profile</label>
         <label><input type="radio" name="avatar_source" value="gravatar" <%= avatarSource === 'gravatar' ? 'checked' : '' %>> Gravatar for the verified email</label>
+        <label><input type="radio" name="avatar_source" value="libravatar" <%= avatarSource === 'libravatar' ? 'checked' : '' %>> Libravatar for the verified email</label>
         <label><input type="radio" name="avatar_source" value="data" <%= avatarSource === 'data' ? 'checked' : '' %>> Uploaded image stored as a small data URI</label>
         <label>Choose image
           <input id="avatar-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">

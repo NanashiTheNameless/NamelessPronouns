@@ -1,11 +1,12 @@
 import { randomBytes } from 'node:crypto';
 
 const GRAVATAR = 'https://www.gravatar.com';
+const LIBRAVATAR = 'https://seccdn.libravatar.org';
 const BASE_CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
-  `img-src 'self' data: ${GRAVATAR}`,
+  `img-src 'self' data: ${GRAVATAR} ${LIBRAVATAR}`,
   "media-src 'self' data:",
   "frame-src 'none'",
   "font-src 'self'",

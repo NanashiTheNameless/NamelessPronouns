@@ -56,6 +56,9 @@ export function validateAvatarDataUri(value) {
   }
   return value;
 }
+function emailDigest(email, algorithm) {
+  return createHash(algorithm).update(String(email || '').trim().toLowerCase()).digest('hex');
+}
 function identicon(userId) {
   const digest = createHash('sha256').update(`nameless-avatar:v1:${userId}`).digest();
   const hue = ((digest[15] << 8) | digest[16]) % 360;
@@ -88,8 +91,12 @@ export function avatarUrl(user) {
     try { return validateAvatarDataUri(user.avatar_data_uri); } catch {   }
   }
   if (user?.avatar_source === 'gravatar') {
-    const emailHash = createHash('md5').update(String(user.email || '').trim().toLowerCase()).digest('hex');
+    const emailHash = emailDigest(user.email, 'md5');
     return `https://www.gravatar.com/avatar/${emailHash}?s=160&d=mp&r=g`;
+  }
+  if (user?.avatar_source === 'libravatar') {
+    const emailHash = emailDigest(user.email, 'sha256');
+    return `https://seccdn.libravatar.org/avatar/${emailHash}?s=160&d=mm`;
   }
   return identicon(String(user?.id || 'anonymous'));
 }

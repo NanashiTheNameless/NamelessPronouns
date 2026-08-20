@@ -329,7 +329,8 @@ test('CSP names no remote origin until a page actually embeds one', async () => 
   const res = await fetch(`${base}/consent`);
   const csp = res.headers.get('content-security-policy');
   assert.doesNotMatch(csp, /pronouns\.page/);
-  assert.match(csp, /img-src 'self' data: https:\/\/www\.gravatar\.com;/, 'only the avatar provider is named');
+  assert.match(csp, /img-src 'self' data: https:\/\/www\.gravatar\.com https:\/\/seccdn\.libravatar\.org;/,
+    'only the avatar providers are named');
   assert.match(csp, /media-src 'self' data:;/, 'no remote audio or video host by default');
   assert.match(csp, /frame-src 'none';/, 'and no embedding at all by default');
   assert.doesNotMatch(csp, /(img|media|frame)-src[^;]* https:;/, 'never a blanket allowance for all of HTTPS');

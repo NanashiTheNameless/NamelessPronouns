@@ -76,6 +76,7 @@ test('a profile icon falls back to the account icon until the profile sets its o
   const ownIcon = profileAvatarUrl({ id: 'profile-1', avatar_source: 'identicon' }, owner);
   assert.notEqual(ownIcon, accountIcon, 'a profile identicon is seeded by the profile, not the account');
   assert.match(profileAvatarUrl({ id: 'profile-1', avatar_source: 'gravatar' }, owner), /gravatar\.com/);
+  assert.match(profileAvatarUrl({ id: 'profile-1', avatar_source: 'libravatar' }, owner), /seccdn\.libravatar\.org/);
 });
 test('the dashboard lists profiles and offers another, but never deletes one', async () => {
   const render = (profiles, profileLimit) => ejs.renderFile(`${viewsDir}dashboard.ejs`, {
