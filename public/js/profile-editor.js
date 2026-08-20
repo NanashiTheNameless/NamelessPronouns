@@ -79,6 +79,10 @@ function ownElement(repeater, row, selector) {
   return null;
 }
 
+function ownElements(repeater, row, selector) {
+  return [...row.querySelectorAll(selector)].filter((element) => ownRepeater(element) === repeater);
+}
+
 function renumberWordGroups() {
   document.querySelectorAll('[data-word-group]').forEach((group, index) => {
     group.querySelectorAll('input[name^="word_value_"]').forEach((input) => {
@@ -103,6 +107,12 @@ function updateRepeater(repeater) {
     if (heading) heading.textContent = `${row.dataset.rowLabel} ${index + 1}`;
     const remove = ownElement(repeater, row, '[data-remove]');
     if (remove) remove.hidden = rows.length === 1;
+    ownElements(repeater, row, '[data-move]').forEach((button) => {
+      const up = button.dataset.move === 'up';
+      button.hidden = rows.length === 1;
+      button.disabled = up ? index === 0 : index === rows.length - 1;
+      button.setAttribute('aria-label', `Move ${row.dataset.rowLabel} ${index + 1} ${up ? 'up' : 'down'}`);
+    });
   });
   const add = ownElement(repeater, repeater, '[data-add]');
   if (add) add.disabled = rows.length >= MAX_ROWS;
@@ -116,9 +126,34 @@ function ownTemplate(repeater) {
   return ownElement(repeater, repeater, 'template');
 }
 
+function announceOrder(message) {
+  const status = document.querySelector('[data-repeater-status]');
+  if (status) status.textContent = message;
+}
+
+function moveRow(button) {
+  const repeater = ownRepeater(button);
+  const rows = repeater && rowsContainer(repeater);
+  const row = button.closest('[data-repeater-row]');
+  if (!rows || !row || row.parentElement !== rows) return;
+  const siblings = [...rows.children];
+  const from = siblings.indexOf(row);
+  const to = from + (button.dataset.move === 'up' ? -1 : 1);
+  if (to < 0 || to >= siblings.length) return;
+  if (to < from) rows.insertBefore(row, siblings[to]);
+  else rows.insertBefore(siblings[to], row);
+  renumberWordGroups();
+  updateRepeater(repeater);
+  row.querySelectorAll('[data-repeater]').forEach(updateRepeater);
+  announceOrder(`${row.dataset.rowLabel} moved to position ${to + 1} of ${siblings.length}.`);
+  if (!button.disabled) button.focus();
+  else ownElements(repeater, row, '[data-move]').find((other) => other !== button && !other.disabled)?.focus();
+}
+
 document.addEventListener('click', (event) => {
   const add = event.target.closest('[data-add]');
   const remove = event.target.closest('[data-remove]');
+  const move = event.target.closest('[data-move]');
   const applyPreset = event.target.closest('[data-apply-pronoun-preset]');
   const flagOption = event.target.closest('[data-flag-option]');
   if (add) {
@@ -144,6 +179,7 @@ document.addEventListener('click', (event) => {
       updateRepeater(repeater);
     }
   }
+  if (move) moveRow(move);
   if (applyPreset) {
     const row = applyPreset.closest('[data-repeater-row]');
     const option = row.querySelector('[data-pronoun-preset]').selectedOptions[0];

@@ -14,6 +14,7 @@
     <% if (warning) { %><p class="error" role="alert"><%= warning %> <a href="/account/content-flags">Review content flags</a>.</p><% } %>
     <% if (saved) { %><p role="status">Profile saved.</p><% } %>
     <% if (importNotice) { %><p class="success" role="status"><%= importNotice %></p><% } %>
+    <p class="fineprint" role="status" aria-live="polite" data-repeater-status></p>
 
     <form method="post" action="/profiles/<%= profile.id %>/edit">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -46,12 +47,16 @@
             <section data-repeater-row data-row-label="Name" class="repeat-row" aria-label="Name <%= i + 1 %>">
               <label><span data-row-heading>Name <%= i + 1 %></span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." value="<%= name.value %>" placeholder="A name you go by"></label>
               <%- await include('partials/opinion-select', { name: 'name_opinion', selected: name.opinion, opinionOptions }) %>
-              <button type="button" class="secondary compact" data-remove>Remove</button>
+              <div class="row-actions">
+                <button type="button" class="secondary compact" data-move="up">Move up</button>
+                <button type="button" class="secondary compact" data-move="down">Move down</button>
+                <button type="button" class="secondary compact" data-remove>Remove</button>
+              </div>
             </section>
           <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another name</button>
-        <template><section data-repeater-row data-row-label="Name" class="repeat-row"><label><span data-row-heading>Name</span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." placeholder="A name you go by"></label><%- await include('partials/opinion-select', { name: 'name_opinion', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Name" class="repeat-row"><label><span data-row-heading>Name</span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." placeholder="A name you go by"></label><%- await include('partials/opinion-select', { name: 'name_opinion', selected: '', opinionOptions }) %><div class="row-actions"><button type="button" class="secondary compact" data-move="up">Move up</button><button type="button" class="secondary compact" data-move="down">Move down</button><button type="button" class="secondary compact" data-remove>Remove</button></div></section></template>
       </fieldset>
 
       <fieldset data-repeater>
@@ -70,12 +75,16 @@
               <label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." value="<%= row.possessivePronoun %>" placeholder="Possessive form used on its own"></label>
               <label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." value="<%= row.reflexive %>" placeholder="Reflexive form, used to refer back to you"></label>
               <%- await include('partials/opinion-select', { name: 'pronoun_opinion', selected: row.opinion, opinionOptions }) %>
-              <button type="button" class="secondary compact" data-remove>Remove</button>
+              <div class="row-actions">
+                <button type="button" class="secondary compact" data-move="up">Move up</button>
+                <button type="button" class="secondary compact" data-move="down">Move down</button>
+                <button type="button" class="secondary compact" data-remove>Remove</button>
+              </div>
             </section>
           <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another pronoun set</button>
-        <template><section data-repeater-row data-row-label="Set" class="repeat-row repeat-row-group"><h2 data-row-heading>Set</h2><div class="pronoun-preset"><label>Optional preset <select data-pronoun-preset><option value="">Choose a preset</option><% pronounPresetOptions.forEach(function (preset) { %><option value="<%= preset.key %>" data-subject="<%= preset.forms[0] %>" data-object="<%= preset.forms[1] %>" data-possessive-determiner="<%= preset.forms[2] %>" data-possessive-pronoun="<%= preset.forms[3] %>" data-reflexive="<%= preset.forms[4] %>"><%= preset.label %></option><% }); %></select></label><button type="button" class="secondary compact" data-apply-pronoun-preset>Use preset</button></div><label>Subject <input name="subject" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Subject form, used before the verb"></label><label>Object <input name="object" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Object form, used after the verb"></label><label>Possessive determiner <input name="possessive_determiner" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Possessive form used before a noun"></label><label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Possessive form used on its own"></label><label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Reflexive form, used to refer back to you"></label><%- await include('partials/opinion-select', { name: 'pronoun_opinion', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Set" class="repeat-row repeat-row-group"><h2 data-row-heading>Set</h2><div class="pronoun-preset"><label>Optional preset <select data-pronoun-preset><option value="">Choose a preset</option><% pronounPresetOptions.forEach(function (preset) { %><option value="<%= preset.key %>" data-subject="<%= preset.forms[0] %>" data-object="<%= preset.forms[1] %>" data-possessive-determiner="<%= preset.forms[2] %>" data-possessive-pronoun="<%= preset.forms[3] %>" data-reflexive="<%= preset.forms[4] %>"><%= preset.label %></option><% }); %></select></label><button type="button" class="secondary compact" data-apply-pronoun-preset>Use preset</button></div><label>Subject <input name="subject" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Subject form, used before the verb"></label><label>Object <input name="object" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Object form, used after the verb"></label><label>Possessive determiner <input name="possessive_determiner" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Possessive form used before a noun"></label><label>Possessive pronoun <input name="possessive_pronoun" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Possessive form used on its own"></label><label>Reflexive <input name="reflexive" maxlength="40" pattern="[A-Za-z0-9\/'\-]+" data-character-constraint data-character-hint="Use only letters, numbers, slashes, apostrophes, and dashes." placeholder="Reflexive form, used to refer back to you"></label><%- await include('partials/opinion-select', { name: 'pronoun_opinion', selected: '', opinionOptions }) %><div class="row-actions"><button type="button" class="secondary compact" data-move="up">Move up</button><button type="button" class="secondary compact" data-move="down">Move down</button><button type="button" class="secondary compact" data-remove>Remove</button></div></section></template>
       </fieldset>
 
       <fieldset>
@@ -107,19 +116,27 @@
                     <section data-repeater-row data-row-label="Word" class="repeat-row" aria-label="Word <%= wi + 1 %>">
                       <label><span data-row-heading>Word <%= wi + 1 %></span><input name="word_value_<%= gi %>" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." value="<%= word.value %>" placeholder="A word that belongs in this group"></label>
                       <%- await include('partials/opinion-select', { name: 'word_opinion_' + gi, selected: word.opinion, opinionOptions }) %>
-                      <button type="button" class="secondary compact" data-remove>Remove</button>
+                      <div class="row-actions">
+                        <button type="button" class="secondary compact" data-move="up">Move up</button>
+                        <button type="button" class="secondary compact" data-move="down">Move down</button>
+                        <button type="button" class="secondary compact" data-remove>Remove</button>
+                      </div>
                     </section>
                   <% } %>
                 </div>
                 <button type="button" class="secondary add-row" data-add>Add another word</button>
-                <template><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_<%= gi %>" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A word that belongs in this group"></label><%- await include('partials/opinion-select', { name: 'word_opinion_' + gi, selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+                <template><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_<%= gi %>" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A word that belongs in this group"></label><%- await include('partials/opinion-select', { name: 'word_opinion_' + gi, selected: '', opinionOptions }) %><div class="row-actions"><button type="button" class="secondary compact" data-move="up">Move up</button><button type="button" class="secondary compact" data-move="down">Move down</button><button type="button" class="secondary compact" data-remove>Remove</button></div></section></template>
               </fieldset>
-              <button type="button" class="secondary compact" data-remove>Remove this group</button>
+              <div class="row-actions">
+                <button type="button" class="secondary compact" data-move="up">Move up</button>
+                <button type="button" class="secondary compact" data-move="down">Move down</button>
+                <button type="button" class="secondary compact" data-remove>Remove this group</button>
+              </div>
             </section>
           <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another word group</button>
-        <template><section data-repeater-row data-word-group data-row-label="Word group" class="repeat-row repeat-row-group"><h2 data-row-heading>Word group</h2><label>Heading <input name="word_group_heading" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="What the words in this group have in common"></label><fieldset data-repeater class="word-rows"><legend>Words in this group</legend><div data-repeater-rows class="repeat-rows"><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_0" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A word that belongs in this group"></label><%- await include('partials/opinion-select', { name: 'word_opinion_0', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></div><button type="button" class="secondary add-row" data-add>Add another word</button><template><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_0" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A word that belongs in this group"></label><%- await include('partials/opinion-select', { name: 'word_opinion_0', selected: '', opinionOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template></fieldset><button type="button" class="secondary compact" data-remove>Remove this group</button></section></template>
+        <template><section data-repeater-row data-word-group data-row-label="Word group" class="repeat-row repeat-row-group"><h2 data-row-heading>Word group</h2><label>Heading <input name="word_group_heading" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="What the words in this group have in common"></label><fieldset data-repeater class="word-rows"><legend>Words in this group</legend><div data-repeater-rows class="repeat-rows"><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_0" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A word that belongs in this group"></label><%- await include('partials/opinion-select', { name: 'word_opinion_0', selected: '', opinionOptions }) %><div class="row-actions"><button type="button" class="secondary compact" data-move="up">Move up</button><button type="button" class="secondary compact" data-move="down">Move down</button><button type="button" class="secondary compact" data-remove>Remove</button></div></section></div><button type="button" class="secondary add-row" data-add>Add another word</button><template><section data-repeater-row data-row-label="Word" class="repeat-row"><label><span data-row-heading>Word</span><input name="word_value_0" maxlength="80" pattern="[\x20-\x7E]*" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces." placeholder="A word that belongs in this group"></label><%- await include('partials/opinion-select', { name: 'word_opinion_0', selected: '', opinionOptions }) %><div class="row-actions"><button type="button" class="secondary compact" data-move="up">Move up</button><button type="button" class="secondary compact" data-move="down">Move down</button><button type="button" class="secondary compact" data-remove>Remove</button></div></section></template></fieldset><div class="row-actions"><button type="button" class="secondary compact" data-move="up">Move up</button><button type="button" class="secondary compact" data-move="down">Move down</button><button type="button" class="secondary compact" data-remove>Remove this group</button></div></section></template>
       </fieldset>
 
       <fieldset data-repeater>
@@ -130,12 +147,16 @@
               <h2 data-row-heading>Link <%= i + 1 %></h2>
               <label>Label <input name="link_label" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." value="<%= row.label %>" placeholder="The text shown for this link"></label>
               <label>HTTPS URL <input name="link_url" type="url" pattern="https://.*" maxlength="2048" data-character-constraint data-character-hint="Enter an HTTPS URL that starts with https://." value="<%= row.url %>" placeholder="The full HTTPS address of the page"></label>
-              <button type="button" class="secondary compact" data-remove>Remove</button>
+              <div class="row-actions">
+                <button type="button" class="secondary compact" data-move="up">Move up</button>
+                <button type="button" class="secondary compact" data-move="down">Move down</button>
+                <button type="button" class="secondary compact" data-remove>Remove</button>
+              </div>
             </section>
           <% }); %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another link</button>
-        <template><section data-repeater-row data-row-label="Link" class="repeat-row repeat-row-group"><h2 data-row-heading>Link</h2><label>Label <input name="link_label" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." placeholder="The text shown for this link"></label><label>HTTPS URL <input name="link_url" type="url" pattern="https://.*" maxlength="2048" data-character-constraint data-character-hint="Enter an HTTPS URL that starts with https://." placeholder="The full HTTPS address of the page"></label><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Link" class="repeat-row repeat-row-group"><h2 data-row-heading>Link</h2><label>Label <input name="link_label" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." placeholder="The text shown for this link"></label><label>HTTPS URL <input name="link_url" type="url" pattern="https://.*" maxlength="2048" data-character-constraint data-character-hint="Enter an HTTPS URL that starts with https://." placeholder="The full HTTPS address of the page"></label><div class="row-actions"><button type="button" class="secondary compact" data-move="up">Move up</button><button type="button" class="secondary compact" data-move="down">Move down</button><button type="button" class="secondary compact" data-remove>Remove</button></div></section></template>
       </fieldset>
 
       <fieldset data-repeater>
@@ -145,12 +166,16 @@
           <% for (const [i, flag] of values.flags.entries()) { %>
             <section data-repeater-row data-row-label="Flag" class="repeat-row" aria-label="Flag <%= i + 1 %>">
               <%- await include('partials/flag-picker', { selected: flag, heading: 'Flag ' + (i + 1), flagOptions }) %>
-              <button type="button" class="secondary compact" data-remove>Remove</button>
+              <div class="row-actions">
+                <button type="button" class="secondary compact" data-move="up">Move up</button>
+                <button type="button" class="secondary compact" data-move="down">Move down</button>
+                <button type="button" class="secondary compact" data-remove>Remove</button>
+              </div>
             </section>
           <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another flag</button>
-        <template><section data-repeater-row data-row-label="Flag" class="repeat-row"><%- await include('partials/flag-picker', { selected: '', heading: 'Flag', flagOptions }) %><button type="button" class="secondary compact" data-remove>Remove</button></section></template>
+        <template><section data-repeater-row data-row-label="Flag" class="repeat-row"><%- await include('partials/flag-picker', { selected: '', heading: 'Flag', flagOptions }) %><div class="row-actions"><button type="button" class="secondary compact" data-move="up">Move up</button><button type="button" class="secondary compact" data-move="down">Move down</button><button type="button" class="secondary compact" data-remove>Remove</button></div></section></template>
       </fieldset>
 
       <div class="form-actions">
