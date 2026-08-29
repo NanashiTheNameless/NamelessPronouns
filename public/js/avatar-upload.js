@@ -134,7 +134,7 @@
           output.value = '';
           pendingSvg = uri;
           size.textContent = 'Preview refused: this SVG contains content that is not allowed for profile icons.';
-          showError(`Warning: ${sanitized.warnings.join(', ')} will be removed. The file will not be previewed or saved. Choose “Strip disallowed SVG content” to continue with the sanitized version.`);
+          showError(`Warning: ${sanitized.warnings.join(', ')} will be removed. The file will not be previewed or saved. Choose "Strip disallowed SVG content" to continue with the sanitized version.`);
           stripSvg.hidden = false;
           return;
         }
