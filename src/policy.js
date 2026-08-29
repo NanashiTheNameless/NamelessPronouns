@@ -40,13 +40,30 @@ export function acceptanceStatements({ userId, ipHash = null, now = Date.now() }
     params: [newId(), userId, TERMS_VERSION, PRIVACY_VERSION, now, now, ipHash],
   }];
 }
-export async function recordAcceptance({ userId, ipHash = null, now = Date.now() }) {
+const STORED_ACCEPTANCE_LIMIT = 10000;
+const storedAcceptances = new Set();
+function storedAcceptanceKey(userId) {
+  return `${userId}:${TERMS_VERSION}:${PRIVACY_VERSION}`;
+}
+function rememberStoredAcceptance(userId) {
+  if (storedAcceptances.size >= STORED_ACCEPTANCE_LIMIT) storedAcceptances.clear();
+  storedAcceptances.add(storedAcceptanceKey(userId));
+}
+export async function hasStoredAcceptance(userId) {
   if (!userId) return false;
+  if (storedAcceptances.has(storedAcceptanceKey(userId))) return true;
   const { rows } = await db.query(
     'SELECT id FROM policy_acceptances WHERE user_id = ? AND terms_version = ? AND privacy_version = ? LIMIT 1',
     [userId, TERMS_VERSION, PRIVACY_VERSION],
   );
-  if (rows[0]) return false;
+  if (!rows[0]) return false;
+  rememberStoredAcceptance(userId);
+  return true;
+}
+export async function recordAcceptance({ userId, ipHash = null, now = Date.now() }) {
+  if (!userId) return false;
+  if (await hasStoredAcceptance(userId)) return false;
   await db.batch(acceptanceStatements({ userId, ipHash, now }));
+  rememberStoredAcceptance(userId);
   return true;
 }

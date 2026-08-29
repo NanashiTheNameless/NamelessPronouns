@@ -1,4 +1,4 @@
-import { hasAccepted } from '../policy.js';
+import { hasAccepted, hasStoredAcceptance } from '../policy.js';
 import { setConsentReturn } from '../consent-return.js';
 const EXEMPT_EXACT = new Set([
   '/consent', '/terms', '/privacy', '/legal-requests', '/contact', '/acknowledgements', '/supporters',
@@ -12,9 +12,9 @@ function isExempt(path) {
   return EXEMPT_PREFIX.some((p) => path.startsWith(p));
 }
 export function policyGate() {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     if (isExempt(req.path)) return next();
-    if (hasAccepted(req)) return next();
+    if (hasAccepted(req) && (!req.user || await hasStoredAcceptance(req.user.id))) return next();
     if (SENSITIVE_RETURN_PREFIX.some((prefix) => req.path.startsWith(prefix))) {
       setConsentReturn(res, req.originalUrl);
       return res.redirect('/consent');

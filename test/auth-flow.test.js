@@ -169,6 +169,13 @@ async function loginAs(cookies, email, password) {
   const codeMail = outbox.find((m) => m.to === email && /sign-in code/i.test(m.subject));
   const code = /code is:\s*(\d{6})/.exec(codeMail.text)[1];
   await post('/login/2fa', { code }, cookies);
+  await acceptPoliciesSignedIn(cookies);
+}
+async function acceptPoliciesSignedIn(cookies) {
+  const page = await (await get('/consent', cookies)).text();
+  const csrf = /name="_csrf" value="([^"]+)"/.exec(page)?.[1];
+  if (!csrf) return;
+  await post('/consent', { _csrf: csrf, policies: 'on', age18: 'on', next: '/' }, cookies);
 }
 async function insertUser({ email, password, status = 'approved', role = 'none' }) {
   const { hashPassword } = await import('../src/auth/password.js');
@@ -1250,6 +1257,7 @@ test('step-up with a TOTP second factor (no email sent)', { skip }, async () => 
   await passwordStep(cookies, email, pw);
   let res = await post('/login/2fa', { code: generate(secret) }, cookies);
   assert.equal(res.headers.get('location'), '/dashboard');
+  await acceptPoliciesSignedIn(cookies);
   res = await get('/account/security', cookies);
   assert.equal(res.status, 302);
   outbox.length = 0;
@@ -1843,6 +1851,33 @@ test('accepting the policies records it for a signed-in account, once per versio
   const { recordAcceptance } = await import('../src/policy.js');
   assert.equal(await recordAcceptance({ userId }), false, 'the current version is already on file');
   assert.equal((await rowsFor()).filter((row) => row.terms_version === TERMS_VERSION).length, 1);
+});
+test('a signed-in account with no stored acceptance is forced back through consent', { skip }, async () => {
+  const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const email = `forced-consent-${suffix}@allowed-${suffix}.example`;
+  const pw = 'forced-consent-Passphrase1!';
+  const userId = await insertUser({ email, password: pw, status: 'approved' });
+  const rowsFor = async () => (await db.query(
+    'SELECT id FROM policy_acceptances WHERE user_id = ?',
+    [userId],
+  )).rows;
+  const cookies = jar();
+  await get('/consent', cookies);
+  await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);
+  let res = await get('/login', cookies);
+  const altcha = await solveAltcha(await res.text());
+  outbox.length = 0;
+  await post('/login', { email, password: pw, altcha }, cookies);
+  const codeMail = outbox.find((m) => m.to === email && /sign-in code/i.test(m.subject));
+  await post('/login/2fa', { code: /code is:\s*(\d{6})/.exec(codeMail.text)[1] }, cookies);
+  assert.equal((await rowsFor()).length, 0, 'the cookie alone leaves nothing on file');
+  res = await get('/settings', cookies);
+  assert.equal(res.status, 302, 'a valid policy cookie no longer satisfies the gate');
+  assert.equal(res.headers.get('location'), '/consent?next=%2Fsettings');
+  await acceptPoliciesSignedIn(cookies);
+  assert.equal((await rowsFor()).length, 1, 're-accepting stores the acceptance');
+  res = await get('/settings', cookies);
+  assert.equal(res.status, 200, 'the gate opens once the acceptance is on file');
 });
 test('usernames are case-insensitive but the URL canonicalizes to the stored casing', { skip }, async () => {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
