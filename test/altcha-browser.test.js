@@ -31,7 +31,7 @@ test('ALTCHA uses the NamelessUnSee business settings and solves in Chromium', a
     const encoded = /<output id="browser-result">([^<]+)<\/output>/.exec(stdout)?.[1];
     assert.ok(encoded && encoded !== 'pending', 'widget completed proof-of-work');
     const result = JSON.parse(encoded.replaceAll('&quot;', '"').replaceAll('&amp;', '&'));
-    assert.deepEqual(result, { solved: true, theme: 'business', businessThemeApplied: true, logoVisible: false, footerVisible: true });
+    assert.deepEqual(result, { solved: true, theme: 'business', siteThemeWins: true, checkedIsSuccess: true, logoVisible: false, footerVisible: true });
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

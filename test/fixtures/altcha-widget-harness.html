@@ -1,4 +1,4 @@
-<!doctype html><html><head><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/vendor/altcha/business.css"></head><body>
+<!doctype html><html><head><link rel="stylesheet" href="/static/vendor/altcha/business.css"><link rel="stylesheet" href="/static/css/main.css"></head><body>
 <form>
   <altcha-widget
     challenge='{"parameters":{"algorithm":"SHA-256","cost":1,"expiresAt":4102444800,"keyLength":32,"keyPrefix":"12ce2f8f7e94e42b75654cd30febc6d5","nonce":"b4c99bec23175c4a67f19769962b7059","salt":"e895b87b5e4548164ebfc56fe1734d71"}}'
@@ -20,7 +20,12 @@
       document.querySelector('#browser-result').textContent = JSON.stringify({
         solved: true,
         theme: widget.getAttribute('theme'),
-        businessThemeApplied: getComputedStyle(widget).getPropertyValue('--altcha-border-radius').trim() === '6px',
+        siteThemeWins: ['--altcha-border-radius: 10px', '--altcha-border-width: 1px', '--altcha-color-base: #16161c', '--altcha-input-background-color: #111116']
+          .every((declaration) => {
+            const [name, expected] = declaration.split(': ');
+            return getComputedStyle(widget).getPropertyValue(name).trim() === expected;
+          }),
+        checkedIsSuccess: getComputedStyle(document.querySelector('altcha-widget input[type="checkbox"]')).backgroundColor === 'rgb(209, 10, 44)',
         logoVisible: Boolean(widget.querySelector('.altcha-logo')),
         footerVisible: Boolean(widget.querySelector('.altcha-footer')),
       });
