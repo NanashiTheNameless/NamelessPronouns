@@ -73,7 +73,7 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.equal(result.defaceQuip, 'No faces were harmed in the selection of this color.');
     assert.match(result.rejectedFamily.message, /only letters, numbers, spaces, commas, quotes, and hyphens/);
     assert.equal(result.rejectedFamily.inlineFont, 'Georgia, serif, "0xProto", monospace', 'a url() font name is refused');
-    assert.match(result.imported.message, /Settings applied\. Ignored what could not be read: colors that are not #rrggbb\./);
+    assert.match(result.imported.message, /Settings applied\. Ignored what could not be read: colors that are not #rrggbb or #rrggbbaa\./);
     assert.equal(result.imported.inlineBg, '#204020', 'imported colors apply');
     assert.equal(result.imported.inlineAccent, '', 'an imported color that is not a hex code is dropped');
     assert.equal(result.imported.inlineFont, 'Verdana, sans-serif, "0xProto", monospace');
@@ -290,7 +290,7 @@ test('the panel offers arbitrary colors, an arbitrary font, and settings transfe
   for (const key of ['bg', 'surface', 'text', 'muted', 'border', 'accent', 'accentText', 'link', 'focus', 'placeholder']) {
     const field = new RegExp(`name="accessibility_color_${key}"[^>]*`).exec(footer);
     assert.ok(field, `${key} has its own color field`);
-    assert.match(field[0], /pattern="#\[0-9A-Fa-f\]\{6\}"/, `${key} accepts only an HTML color code`);
+    assert.match(field[0], /pattern="#\(\[0-9A-Fa-f\]\{6\}\|\[0-9A-Fa-f\]\{8\}\)"/, `${key} accepts only an HTML color code, with or without transparency`);
     assert.match(field[0], /placeholder="[^"]+"/, `${key} explains itself`);
   }
   for (const key of ['bg', 'surface', 'text', 'muted', 'border', 'accent', 'accentText', 'link', 'focus', 'placeholder']) {
@@ -305,6 +305,51 @@ test('the panel offers arbitrary colors, an arbitrary font, and settings transfe
   assert.match(footer, /data-accessibility-import>Apply pasted settings</);
   assert.match(footer, /role="status" aria-live="polite" data-accessibility-status/, 'feedback is announced politely');
   assert.match(footer, /role="status" aria-live="polite" data-accessibility-contrast/, 'the contrast note is announced politely');
+});
+test('the newest client-side eggs are wired into the shipped script', async () => {
+  const script = await readFile(new URL('../public/js/accessibility.js', import.meta.url), 'utf8');
+  assert.match(script, /const HEX = \/\^#\(\?:\[0-9a-f\]\{6\}\|\[0-9a-f\]\{8\}\)\$\/i;/,
+    'six and eight digit HTML color codes are both valid');
+  for (const [color, quip] of [
+    ['#0ddba1', 'Oddball. Fits right in.'],
+    ['#accede', 'We accede.'],
+    ['#efface', 'Effaced. Still visible.'],
+    ['#decaf0', 'Decaffeinated. Somehow still awake.'],
+    ['#deadbeef', 'A classic. Now with transparency.'],
+    ['#cafebabe', 'Java called. It wants its constant back.'],
+    ['#feedface', 'Fed.'],
+    ['#8badf00d', 'Crash report filed.'],
+  ]) {
+    assert.ok(script.includes(`'${color}': '${quip}'`), `${color} has its quip`);
+    assert.match(color, /^#([0-9a-f]{6}|[0-9a-f]{8})$/, `${color} is a valid HTML color code`);
+  }
+  for (const font of ['impact', 'arial', "'courier new'", 'font', 'cursive']) {
+    assert.ok(script.includes(`${font}: '`), `${font} has its quip`);
+  }
+  for (const [size, quip] of [[404, 'Not found, but very large.'], [42, 'The answer, rendered small.'], [1998, 'The nineties were not that big.']]) {
+    assert.ok(script.includes(`${size}: '${quip}'`), `${size} percent is answered`);
+  }
+  for (const clock of ['13:37', '04:04', '11:11']) {
+    assert.ok(script.includes(`'${clock}'`), `${clock} is answered`);
+  }
+  for (const [sequence, quip] of [
+    ['they', 'Singular. In English since the 1300s.'],
+    ['ls', 'You are looking at it.'],
+    ['vim', 'Nothing is trapping you. Escape, then :q, also works.'],
+    ['git blame', 'NamelessNanashi. Every line.'],
+    ['sudo', 'Still not a shell.'],
+    ['coffee', 'Wrong appliance.'],
+    ['undo', 'Ctrl+Z was right there.'],
+    ['konami', 'Close. Use the arrows.'],
+  ]) {
+    assert.ok(script.includes(`[...'${sequence}'], run: () => announce('${quip}')`), `typing ${sequence} answers`);
+  }
+  assert.ok(script.includes("[...'pwd'], run: () => announce(location.pathname)"), 'pwd prints the path of the page');
+  assert.match(script, /keys: \[\.\.\.arrows, 'a', 'b'\],\n\s*run: \(\) => announce\('Almost\. Order matters\.'\)/,
+    'the Konami code in the wrong order says so');
+  assert.match(script, /Plus addressing\. A person of taste\./);
+  assert.match(script, /You did not read it\. It is short, so try\./);
+  assert.match(script, /You read it\. Genuinely rare\./);
 });
 test('the custom theme derives the rest of its palette from the colors the user gives', async () => {
   const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');

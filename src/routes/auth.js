@@ -76,6 +76,7 @@ router.post('/signup', async (req, res) => {
     throw err;
   }
   if (email === 'nobody@example.com') return renderError('Nobody already has a profile. See /u/nobody.', req.body);
+  if (email === 'test@test.com') return renderError('This is production. Probably.', req.body);
   if (req.body.policies !== 'on') return renderError('You must agree to the Terms of Service and Privacy Policy.', req.body);
   if (req.body.age18 !== 'on') return renderError('You must attest that you are at least 18 years old.', req.body);
   const password = req.body.password;

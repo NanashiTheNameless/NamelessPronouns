@@ -388,6 +388,20 @@ test('pronoun preset script fills fields only after explicit application', async
   assert.match(css, /\.pronoun-preset \[data-apply-pronoun-preset\]\s*\{[^}]*min-height:\s*2\.9rem[^}]*margin-top:\s*0/s);
   assert.match(css, /button\[data-remove\]\s*\{[^}]*min-height:\s*2\.9rem/s);
 });
+test('the editor eggs answer without changing what gets saved', async () => {
+  const script = await readFile(new URL('../public/js/profile-editor.js', import.meta.url), 'utf8');
+  assert.match(script, /Sanitized\. This is not 2005\./);
+  assert.match(script, /Removed, with respect for history\./);
+  assert.match(script, /Perfectly full\. Not one character wasted\./);
+  assert.match(script, /Twice is a preference, not a typo\./);
+  assert.match(script, /Nothing changed\. Saved anyway\./);
+  assert.match(script, /const RETIRED_TAG = \/<\\s\*\(blink\|marquee\)\\b\/i;/);
+  assert.match(script, /announceOnce\('duplicate-pronouns'/);
+  assert.match(script, /form\[action\$="\/edit"\]/, 'the unchanged-save counter watches the edit form only');
+  assert.match(script, /\.filter\(\(\[name\]\) => !name\.startsWith\('_'\)\)/,
+    'the CSRF and save tokens never count as a change');
+  assert.doesNotMatch(script, /preventDefault\(\)[^]*editForm/, 'no egg blocks a save');
+});
 test('constrained fields state their own validation message', async () => {
   const script = await readFile(new URL('../public/js/profile-editor.js', import.meta.url), 'utf8');
   const shared = await readFile(new URL('../public/js/field-messages.js', import.meta.url), 'utf8');

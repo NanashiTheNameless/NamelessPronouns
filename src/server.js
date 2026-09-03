@@ -34,6 +34,7 @@ import { profileLimitFor, USERNAME_HOLD_MS } from './profiles.js';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const TEA_STEEP_MS = 4 * 60 * 1000 + 18 * 1000;
 const PATIENCE = 'Slow down. The pronouns are not going anywhere.';
+const UNAVAILABLE_NOTE = 'Back soon. Nanashi is holding a wire.';
 export function teaIsSteeped(startedAt, now = Date.now()) {
   const started = Number(startedAt);
   return Number.isFinite(started) && started > 0 && now - started >= TEA_STEEP_MS;
@@ -80,6 +81,29 @@ export function createApp() {
     };
     next();
   });
+  app.use((req, res, next) => {
+    if (req.method !== 'TRACE') return next();
+    res.setHeader('Allow', 'GET, HEAD, POST, OPTIONS');
+    return res.type('text/plain').status(405).send('We do not trace. Ever.\n');
+  });
+  app.get('/', (req, res, next) => {
+    const accept = String(req.get('accept') || '');
+    if (!/\btext\/plain\b/.test(accept) || /\btext\/html\b/.test(accept)) return next();
+    return res.type('text/plain').send([
+      'NamelessPronouns',
+      '',
+      'A profile page that stays simple.',
+      '',
+      'Create a focused public page for your names, pronouns, identity notes,',
+      'and trusted links. No feeds, ads, messages, or user tracking.',
+      '',
+      'Request an account: /signup',
+      'Sign in: /login',
+      '',
+      'Served in plain text because you asked for plain text.',
+      '',
+    ].join('\n'));
+  });
   app.options('/teapot', (req, res) => {
     res.setHeader('Allow', 'GET, HEAD, OPTIONS');
     res.setHeader('X-Brew', 'not-standardized');
@@ -111,6 +135,26 @@ export function createApp() {
   });
   app.get('/status', (req, res) => {
     res.type('text/plain').send('Somehow still running.\n');
+  });
+  app.get('/everything', (req, res) => {
+    res.setHeader('X-Everything', 'did-not-fit');
+    res.type('text/plain').status(413).send('Everything did not fit.\n');
+  });
+  for (const route of ['/something', '/anything']) {
+    app.get(route, (req, res) => {
+      res.append('Link', '</u/something>; rel="alternate"');
+      res.append('Link', '</u/nothing>; rel="alternate"');
+      res.append('Link', '</u/everything>; rel="alternate"');
+      res.setHeader('X-Choices', 'yours');
+      res.type('text/plain').status(300).send('Several things are available. Pick one.\n');
+    });
+  }
+  app.get('/it', (req, res) => {
+    res.setHeader('X-Teapot-Solidarity', 'yes');
+    res.type('text/plain').status(418).send('It/its. Same as the teapot.\n');
+  });
+  app.get('/.well-known/change-password', (req, res) => {
+    res.redirect(302, '/account/security');
   });
   app.get('/.well-known/security.txt', (req, res) => {
     const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -171,17 +215,17 @@ export function createApp() {
       res.status(200).json({ status: 'ok' });
     } catch (err) {
       logger.error('healthz db ping failed', { error: err.message });
-      res.status(503).json({ status: 'unavailable' });
+      res.status(503).json({ status: 'unavailable', note: UNAVAILABLE_NOTE });
     }
   });
   app.get('/readyz', async (req, res) => {
     try {
       await db.ping();
       const pending = await pendingMigrations();
-      if (pending.length > 0) return res.status(503).json({ status: 'migrations-pending', pending });
+      if (pending.length > 0) return res.status(503).json({ status: 'migrations-pending', pending, note: UNAVAILABLE_NOTE });
       res.status(200).json({ status: 'ready' });
     } catch {
-      res.status(503).json({ status: 'unavailable' });
+      res.status(503).json({ status: 'unavailable', note: UNAVAILABLE_NOTE });
     }
   });
   app.use('/static', express.static(path.join(root, 'public'), {
@@ -245,7 +289,7 @@ export function createApp() {
   app.use((req, res) => res.status(404).render('error', { title: 'Not found', status: 404, message: 'Page not found.' }));
   app.use((err, req, res, next) => {
     logger.error('unhandled error', { error: err.message });
-    res.status(500).render('error', { title: 'Error', status: 500, message: 'Something went wrong.' });
+    res.status(500).render('error', { title: 'Error', status: 500, message: 'Something broke. It was not you.' });
   });
   return app;
 }

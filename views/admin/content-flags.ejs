@@ -23,6 +23,7 @@
     <% if (reviews.length === 0) { %>
       <p>No pending content flag reviews.</p>
       <p class="fineprint">Nothing to moderate. Suspicious.</p>
+      <% if (locals.clearedBacklog) { %><p class="fineprint">Queue empty. Go outside.</p><% } %>
     <% } else { %>
       <ul>
         <% reviews.forEach(function (review) { %>

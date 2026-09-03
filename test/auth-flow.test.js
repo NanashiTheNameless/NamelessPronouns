@@ -159,6 +159,28 @@ test('server accepts a common password when the client deterrent is bypassed', {
   assert.match(await res.text(), /Check your email/i);
   assert.equal((await db.query('SELECT id FROM users WHERE email = ?', [email])).rows.length, 1);
 });
+test('the reserved joke addresses are refused by name', { skip }, async () => {
+  const cookies = jar();
+  await post('/consent', { policies: 'on', age18: 'on', next: '/signup' }, cookies);
+  const attempt = async (email) => {
+    const page = await (await get('/signup', cookies)).text();
+    const res = await post('/signup', {
+      email,
+      password: 'a-long-enough-passphrase-9',
+      profile_username: `reserved${Math.floor(Math.random() * 100000)}`,
+      display_name: 'Reserved Address Test',
+      reason: 'I want a personal profile.',
+      policies: 'on',
+      age18: 'on',
+      altcha: await solveAltcha(page),
+    }, cookies);
+    assert.equal(res.status, 400);
+    return res.text();
+  };
+  assert.match(await attempt('test@test.com'), /This is production\. Probably\./);
+  assert.match(await attempt('nobody@example.com'), /Nobody already has a profile\./);
+  assert.equal((await db.query('SELECT id FROM users WHERE email = ?', ['test@test.com'])).rows.length, 0);
+});
 async function loginAs(cookies, email, password) {
   await get('/consent', cookies);
   await post('/consent', { policies: 'on', age18: 'on', next: '/' }, cookies);

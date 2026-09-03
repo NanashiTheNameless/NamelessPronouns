@@ -23,6 +23,17 @@ const LOOKUP_EGGS = new Map([
   ['null', 'Both already have profiles. See /u/null and /u/undefined.'],
   ['undefined', 'Both already have profiles. See /u/null and /u/undefined.'],
 ]);
+const LOOKUP_PATTERN_EGGS = [
+  [/drop\s+table|;\s*drop\b/i, 'We use parameterised queries. Thank you for checking.'],
+  [/'\s*or\s*'?1'?\s*=\s*'?1/i, 'We use parameterised queries. Thank you for checking.'],
+  [/<\s*script\b/i, 'Escaped, as intended.'],
+];
+export function lookupEgg(email) {
+  if (!email) return '';
+  const exact = LOOKUP_EGGS.get(email);
+  if (exact) return exact;
+  return LOOKUP_PATTERN_EGGS.find(([pattern]) => pattern.test(email))?.[1] || '';
+}
 router.get('/admin', requireStaff('support'), async (req, res) => {
   const pending = await db.query(
     `SELECT id, email, requested_profile_username, requested_display_name, requested_at
@@ -30,11 +41,11 @@ router.get('/admin', requireStaff('support'), async (req, res) => {
   );
   let searched = null;
   const email = typeof req.query.email === 'string' ? req.query.email.trim().toLowerCase() : '';
-  const lookupMessage = LOOKUP_EGGS.get(email) || '';
+  const lookupMessage = lookupEgg(email);
   if (email && !lookupMessage) {
     const { rows } = await db.query(
       'SELECT id, email, signup_status, staff_role, twofa_method FROM users WHERE email = ?',
-      [email],
+      [email === 'me' ? req.user.email : email],
     );
     searched = rows[0] || null;
   }
@@ -46,6 +57,7 @@ router.get('/admin', requireStaff('support'), async (req, res) => {
     searched,
     email,
     lookupMessage,
+    selfLookup: email === 'me' && Boolean(searched),
   });
 });
 router.get('/admin/easter-eggs', requireStaff('support'), (req, res) => {
@@ -67,8 +79,16 @@ router.get('/admin/content-flags', requireStaff('administrator'), requireFreshAu
       ORDER BY f.created_at DESC`,
     [req.user.id],
   )]);
+  const recentlyDecided = rows.length === 0
+    ? Number((await db.query(
+      `SELECT COUNT(*) AS c FROM content_flag_reviews
+        WHERE status <> 'pending' AND decided_at >= ?`,
+      [Date.now() - 24 * 60 * 60 * 1000],
+    )).rows[0].c)
+    : 0;
   res.render('admin/content-flags', {
     title: 'Content flag reviews',
+    clearedBacklog: recentlyDecided >= 5,
     reviews: rows.map((row) => ({ ...row, requestedAt: new Date(Number(row.requested_at)).toISOString() })),
     selfFlags: selfFlags.map((row) => ({ ...row, createdAt: new Date(Number(row.created_at)).toISOString() })),
   });

@@ -746,5 +746,280 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Owner diagnostics",
     "activation": "Run NamelessNanashi.fix() in the console",
     "effect": "Returns \"Have you tried turning it off and on again?\""
+  },
+  {
+    "name": "Everything endpoint",
+    "activation": "Visit /everything",
+    "effect": "Returns HTTP 413 with \"Everything did not fit.\""
+  },
+  {
+    "name": "Multiple choices",
+    "activation": "Visit /something or /anything",
+    "effect": "Returns HTTP 300 with \"Several things are available. Pick one.\" and Link headers to the reserved profiles"
+  },
+  {
+    "name": "It endpoint",
+    "activation": "Visit /it",
+    "effect": "Returns HTTP 418 with \"It/its. Same as the teapot.\" and X-Teapot-Solidarity: yes"
+  },
+  {
+    "name": "Change your password",
+    "activation": "Visit /.well-known/change-password",
+    "effect": "Returns HTTP 302 to the account security page, as RFC 8615 asks"
+  },
+  {
+    "name": "No tracing",
+    "activation": "Send a TRACE request to any path",
+    "effect": "Returns HTTP 405 with \"We do not trace. Ever.\""
+  },
+  {
+    "name": "Plain-text home",
+    "activation": "Request / with an Accept header of text/plain and no text/html",
+    "effect": "Serves the home page as plain text"
+  },
+  {
+    "name": "Patient outage",
+    "activation": "Reach /healthz or /readyz while the database is unavailable",
+    "effect": "Adds note: \"Back soon. Nanashi is holding a wire.\" to the 503 JSON"
+  },
+  {
+    "name": "Blameless error",
+    "activation": "Reach a page that fails unexpectedly",
+    "effect": "The 500 page says \"Something broke. It was not you.\""
+  },
+  {
+    "name": "Oddball color",
+    "activation": "Enter #0ddba1 in a custom color field",
+    "effect": "Says \"Oddball. Fits right in.\""
+  },
+  {
+    "name": "Accede color",
+    "activation": "Enter #accede in a custom color field",
+    "effect": "Says \"We accede.\""
+  },
+  {
+    "name": "Efface color",
+    "activation": "Enter #efface in a custom color field",
+    "effect": "Says \"Effaced. Still visible.\""
+  },
+  {
+    "name": "Decaffeinated color",
+    "activation": "Enter #decaf0 in a custom color field",
+    "effect": "Says \"Decaffeinated. Somehow still awake.\""
+  },
+  {
+    "name": "Dead beef color",
+    "activation": "Enter #deadbeef in a custom color field",
+    "effect": "Says \"A classic. Now with transparency.\""
+  },
+  {
+    "name": "Cafe babe color",
+    "activation": "Enter #cafebabe in a custom color field",
+    "effect": "Says \"Java called. It wants its constant back.\""
+  },
+  {
+    "name": "Feed face color",
+    "activation": "Enter #feedface in a custom color field",
+    "effect": "Says \"Fed.\""
+  },
+  {
+    "name": "Bad food color",
+    "activation": "Enter #8badf00d in a custom color field",
+    "effect": "Says \"Crash report filed.\""
+  },
+  {
+    "name": "Transparent colors",
+    "activation": "Enter an eight-digit color code such as #1a2b3ccc in a custom color field",
+    "effect": "Accepts it as a valid HTML color code, transparency included"
+  },
+  {
+    "name": "Impact",
+    "activation": "Enter Impact as the custom font",
+    "effect": "Says \"Everything becomes a meme eventually.\""
+  },
+  {
+    "name": "Arial",
+    "activation": "Enter Arial as the custom font",
+    "effect": "Says \"Helvetica is right there.\""
+  },
+  {
+    "name": "Courier New",
+    "activation": "Enter Courier New as the custom font",
+    "effect": "Says \"Monospaced and unbothered.\""
+  },
+  {
+    "name": "Recursive font",
+    "activation": "Enter font as the custom font",
+    "effect": "Says \"Recursive.\""
+  },
+  {
+    "name": "Cursive",
+    "activation": "Enter cursive as the custom font",
+    "effect": "Says \"A web-safe risk.\""
+  },
+  {
+    "name": "Missing text size",
+    "activation": "Enter 404 as the arbitrary text size percentage",
+    "effect": "Says \"Not found, but very large.\" before repeating the allowed range"
+  },
+  {
+    "name": "Answer text size",
+    "activation": "Enter 42 as the arbitrary text size percentage",
+    "effect": "Says \"The answer, rendered small.\" before repeating the allowed range"
+  },
+  {
+    "name": "Nineties text size",
+    "activation": "Enter 1998 as the arbitrary text size percentage",
+    "effect": "Says \"The nineties were not that big.\" before repeating the allowed range"
+  },
+  {
+    "name": "Leet o'clock",
+    "activation": "Open any page at 13:37 by the device clock",
+    "effect": "Shows a \"Leet o'clock.\" toast, once per browser session"
+  },
+  {
+    "name": "Time not found",
+    "activation": "Open any page at 04:04 by the device clock",
+    "effect": "Shows a \"Time not found.\" toast, once per browser session"
+  },
+  {
+    "name": "Eleven eleven",
+    "activation": "Open any page at 11:11 by the device clock",
+    "effect": "Shows a \"Make a wish. Or do not.\" toast, once per browser session"
+  },
+  {
+    "name": "Singular they",
+    "activation": "Type they outside a text field",
+    "effect": "Says \"Singular. In English since the 1300s.\""
+  },
+  {
+    "name": "List sequence",
+    "activation": "Type ls outside a text field",
+    "effect": "Says \"You are looking at it.\""
+  },
+  {
+    "name": "Print working directory",
+    "activation": "Type pwd outside a text field",
+    "effect": "Shows the path of the page you are on"
+  },
+  {
+    "name": "Vim escape",
+    "activation": "Type vim outside a text field",
+    "effect": "Says \"Nothing is trapping you. Escape, then :q, also works.\""
+  },
+  {
+    "name": "Git blame",
+    "activation": "Type git blame outside a text field",
+    "effect": "Says \"NamelessNanashi. Every line.\""
+  },
+  {
+    "name": "Sudo sequence",
+    "activation": "Type sudo outside a text field",
+    "effect": "Says \"Still not a shell.\""
+  },
+  {
+    "name": "Tea sequence",
+    "activation": "Type tea outside a text field",
+    "effect": "Points at /teapot and the four minutes eighteen seconds it needs"
+  },
+  {
+    "name": "Coffee sequence",
+    "activation": "Type coffee outside a text field",
+    "effect": "Says \"Wrong appliance.\""
+  },
+  {
+    "name": "Undo sequence",
+    "activation": "Type undo outside a text field",
+    "effect": "Says \"Ctrl+Z was right there.\""
+  },
+  {
+    "name": "Konami spelled out",
+    "activation": "Type konami outside a text field",
+    "effect": "Says \"Close. Use the arrows.\""
+  },
+  {
+    "name": "Konami misordered",
+    "activation": "Enter the Konami code with A and B the wrong way round",
+    "effect": "Says \"Almost. Order matters.\""
+  },
+  {
+    "name": "Maximum flexibility",
+    "activation": "View a profile listing any/all as a pronoun set",
+    "effect": "Adds \"Maximum flexibility detected.\" beneath the pronouns"
+  },
+  {
+    "name": "Full to the brim",
+    "activation": "Fill a profile bio or notes field to its exact character limit",
+    "effect": "Says \"Perfectly full. Not one character wasted.\""
+  },
+  {
+    "name": "Script tag",
+    "activation": "Type a script tag into a profile bio or notes field",
+    "effect": "Says \"Sanitized. This is not 2005.\""
+  },
+  {
+    "name": "Retired tags",
+    "activation": "Type a blink or marquee tag into a profile bio or notes field",
+    "effect": "Says \"Removed, with respect for history.\""
+  },
+  {
+    "name": "Twice the pronouns",
+    "activation": "Enter the same pronoun set in two rows of the profile editor",
+    "effect": "Says \"Twice is a preference, not a typo.\""
+  },
+  {
+    "name": "Unchanged save",
+    "activation": "Save a profile three times without changing anything",
+    "effect": "Says \"Nothing changed. Saved anyway.\""
+  },
+  {
+    "name": "Test signup",
+    "activation": "Request an account using test@test.com",
+    "effect": "Answers \"This is production. Probably.\""
+  },
+  {
+    "name": "Plus addressing",
+    "activation": "Type a plus-addressed email into any email field",
+    "effect": "Shows a \"Plus addressing. A person of taste.\" toast, once per browser session"
+  },
+  {
+    "name": "Hasty consent",
+    "activation": "Tick both consent boxes within two seconds of the page loading",
+    "effect": "Adds \"You did not read it. It is short, so try.\" under the form"
+  },
+  {
+    "name": "Actually read it",
+    "activation": "Scroll the Terms of Service or Privacy Policy to the very bottom",
+    "effect": "Says \"You read it. Genuinely rare.\""
+  },
+  {
+    "name": "Admin injection",
+    "activation": "Enter drop table or ' OR 1=1-- in the admin account lookup",
+    "effect": "Responds \"We use parameterised queries. Thank you for checking.\"",
+    "staff": true
+  },
+  {
+    "name": "Admin script",
+    "activation": "Enter a script tag in the admin account lookup",
+    "effect": "Responds \"Escaped, as intended.\"",
+    "staff": true
+  },
+  {
+    "name": "Admin mirror",
+    "activation": "Enter me in the admin account lookup",
+    "effect": "Looks up your own account and says \"That is you. Hello.\"",
+    "staff": true
+  },
+  {
+    "name": "Quiet audit log",
+    "activation": "Open the Administrator audit log with no matching events",
+    "effect": "Adds \"Nobody did anything. Allegedly.\"",
+    "staff": true
+  },
+  {
+    "name": "Cleared backlog",
+    "activation": "Open the content flag reviews with none pending after five or more decisions in a day",
+    "effect": "Adds \"Queue empty. Go outside.\"",
+    "staff": true
   }
 ].map(Object.freeze));

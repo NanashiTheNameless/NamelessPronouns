@@ -209,14 +209,76 @@ document.addEventListener('click', (event) => {
 });
 
 const PLACEHOLDER_PROSE = /lorem\s+ipsum/i;
-let placeholderAnnounced = false;
+const SCRIPT_TAG = /<\s*script\b/i;
+const RETIRED_TAG = /<\s*(blink|marquee)\b/i;
+const announced = new Set();
+function announceOnce(name, message) {
+  if (announced.has(name)) return;
+  announced.add(name);
+  window.npAccessibility?.announceEaster?.(message);
+}
+
+function readSession(key) {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(key, value) {
+  try {
+    if (value === null) sessionStorage.removeItem(key);
+    else sessionStorage.setItem(key, value);
+  } catch {}
+}
+
+function pronounRowValues() {
+  return [...document.querySelectorAll('[data-repeater-row]')]
+    .map((row) => PRONOUN_FIELDS.map((name) => row.querySelector(`[name="${name}"]`)?.value.trim().toLowerCase() || ''))
+    .filter((forms) => forms.every(Boolean))
+    .map((forms) => forms.join('/'));
+}
+
 document.addEventListener('input', (event) => {
-  if (event.target.matches('[data-character-constraint]')) updateCharacterConstraint(event.target);
-  if (!placeholderAnnounced && event.target.matches('textarea') && PLACEHOLDER_PROSE.test(event.target.value)) {
-    placeholderAnnounced = true;
-    window.npAccessibility?.announceEaster?.('Placeholder detected. You are allowed to be real.');
+  const field = event.target;
+  if (field.matches('[data-character-constraint]')) updateCharacterConstraint(field);
+  if (field.matches('textarea')) {
+    if (PLACEHOLDER_PROSE.test(field.value)) announceOnce('placeholder', 'Placeholder detected. You are allowed to be real.');
+    if (SCRIPT_TAG.test(field.value)) announceOnce('script', 'Sanitized. This is not 2005.');
+    if (RETIRED_TAG.test(field.value)) announceOnce('retired', 'Removed, with respect for history.');
+    if (field.maxLength > 0 && field.value.length === field.maxLength) {
+      announceOnce('full', 'Perfectly full. Not one character wasted.');
+    }
+  }
+  if (PRONOUN_FIELDS.includes(field.name)) {
+    const sets = pronounRowValues();
+    if (new Set(sets).size < sets.length) announceOnce('duplicate-pronouns', 'Twice is a preference, not a typo.');
   }
 });
+
+const editForm = document.querySelector('form[action$="/edit"]');
+if (editForm) {
+  const key = `np-easter-unchanged:${editForm.getAttribute('action')}`;
+  const snapshot = () => [...new FormData(editForm).entries()]
+    .filter(([name]) => !name.startsWith('_'))
+    .map(([name, value]) => `${name}=${value}`)
+    .join('\n');
+  const opened = snapshot();
+  if (readSession(`${key}:announce`) === 'yes') {
+    writeSession(`${key}:announce`, null);
+    window.npAccessibility?.announceEaster?.('Nothing changed. Saved anyway.');
+  }
+  editForm.addEventListener('submit', () => {
+    const unchanged = snapshot() === opened;
+    const count = unchanged ? Number(readSession(key) || 0) + 1 : 0;
+    writeSession(key, String(count));
+    if (count >= 3) {
+      writeSession(key, '0');
+      writeSession(`${key}:announce`, 'yes');
+    }
+  });
+}
 renumberWordGroups();
 updateRepeaters();
 updateCharacterConstraints();

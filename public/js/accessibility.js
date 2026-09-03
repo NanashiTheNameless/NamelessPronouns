@@ -11,7 +11,7 @@ const FONTS = ['default', 'sans', 'serif', 'mono', 'custom'];
 const SIZES = ['default', 'large', 'larger', 'largest', 'custom'];
 const SCALE_MIN = 75;
 const SCALE_MAX = 200;
-const HEX = /^#[0-9a-f]{6}$/i;
+const HEX = /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const FAMILY = /^[A-Za-z0-9 ,'"-]{1,120}$/;
 const COLORS = Object.freeze({
   bg: '--bg',
@@ -132,6 +132,10 @@ function storedColors() {
   }
 }
 
+function pickerHex(hex) {
+  return hex.slice(0, 7);
+}
+
 function relativeLuminance(hex) {
   const channels = [1, 3, 5]
     .map((index) => parseInt(hex.slice(index, index + 2), 16) / 255)
@@ -219,7 +223,7 @@ function importSettings(text) {
   if (parsed.font && !FONTS.includes(parsed.font)) dropped.push('font');
   if (parsed.size && !SIZES.includes(parsed.size)) dropped.push('text size');
   if (parsed.colors && Object.keys(validColors(parsed.colors)).length < Object.keys(parsed.colors).length) {
-    dropped.push('colors that are not #rrggbb');
+    dropped.push('colors that are not #rrggbb or #rrggbbaa');
   }
   if (parsed.fontFamily && !family) dropped.push('font family');
   if (parsed.fontScale && !scale) dropped.push('text size percentage');
@@ -287,11 +291,11 @@ function wirePanel() {
     const picker = form.querySelector(`[data-color-picker="${key}"]`);
     if (!picker) return;
     if (value && HEX.test(value)) {
-      picker.value = value;
+      picker.value = pickerHex(value);
       return;
     }
     const active = getComputedStyle(document.documentElement).getPropertyValue(COLORS[key]).trim();
-    picker.value = HEX.test(active) ? active : '#000000';
+    picker.value = HEX.test(active) ? pickerHex(active) : '#000000';
   };
   const sync = () => {
     if (konamiTheme && readRaw(KONAMI_KEY) === 'unlocked') konamiTheme.hidden = false;
@@ -359,7 +363,7 @@ function wirePanel() {
       const value = field.value.trim();
       if (value === '') delete colors[colorKey];
       else if (HEX.test(value)) colors[colorKey] = value.toLowerCase();
-      else return say(status, `${field.dataset.colorLabel || 'That color'} needs an HTML color code such as #1a2b3c.`);
+      else return say(status, `${field.dataset.colorLabel || 'That color'} needs an HTML color code such as #1a2b3c, or #1a2b3ccc with transparency.`);
       write(COLORS_KEY, Object.keys(colors).length ? JSON.stringify(colors) : null);
       const quips = {
         '#c0ffee': 'Coffee detected. No beans were harmed.',
@@ -372,6 +376,14 @@ function wirePanel() {
         '#777777': 'Seven. Naturally.',
         '#abcdef': 'Alphabetical, hexadecimal, and suspiciously organized.',
         '#dec0de': 'Decoded.',
+        '#0ddba1': 'Oddball. Fits right in.',
+        '#accede': 'We accede.',
+        '#efface': 'Effaced. Still visible.',
+        '#decaf0': 'Decaffeinated. Somehow still awake.',
+        '#deadbeef': 'A classic. Now with transparency.',
+        '#cafebabe': 'Java called. It wants its constant back.',
+        '#feedface': 'Fed.',
+        '#8badf00d': 'Crash report filed.',
       };
       const paired = colors.bg && colors.text;
       const paletteQuip = paired && colors.bg === colors.text
@@ -399,6 +411,11 @@ function wirePanel() {
         papyrus: 'The ancient records warned us.',
         wingdings: 'We cannot read that either.',
         helvetica: 'There is a documentary about this.',
+        impact: 'Everything becomes a meme eventually.',
+        arial: 'Helvetica is right there.',
+        'courier new': 'Monospaced and unbothered.',
+        font: 'Recursive.',
+        cursive: 'A web-safe risk.',
       };
       say(status, fontQuips[family.toLowerCase()] || '');
       applyAll();
@@ -407,7 +424,13 @@ function wirePanel() {
     if (field.name === 'accessibility_font_scale') {
       const scale = validScale(field.value);
       if (field.value.trim() !== '' && !scale) {
-        return say(status, `A text size must be a whole percentage between ${SCALE_MIN} and ${SCALE_MAX}.`);
+        const refused = {
+          404: 'Not found, but very large.',
+          42: 'The answer, rendered small.',
+          1998: 'The nineties were not that big.',
+        }[field.value.trim()];
+        const limits = `A text size must be a whole percentage between ${SCALE_MIN} and ${SCALE_MAX}.`;
+        return say(status, refused ? `${refused} ${limits}` : limits);
       }
       write(SCALE_KEY, scale ? String(scale) : null);
       say(status, scale === 100 ? 'That is the size we started with.' : '');
@@ -464,25 +487,60 @@ function wireKeyboardEggs() {
   const ownerHeading = document.querySelector('[data-owner-heading]');
   const ownerBadge = document.querySelector('[data-owner-badge]');
   const shortcutsHeading = shortcuts?.querySelector('h2');
-  const sequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-  let position = 0;
-  let nanashiPosition = 0;
-  let answerPosition = 0;
-  let whoamiPosition = 0;
-  let helpPosition = 0;
-  let pronounsPosition = 0;
-  let xyzzyPosition = 0;
-  let condimentPosition = 0;
+  const arrows = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
   let headingTimer;
   let ownerTimer;
-  const nanashiSequence = [...'nanashi'];
-  const answerSequence = ['4', '2'];
-  const whoamiSequence = [...'whoami'];
-  const helpSequence = [...'help'];
-  const pronounsSequence = [...'pronouns'];
-  const xyzzySequence = [...'xyzzy'];
-  const condimentSequence = [...'ketchup'];
   const announce = announceEaster;
+  const unlockTheme = (storageKey, element, unlockedMessage, encoreMessage) => {
+    const already = readRaw(storageKey) === 'unlocked';
+    write(storageKey, 'unlocked');
+    if (element) element.hidden = false;
+    const message = already ? encoreMessage : unlockedMessage;
+    if (status) status.textContent = message;
+    announce(message);
+    if (accessibility?.open) element?.querySelector('input')?.focus();
+  };
+  const sequences = [
+    { keys: [...'nanashi'], run: () => announce('Owner located. Please allow 3-5 business eternities for a response.') },
+    { keys: ['4', '2'], run: () => announce('You have the answer. The question remains unavailable.') },
+    { keys: [...'whoami'], run: () => announce('An easter egg collector, Apparently.') },
+    { keys: [...'help'], run: () => announce('Shift+? was right there.') },
+    { keys: [...'pronouns'], run: () => announce('Correct. You found the subject.') },
+    { keys: [...'xyzzy'], run: () => announce('Nothing happens. Documented.') },
+    { keys: [...'they'], run: () => announce('Singular. In English since the 1300s.') },
+    { keys: [...'ls'], run: () => announce('You are looking at it.') },
+    { keys: [...'pwd'], run: () => announce(location.pathname) },
+    { keys: [...'vim'], run: () => announce('Nothing is trapping you. Escape, then :q, also works.') },
+    { keys: [...'git blame'], run: () => announce('NamelessNanashi. Every line.') },
+    { keys: [...'sudo'], run: () => announce('Still not a shell.') },
+    { keys: [...'tea'], run: () => announce('Steeping. Come back to /teapot in four minutes and eighteen seconds.') },
+    { keys: [...'coffee'], run: () => announce('Wrong appliance.') },
+    { keys: [...'undo'], run: () => announce('Ctrl+Z was right there.') },
+    { keys: [...'konami'], run: () => announce('Close. Use the arrows.') },
+    {
+      keys: [...arrows, 'a', 'b'],
+      run: () => announce('Almost. Order matters.'),
+    },
+    {
+      keys: [...'ketchup'],
+      run: () => unlockTheme(
+        CONDIMENT_KEY,
+        condimentTheme,
+        'Ketchup and Mustard theme unlocked. It is a hot dog. We are all very sorry.',
+        'The condiments are already out.',
+      ),
+    },
+    {
+      keys: [...arrows, 'b', 'a'],
+      run: () => unlockTheme(
+        KONAMI_KEY,
+        konamiTheme,
+        '1998 theme unlocked. Some things do improve with age. Preserved by NamelessNanashi.',
+        'Achievement already achieved.',
+      ),
+    },
+  ];
+  const positions = sequences.map(() => 0);
   const ownerPrefix = document.querySelector('[data-owner-prefix]');
   let signatureClicks = 0;
   ownerSignature?.addEventListener('click', (event) => {
@@ -534,75 +592,14 @@ function wireKeyboardEggs() {
     }
     if (editable || event.repeat) return;
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-    nanashiPosition = key === nanashiSequence[nanashiPosition]
-      ? nanashiPosition + 1
-      : (key === nanashiSequence[0] ? 1 : 0);
-    if (nanashiPosition === nanashiSequence.length) {
-      nanashiPosition = 0;
-      announce('Owner located. Please allow 3-5 business eternities for a response.');
-    }
-    answerPosition = key === answerSequence[answerPosition]
-      ? answerPosition + 1
-      : (key === answerSequence[0] ? 1 : 0);
-    if (answerPosition === answerSequence.length) {
-      answerPosition = 0;
-      announce('You have the answer. The question remains unavailable.');
-    }
-    whoamiPosition = key === whoamiSequence[whoamiPosition]
-      ? whoamiPosition + 1
-      : (key === whoamiSequence[0] ? 1 : 0);
-    if (whoamiPosition === whoamiSequence.length) {
-      whoamiPosition = 0;
-      announce('An easter egg collector, Apparently.');
-    }
-    helpPosition = key === helpSequence[helpPosition]
-      ? helpPosition + 1
-      : (key === helpSequence[0] ? 1 : 0);
-    if (helpPosition === helpSequence.length) {
-      helpPosition = 0;
-      announce('Shift+? was right there.');
-    }
-    pronounsPosition = key === pronounsSequence[pronounsPosition]
-      ? pronounsPosition + 1
-      : (key === pronounsSequence[0] ? 1 : 0);
-    if (pronounsPosition === pronounsSequence.length) {
-      pronounsPosition = 0;
-      announce('Correct. You found the subject.');
-    }
-    xyzzyPosition = key === xyzzySequence[xyzzyPosition]
-      ? xyzzyPosition + 1
-      : (key === xyzzySequence[0] ? 1 : 0);
-    if (xyzzyPosition === xyzzySequence.length) {
-      xyzzyPosition = 0;
-      announce('Nothing happens. Documented.');
-    }
-    condimentPosition = key === condimentSequence[condimentPosition]
-      ? condimentPosition + 1
-      : (key === condimentSequence[0] ? 1 : 0);
-    if (condimentPosition === condimentSequence.length) {
-      condimentPosition = 0;
-      const alreadyCondiments = readRaw(CONDIMENT_KEY) === 'unlocked';
-      write(CONDIMENT_KEY, 'unlocked');
-      if (condimentTheme) condimentTheme.hidden = false;
-      const condimentMessage = alreadyCondiments
-        ? 'The condiments are already out.'
-        : 'Ketchup and Mustard theme unlocked. It is a hot dog. We are all very sorry.';
-      if (status) status.textContent = condimentMessage;
-      announce(condimentMessage);
-      if (accessibility?.open) condimentTheme?.querySelector('input')?.focus();
-    }
-    position = key === sequence[position] ? position + 1 : (key === sequence[0] ? 1 : 0);
-    if (position !== sequence.length) return;
-    position = 0;
-    const alreadyUnlocked = readRaw(KONAMI_KEY) === 'unlocked';
-    write(KONAMI_KEY, 'unlocked');
-    if (konamiTheme) konamiTheme.hidden = false;
-    const message = alreadyUnlocked
-      ? 'Achievement already achieved.'
-      : '1998 theme unlocked. Some things do improve with age. Preserved by NamelessNanashi.';
-    if (status) status.textContent = message;
-    announce(message);
-    if (accessibility?.open) konamiTheme?.querySelector('input')?.focus();
+    sequences.forEach((entry, index) => {
+      positions[index] = key === entry.keys[positions[index]]
+        ? positions[index] + 1
+        : (key === entry.keys[0] ? 1 : 0);
+      if (positions[index] !== entry.keys.length) return;
+      positions[index] = 0;
+      entry.run();
+    });
   });
 }
 
@@ -631,10 +628,61 @@ function wirePageEggs() {
     }
   }
 
-  const hour = new Date().getHours();
+  const now = new Date();
+  const hour = now.getHours();
   if (hour >= 2 && hour < 4 && readSession('np-easter-late-night') !== 'yes') {
     writeSession('np-easter-late-night', 'yes');
     announceEaster('Go to sleep. The profile will still be here tomorrow.');
+  }
+
+  const clockEggs = {
+    '13:37': 'Leet o\'clock.',
+    '04:04': 'Time not found.',
+    '11:11': 'Make a wish. Or do not.',
+  };
+  const clock = `${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  if (clockEggs[clock] && readSession(`np-easter-clock:${clock}`) !== 'yes') {
+    writeSession(`np-easter-clock:${clock}`, 'yes');
+    announceEaster(clockEggs[clock]);
+  }
+
+  let plusAnnounced = readSession('np-easter-plus-address') === 'yes';
+  document.addEventListener('input', (event) => {
+    const field = event.target;
+    if (plusAnnounced || !(field instanceof HTMLInputElement) || field.type !== 'email') return;
+    if (!/^[^@\s]+\+[^@\s]*@[^@\s]+\.[^@\s]+$/.test(field.value.trim())) return;
+    plusAnnounced = true;
+    writeSession('np-easter-plus-address', 'yes');
+    announceEaster('Plus addressing. A person of taste.');
+  });
+
+  const consentForm = document.querySelector('form[action="/consent"]');
+  if (consentForm) {
+    const openedAt = Date.now();
+    const consentNote = document.createElement('p');
+    consentNote.className = 'fineprint';
+    consentNote.hidden = true;
+    consentForm.append(consentNote);
+    consentForm.addEventListener('change', () => {
+      const boxes = [...consentForm.querySelectorAll('input[type="checkbox"]')];
+      if (consentNote.hidden === false || !boxes.length || !boxes.every((box) => box.checked)) return;
+      if (Date.now() - openedAt >= 2000) return;
+      consentNote.textContent = 'You did not read it. It is short, so try.';
+      consentNote.hidden = false;
+    });
+  }
+
+  const legalDocument = document.querySelector('.legal-document');
+  if (legalDocument) {
+    const key = `np-easter-policy-read:${location.pathname}`;
+    const checkRead = () => {
+      const bottom = legalDocument.getBoundingClientRect().bottom;
+      if (bottom - window.innerHeight > 4 || readSession(key) === 'yes') return;
+      writeSession(key, 'yes');
+      window.removeEventListener('scroll', checkRead);
+      announceEaster('You read it. Genuinely rare.');
+    };
+    window.addEventListener('scroll', checkRead, { passive: true });
   }
 
   document.querySelector('[data-404-return]')?.addEventListener('click', () => {

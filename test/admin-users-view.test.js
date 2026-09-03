@@ -327,12 +327,26 @@ test('every staff role can open the complete Easter egg catalog', async () => {
     'Leap-day visitor', 'Epoch birthday', 'NamelessNanashi.fix()', 'X-Curl: excellent-choice']) {
     assert.match(html, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
+  for (const phrase of ['Everything endpoint', 'Visit /everything', 'Multiple choices', 'It endpoint',
+    'Change your password', 'No tracing', 'Plain-text home', 'Singular they', 'Print working directory',
+    'Konami misordered', 'Maximum flexibility', 'Unchanged save', 'Test signup', 'Plus addressing',
+    'Hasty consent', 'Actually read it', 'Admin injection', 'Admin mirror', 'Quiet audit log',
+    'Cleared backlog', 'Transparent colors', 'Dead beef color', 'Impact', 'Missing text size']) {
+    assert.match(html, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
   assert.equal(EASTER_EGGS.some((egg) => egg.name === 'Placeholder profiles'), false);
   assert.equal(EASTER_EGGS.some((egg) => egg.name === 'Boolean profiles'), false);
   assert.equal(EASTER_EGGS.some((egg) => egg.name === 'Well-known Owner'), false);
   assert.equal(EASTER_EGGS.filter((egg) => egg.activation === 'Visit /.well-known/nameless').length, 1);
   const route = await readFile(new URL('../src/routes/admin.js', import.meta.url), 'utf8');
   assert.match(route, /router\.get\('\/admin\/easter-eggs', requireStaff\('support'\)/);
+  const auditView = await readFile(new URL('../views/admin/audit.ejs', import.meta.url), 'utf8');
+  assert.match(auditView, /<p>No events\.<\/p><p class="fineprint">Nobody did anything\. Allegedly\.<\/p>/);
+  const flagsView = await readFile(new URL('../views/admin/content-flags.ejs', import.meta.url), 'utf8');
+  assert.match(flagsView, /locals\.clearedBacklog[^]*Queue empty\. Go outside\./);
+  const overviewView = await readFile(new URL('../views/admin/overview.ejs', import.meta.url), 'utf8');
+  assert.match(overviewView, /locals\.selfLookup[^]*That is you\. Hello\./);
+  assert.match(route, /email === 'me' \? req\.user\.email : email/, 'the mirror lookup still queries by exact email');
 });
 test('the admin lookup has an answer for sudo', async () => {
   const html = await ejs.renderFile(fileURLToPath(new URL('../views/admin/overview.ejs', import.meta.url)), {

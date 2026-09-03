@@ -35,6 +35,7 @@
       </form>
       <% if (locals.lookupMessage) { %><p><%= locals.lookupMessage %></p>
       <% } else if (email && !searched) { %><p>No account with that exact email.</p><% } %>
+      <% if (locals.selfLookup) { %><p class="fineprint">That is you. Hello.</p><% } %>
       <% if (searched) { %>
         <p><%- await obfuscateEmail(searched.email) %> | <%= searched.signup_status %>, role <%= searched.staff_role %>, 2FA <%= searched.twofa_method %>. <a href="/admin/accounts/<%= searched.id %>">Open account</a></p>
       <% } %>

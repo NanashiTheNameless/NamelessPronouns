@@ -182,6 +182,24 @@ test('an unpublished profile page explains why the viewer can see it', async () 
   assert.doesNotMatch(await render({ preview: null }), /not published/);
   assert.doesNotMatch(await render({}), /not published/, 'the banner needs an explicit reason');
 });
+test('a profile listing any/all says so, and no other set does', async () => {
+  const render = (extra) => ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
+    title: 'Example',
+    profile: { id: 'profile-1', display_name: 'Example', description: '', notes: '' },
+    username: 'example',
+    avatar: '/static/avatar.svg',
+    names: [], pronouns: [], words: [], links: [], flags: [], pronounPreferences: [],
+    descriptionHtml: '', notesHtml: '', preview: null,
+    obfuscateEmails: async (value) => value,
+    ...extra,
+  }, { async: true });
+  const pronouns = [{ short: 'any/all', opinion: { label: 'Yes', symbol: '+' } }];
+  assert.match(
+    await render({ pronouns, pronounSetEgg: 'Maximum flexibility detected.' }),
+    /Maximum flexibility detected\./,
+  );
+  assert.doesNotMatch(await render({ pronouns }), /Maximum flexibility detected\./);
+});
 test('notes headings nest under the Notes section, and prose links stay distinct', async () => {
   const html = await ejs.renderFile(fileURLToPath(new URL('../views/profile.ejs', import.meta.url)), {
     title: 'Example',

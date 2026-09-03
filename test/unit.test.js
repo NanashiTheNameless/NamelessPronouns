@@ -264,6 +264,24 @@ test('the pronoun opinion egg needs at least two sets that agree', async () => {
   assert.equal(pronounOpinionEgg([]), null);
 });
 
+test('the any/all pronoun egg only fires on that exact set', async () => {
+  const { pronounSetEgg } = await import('../src/routes/public-profile.js');
+  assert.equal(pronounSetEgg(['any/all']), 'Maximum flexibility detected.');
+  assert.equal(pronounSetEgg(['they/them', 'Any/All']), 'Maximum flexibility detected.');
+  assert.equal(pronounSetEgg(['any/most']), null);
+  assert.equal(pronounSetEgg([]), null);
+});
+test('the admin account lookup answers injection attempts without querying anything', async () => {
+  const { lookupEgg } = await import('../src/routes/admin.js');
+  assert.equal(lookupEgg('sudo'), 'Nice try. This is not a shell.');
+  assert.equal(lookupEgg("' or 1=1--"), 'We use parameterised queries. Thank you for checking.');
+  assert.equal(lookupEgg('bob@example.com; drop table users'), 'We use parameterised queries. Thank you for checking.');
+  assert.equal(lookupEgg('<script>alert(1)</script>'), 'Escaped, as intended.');
+  assert.equal(lookupEgg('me'), '', 'me is a real lookup, not a joke');
+  assert.equal(lookupEgg('someone@example.com'), '');
+  assert.equal(lookupEgg(''), '');
+});
+
 test('the password-reset gate holds a flagged account on the reset page and nowhere else', () => {
   const gate = passwordResetGate();
   const run = (user, path) => {

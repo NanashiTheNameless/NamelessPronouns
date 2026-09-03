@@ -210,6 +210,11 @@ export function pronounOpinionEgg(opinions) {
   if (keys.every((key) => key === 'jokingly')) return 'Nothing here is serious. Including this line.';
   return null;
 }
+export function pronounSetEgg(pairs) {
+  return pairs.some((pair) => pair.toLowerCase().replace(/\s+/g, '') === 'any/all')
+    ? 'Maximum flexibility detected.'
+    : null;
+}
 function teapotAdjacent(res, pairs) {
   if (pairs.some((pair) => pair.toLowerCase() === 'it/its')) res.setHeader('X-Teapot-Adjacent', 'yes');
 }
@@ -244,6 +249,7 @@ async function placeholderProfile(res, username) {
     names: placeholder.names.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
     pronouns: placeholder.pronouns.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
     pronounOpinionEgg: pronounOpinionEgg(placeholder.pronouns.map((row) => row.opinion)),
+    pronounSetEgg: pronounSetEgg(placeholder.pronouns.map((row) => row.short)),
     words: placeholder.words.map((group) => ({
       ...group,
       words: group.words.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
@@ -396,6 +402,7 @@ router.get('/u/:username', async (req, res) => {
     names: names.rows.map((row) => ({ value: row.value, opinion: opinionView(row.opinion) })),
     pronouns: pronouns.rows.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
     pronounOpinionEgg: pronounOpinionEgg(pronouns.rows.map((row) => row.opinion)),
+    pronounSetEgg: pronounSetEgg(pronouns.rows.map((row) => `${row.subject}/${row.object}`)),
     words: groupProfileWords(wordGroups.rows, words.rows).map((group) => ({
       heading: group.heading,
       words: group.words.map((word) => ({ value: word.value, opinion: opinionView(word.opinion) })),

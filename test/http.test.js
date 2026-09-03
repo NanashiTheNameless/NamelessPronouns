@@ -1,6 +1,7 @@
 import './setup.js';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { request as httpRequest } from 'node:http';
 import { createApp, teaIsSteeped } from '../src/server.js';
 import { ROBOTS_DIRECTIVES } from '../src/middleware/security-headers.js';
 import { signValue } from '../src/util/cookies.js';
@@ -147,6 +148,50 @@ test('reserved Easter egg profiles bypass consent and database-backed sessions',
   assert.equal(notAdjacent.headers.get('x-teapot-adjacent'), null);
   const nobody = await fetch(`${base}/u/nobody`);
   assert.match(await nobody.text(), /Nobody printed this\./);
+});
+test('the new endpoint eggs answer in their own voice', async () => {
+  const everything = await fetch(`${base}/everything`);
+  assert.equal(everything.status, 413);
+  assert.equal(everything.headers.get('x-everything'), 'did-not-fit');
+  assert.equal(await everything.text(), 'Everything did not fit.\n');
+  for (const path of ['/something', '/anything']) {
+    const choices = await fetch(`${base}${path}`, { redirect: 'manual' });
+    assert.equal(choices.status, 300, `${path} offers the choice`);
+    assert.equal(choices.headers.get('x-choices'), 'yours');
+    assert.match(choices.headers.get('link') || '', /<\/u\/everything>; rel="alternate"/);
+    assert.equal(await choices.text(), 'Several things are available. Pick one.\n');
+  }
+  const it = await fetch(`${base}/it`);
+  assert.equal(it.status, 418);
+  assert.equal(it.headers.get('x-teapot-solidarity'), 'yes');
+  assert.equal(await it.text(), 'It/its. Same as the teapot.\n');
+  const changePassword = await fetch(`${base}/.well-known/change-password`, { redirect: 'manual' });
+  assert.equal(changePassword.status, 302);
+  assert.equal(changePassword.headers.get('location'), '/account/security');
+  const traced = await new Promise((resolve, reject) => {
+    const request = httpRequest({
+      method: 'TRACE', host: '127.0.0.1', port: server.address().port, path: '/teapot',
+    }, (response) => {
+      let body = '';
+      response.setEncoding('utf8');
+      response.on('data', (chunk) => { body += chunk; });
+      response.on('end', () => resolve({ status: response.statusCode, headers: response.headers, body }));
+    });
+    request.on('error', reject);
+    request.end();
+  });
+  assert.equal(traced.status, 405);
+  assert.equal(traced.headers.allow, 'GET, HEAD, POST, OPTIONS');
+  assert.equal(traced.body, 'We do not trace. Ever.\n');
+  const plain = await fetch(`${base}/`, { headers: { accept: 'text/plain' } });
+  assert.equal(plain.status, 200);
+  assert.match(plain.headers.get('content-type') || '', /^text\/plain/);
+  const plainBody = await plain.text();
+  assert.match(plainBody, /^NamelessPronouns\n/);
+  assert.match(plainBody, /Request an account: \/signup/);
+  assert.match(plainBody, /Served in plain text because you asked for plain text\./);
+  const browser = await fetch(`${base}/`, { headers: { accept: 'text/html,text/plain' }, redirect: 'manual' });
+  assert.notEqual(browser.headers.get('content-type'), plain.headers.get('content-type'));
 });
 test('every documented endpoint egg answers with the status it claims', async () => {
   const { EASTER_EGGS } = await import('../src/easter-eggs.js');
