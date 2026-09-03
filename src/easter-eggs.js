@@ -203,6 +203,11 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Says \"We cannot read that either.\""
   },
   {
+    "name": "Default text size",
+    "activation": "Enter 100 as the arbitrary text size percentage",
+    "effect": "Says \"That is the size we started with.\""
+  },
+  {
     "name": "Ordered color",
     "activation": "Enter #123456 in a custom color field",
     "effect": "Says \"Everything appears to be in order.\""
@@ -281,6 +286,11 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Settings time machine",
     "activation": "Import an accessibility settings object with \"version\": 1998, even if its theme is \"default\"",
     "effect": "Unlocks the 1998 theme in that browser until its site data is cleared, while continuing to use the theme selected by the imported settings"
+  },
+  {
+    "name": "Settings condiment jar",
+    "activation": "Import an accessibility settings object with \"version\": 57",
+    "effect": "Unlocks the Ketchup and Mustard theme in that browser until its site data is cleared, while continuing to use the theme selected by the imported settings"
   },
   {
     "name": "Print escape",
@@ -506,6 +516,16 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Konami attribution",
     "activation": "Unlock the 1998 theme",
     "effect": "Credits its preservation to NamelessNanashi"
+  },
+  {
+    "name": "Condiment code",
+    "activation": "Type ketchup outside a text field",
+    "effect": "Unlocks the deliberately garish \"Ketchup and Mustard\" theme in that browser until its site data is cleared, and shows a toast"
+  },
+  {
+    "name": "Condiment encore",
+    "activation": "Type ketchup after unlocking the theme",
+    "effect": "Shows a \"The condiments are already out.\" toast"
   },
   {
     "name": "Error dimensions",

@@ -128,6 +128,24 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.equal(result.defaultFontQuip, 'You came all this way to choose the default. Respect.');
     assert.equal(result.papyrusQuip, 'The ancient records warned us.');
     assert.deepEqual(result.konami, { initiallyHidden: true, unlocked: true, stored: 'unlocked' });
+    assert.deepEqual(result.condiments, {
+      initiallyHidden: true,
+      unlocked: true,
+      stored: 'unlocked',
+      message: 'Ketchup and Mustard theme unlocked. It is a hot dog. We are all very sorry.',
+    }, 'typing ketchup reveals the condiment theme and remembers it');
+    assert.deepEqual(result.condimentToast, {
+      message: 'Ketchup and Mustard theme unlocked. It is a hot dog. We are all very sorry.',
+      visible: true,
+      topLayer: true,
+    });
+    assert.equal(result.condimentEncore, 'The condiments are already out.');
+    assert.deepEqual(result.condimentTheme, {
+      theme: 'ketchup',
+      background: 'rgb(255, 212, 0)',
+      color: 'rgb(58, 2, 0)',
+      striped: true,
+    }, 'the condiment theme paints mustard behind ketchup-dark text, with stripes');
     assert.deepEqual(result.konamiToast, {
       message: 'Achievement already achieved.',
       visible: true,
@@ -248,6 +266,9 @@ test('the accessibility script contains the local-only keyboard and input eggs',
   assert.match(script, /Still going\./);
   assert.match(script, /Correct\. You found the subject\./);
   assert.match(script, /Nothing happens\. Documented\./);
+  assert.match(script, /It is a hot dog\. We are all very sorry\./);
+  assert.match(script, /The condiments are already out\./);
+  assert.match(script, /Condiments are a choice, and you have made one\./);
   assert.match(script, /Approximately 3\.14 people are reading this\./);
   assert.match(script, /Everything here is true, except False\./);
   assert.match(script, /Not found, but properly steeped\./);
@@ -263,6 +284,8 @@ test('the accessibility script contains the local-only keyboard and input eggs',
 test('the panel offers arbitrary colors, an arbitrary font, and settings transfer', async () => {
   const footer = await readFile(new URL('../views/partials/site-footer.ejs', import.meta.url), 'utf8');
   assert.match(footer, /name="accessibility_theme" value="custom"/);
+  assert.match(footer, /data-condiment-theme hidden><input type="radio" name="accessibility_theme" value="ketchup"/,
+    'the condiment theme stays hidden until it is unlocked');
   assert.match(footer, /name="accessibility_font" value="custom"/);
   for (const key of ['bg', 'surface', 'text', 'muted', 'border', 'accent', 'accentText', 'link', 'focus', 'placeholder']) {
     const field = new RegExp(`name="accessibility_color_${key}"[^>]*`).exec(footer);
@@ -296,7 +319,7 @@ test('every theme redefines the whole palette, and fonts stay first-party', asyn
   const css = await readFile(new URL('../public/css/main.css', import.meta.url), 'utf8');
   const tokens = [...(/:root \{([^}]*)\}/.exec(css)[1]).matchAll(/(--[a-z-]+):/g)].map((match) => match[1]);
   assert.ok(tokens.includes('--font-body') && tokens.includes('--link'), 'the base palette carries the new tokens');
-  for (const theme of ['light', 'contrast', 'contrast-light', '1998']) {
+  for (const theme of ['light', 'contrast', 'contrast-light', '1998', 'ketchup']) {
     const block = new RegExp(`:root\\[data-theme="${theme}"\\] \\{([^}]*)\\}`).exec(css);
     assert.ok(block, `${theme} defines a palette`);
     for (const token of tokens.filter((name) => name !== '--font-body')) {

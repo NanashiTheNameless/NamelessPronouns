@@ -1288,6 +1288,36 @@ altcha-widget.email-obfuscation .email-reveal:hover,
   --focus: #000080;
   --shadow: none;
 }
+:root[data-theme="ketchup"] {
+  color-scheme: light;
+  --on-accent: #ffffff;
+  --link: #0000cc;
+  --bg: #ffd400;
+  --surface: #ffe23f;
+  --surface-strong: #ffe97f;
+  --text: #3a0200;
+  --muted: #5c0d00;
+  --border: #8a1200;
+  --accent: #b81000;
+  --accent-hover: #8f0c00;
+  --accent-soft: #ffe97f;
+  --danger: #6b0000;
+  --danger-soft: #ffe97f;
+  --success: #0f4d24;
+  --success-soft: #ffe97f;
+  --placeholder: #6b1500;
+  --focus: #0000cc;
+  --shadow: none;
+}
+:root[data-theme="ketchup"] body {
+  background-color: var(--bg);
+  background-image: repeating-linear-gradient(135deg, transparent 0 1.5rem, #ff7314 1.5rem 3rem);
+}
+:root[data-theme="ketchup"] .container,
+:root[data-theme="ketchup"] .site-nav {
+  border-width: 3px;
+  border-style: dashed;
+}
 :root[data-theme="contrast"] button,
 :root[data-theme="contrast"] .button,
 :root[data-theme="contrast-light"] button,

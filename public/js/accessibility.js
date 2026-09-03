@@ -5,7 +5,8 @@ const FAMILY_KEY = 'np-accessibility-font-family';
 const SIZE_KEY = 'np-accessibility-size';
 const SCALE_KEY = 'np-accessibility-size-scale';
 const KONAMI_KEY = 'np-accessibility-konami';
-const THEMES = ['default', 'light', 'contrast', 'contrast-light', '1998', 'custom'];
+const CONDIMENT_KEY = 'np-accessibility-condiments';
+const THEMES = ['default', 'light', 'contrast', 'contrast-light', '1998', 'ketchup', 'custom'];
 const FONTS = ['default', 'sans', 'serif', 'mono', 'custom'];
 const SIZES = ['default', 'large', 'larger', 'largest', 'custom'];
 const SCALE_MIN = 75;
@@ -195,7 +196,7 @@ function importSettings(text) {
   let parsed;
   try {
     const trimmed = String(text).trim();
-    const source = /^"version"\s*:\s*1998\s*,?$/.test(trimmed)
+    const source = /^"version"\s*:\s*(?:1998|57)\s*,?$/.test(trimmed)
       ? `{${trimmed.replace(/,\s*$/, '')}}`
       : trimmed;
     parsed = JSON.parse(source);
@@ -206,6 +207,7 @@ function importSettings(text) {
     return { ok: false, message: 'Settings text must be a single block of settings.' };
   }
   const from1998 = Number(parsed.version) === 1998;
+  const fromCondiments = Number(parsed.version) === 57;
   const theme = THEMES.includes(parsed.theme) ? parsed.theme : 'default';
   const font = FONTS.includes(parsed.font) ? parsed.font : 'default';
   const size = SIZES.includes(parsed.size) ? parsed.size : 'default';
@@ -223,6 +225,7 @@ function importSettings(text) {
   if (parsed.fontScale && !scale) dropped.push('text size percentage');
   write(THEME_KEY, theme);
   if (from1998) write(KONAMI_KEY, 'unlocked');
+  if (fromCondiments) write(CONDIMENT_KEY, 'unlocked');
   write(FONT_KEY, font);
   write(SIZE_KEY, size);
   write(COLORS_KEY, Object.keys(colors).length ? JSON.stringify(colors) : null);
@@ -232,9 +235,12 @@ function importSettings(text) {
   return {
     ok: true,
     unlocked1998: from1998,
+    unlockedCondiments: fromCondiments,
     dropped,
     message: from1998
       ? '1998 theme unlocked.'
+      : fromCondiments
+      ? 'Ketchup and Mustard theme unlocked. Condiments are a choice, and you have made one.'
       : dropped.length
       ? `Settings applied. Ignored what could not be read: ${dropped.join(', ')}.`
       : 'Settings applied.',
@@ -250,9 +256,11 @@ function wirePanel() {
   const status = dialog.querySelector('[data-accessibility-status]');
   const warning = dialog.querySelector('[data-accessibility-contrast]');
   const konamiTheme = dialog.querySelector('[data-konami-theme]');
+  const condimentTheme = dialog.querySelector('[data-condiment-theme]');
   let resetCount = 0;
   let copyCount = 0;
   if (konamiTheme && readRaw(KONAMI_KEY) === 'unlocked') konamiTheme.hidden = false;
+  if (condimentTheme && readRaw(CONDIMENT_KEY) === 'unlocked') condimentTheme.hidden = false;
   const check = (name, value) => {
     const radio = form.querySelector(`input[name="${name}"][value="${value}"]`);
     if (radio) radio.checked = true;
@@ -287,6 +295,7 @@ function wirePanel() {
   };
   const sync = () => {
     if (konamiTheme && readRaw(KONAMI_KEY) === 'unlocked') konamiTheme.hidden = false;
+    if (condimentTheme && readRaw(CONDIMENT_KEY) === 'unlocked') condimentTheme.hidden = false;
     check('accessibility_theme', choice(THEME_KEY, THEMES));
     check('accessibility_font', choice(FONT_KEY, FONTS));
     check('accessibility_size', choice(SIZE_KEY, SIZES));
@@ -426,6 +435,7 @@ function wirePanel() {
     say(status, result.message);
     sync();
     if (result.unlocked1998 && konamiTheme) konamiTheme.hidden = false;
+    if (result.unlockedCondiments && condimentTheme) condimentTheme.hidden = false;
   });
   dialog.querySelector('[data-accessibility-reset]')?.addEventListener('click', () => {
     copyCount = 0;
@@ -448,6 +458,7 @@ function wireKeyboardEggs() {
   const shortcuts = document.querySelector('[data-shortcuts-panel]');
   const accessibility = document.querySelector('[data-accessibility-panel]');
   const konamiTheme = document.querySelector('[data-konami-theme]');
+  const condimentTheme = document.querySelector('[data-condiment-theme]');
   const status = document.querySelector('[data-accessibility-status]');
   const ownerSignature = document.querySelector('[data-owner-signature]');
   const ownerHeading = document.querySelector('[data-owner-heading]');
@@ -461,6 +472,7 @@ function wireKeyboardEggs() {
   let helpPosition = 0;
   let pronounsPosition = 0;
   let xyzzyPosition = 0;
+  let condimentPosition = 0;
   let headingTimer;
   let ownerTimer;
   const nanashiSequence = [...'nanashi'];
@@ -469,6 +481,7 @@ function wireKeyboardEggs() {
   const helpSequence = [...'help'];
   const pronounsSequence = [...'pronouns'];
   const xyzzySequence = [...'xyzzy'];
+  const condimentSequence = [...'ketchup'];
   const announce = announceEaster;
   const ownerPrefix = document.querySelector('[data-owner-prefix]');
   let signatureClicks = 0;
@@ -562,6 +575,21 @@ function wireKeyboardEggs() {
     if (xyzzyPosition === xyzzySequence.length) {
       xyzzyPosition = 0;
       announce('Nothing happens. Documented.');
+    }
+    condimentPosition = key === condimentSequence[condimentPosition]
+      ? condimentPosition + 1
+      : (key === condimentSequence[0] ? 1 : 0);
+    if (condimentPosition === condimentSequence.length) {
+      condimentPosition = 0;
+      const alreadyCondiments = readRaw(CONDIMENT_KEY) === 'unlocked';
+      write(CONDIMENT_KEY, 'unlocked');
+      if (condimentTheme) condimentTheme.hidden = false;
+      const condimentMessage = alreadyCondiments
+        ? 'The condiments are already out.'
+        : 'Ketchup and Mustard theme unlocked. It is a hot dog. We are all very sorry.';
+      if (status) status.textContent = condimentMessage;
+      announce(condimentMessage);
+      if (accessibility?.open) condimentTheme?.querySelector('input')?.focus();
     }
     position = key === sequence[position] ? position + 1 : (key === sequence[0] ? 1 : 0);
     if (position !== sequence.length) return;

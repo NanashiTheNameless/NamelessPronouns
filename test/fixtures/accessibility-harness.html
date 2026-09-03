@@ -55,6 +55,7 @@
     const openedState = dialog.open;
     const openedWithStoredChecked = dialog.querySelector('input[name="accessibility_theme"]:checked').value;
     const konamiInitiallyHidden = dialog.querySelector('[data-konami-theme]').hidden;
+    const condimentInitiallyHidden = dialog.querySelector('[data-condiment-theme]').hidden;
     const ownerBusinessCard = { ...window.NamelessNanashi };
     const ownerBusinessCardText = window.NamelessNanashi.toString();
     const ownerFix = window.NamelessNanashi.fix();
@@ -255,7 +256,24 @@
     }
     const konamiEncore = status();
     const konamiEncoreToast = toastState();
+    for (const key of [...'ketchup']) document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    const condiments = {
+      initiallyHidden: condimentInitiallyHidden,
+      unlocked: dialog.querySelector('[data-condiment-theme]').hidden === false,
+      stored: localStorage.getItem('np-accessibility-condiments'),
+      message: status(),
+    };
+    const condimentToast = toastState();
+    for (const key of [...'ketchup']) document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    const condimentEncore = status();
     open.click();
+    pick('accessibility_theme', 'ketchup');
+    const condimentTheme = {
+      theme: root.getAttribute('data-theme'),
+      background: getComputedStyle(document.body).backgroundColor,
+      color: getComputedStyle(document.body).color,
+      striped: getComputedStyle(document.body).backgroundImage.includes('repeating-linear-gradient'),
+    };
     pick('accessibility_theme', '1998');
     const retroTheme = root.getAttribute('data-theme');
     clickAction('close');
@@ -326,6 +344,10 @@
       timesQuip,
       defaultFontQuip,
       papyrusQuip,
+      condiments,
+      condimentToast,
+      condimentEncore,
+      condimentTheme,
       konami,
       konamiToast,
       konamiEncore,
