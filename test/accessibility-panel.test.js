@@ -89,6 +89,22 @@ test('accessibility settings apply before paint, persist locally, and reset', as
     assert.deepEqual(result.timeMachine, {
       message: '1998 theme unlocked.', theme: null, unlocked: 'unlocked', revealed: true,
     });
+    assert.deepEqual(result.sizePreset, {
+      size: 'larger', stored: 'larger', rootFontSize: '20px', scaleHidden: true,
+    }, 'a preset text size scales the root font size and hides the percentage field');
+    assert.match(result.rejectedScale.message, /whole percentage between 75 and 200/);
+    assert.equal(result.rejectedScale.inlineSize, '', 'an out of range percentage never reaches the page');
+    assert.deepEqual(result.sizeCustom, {
+      shown: true,
+      size: 'custom',
+      inlineSize: '175%',
+      rootFontSize: '28px',
+      stored: '175',
+      exported: result.sizeCustom.exported,
+    }, 'the arbitrary text size applies as an inline root font size');
+    const sizeExport = JSON.parse(result.sizeCustom.exported);
+    assert.equal(sizeExport.size, 'custom');
+    assert.equal(sizeExport.fontScale, 175, 'the text size travels with the exported settings');
     const exported = JSON.parse(result.custom.exported);
     assert.equal(exported.version, 1);
     assert.equal(exported.theme, 'custom');
@@ -98,6 +114,7 @@ test('accessibility settings apply before paint, persist locally, and reset', as
       theme: null, font: null, stored: [null, null], checked: 'default',
       inlineBg: '', inlineFont: '', storedColors: null, storedFamily: null,
       colorsHidden: true,
+      size: null, storedSize: null, storedScale: null, inlineSize: '', rootFontSize: '16px',
     }, 'reset clears the attributes, the inline colors, and everything stored, and hides the color fields');
     assert.equal(result.doubleReset, 'Still default. NamelessNanashi would be proud.');
     assert.match(result.colorQuip, /Coffee detected/);

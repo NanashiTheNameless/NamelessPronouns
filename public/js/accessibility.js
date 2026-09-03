@@ -2,9 +2,14 @@ const THEME_KEY = 'np-accessibility-theme';
 const FONT_KEY = 'np-accessibility-font';
 const COLORS_KEY = 'np-accessibility-colors';
 const FAMILY_KEY = 'np-accessibility-font-family';
+const SIZE_KEY = 'np-accessibility-size';
+const SCALE_KEY = 'np-accessibility-size-scale';
 const KONAMI_KEY = 'np-accessibility-konami';
 const THEMES = ['default', 'light', 'contrast', 'contrast-light', '1998', 'custom'];
 const FONTS = ['default', 'sans', 'serif', 'mono', 'custom'];
+const SIZES = ['default', 'large', 'larger', 'largest', 'custom'];
+const SCALE_MIN = 75;
+const SCALE_MAX = 200;
 const HEX = /^#[0-9a-f]{6}$/i;
 const FAMILY = /^[A-Za-z0-9 ,'"-]{1,120}$/;
 const COLORS = Object.freeze({
@@ -112,6 +117,12 @@ function validFamily(input) {
   return FAMILY.test(value) ? value : '';
 }
 
+function validScale(input) {
+  const value = Number(String(input ?? '').trim());
+  if (!Number.isFinite(value) || !Number.isInteger(value)) return 0;
+  return value >= SCALE_MIN && value <= SCALE_MAX ? value : 0;
+}
+
 function storedColors() {
   try {
     return validColors(JSON.parse(readRaw(COLORS_KEY) || '{}'));
@@ -133,7 +144,7 @@ function contrastRatio(first, second) {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 
-function applyCustom(colors, family) {
+function applyCustom(colors, family, scale) {
   const root = document.documentElement;
   for (const [key, property] of Object.entries(COLORS)) {
     if (colors[key]) root.style.setProperty(property, colors[key]);
@@ -143,21 +154,27 @@ function applyCustom(colors, family) {
   else root.style.removeProperty('color-scheme');
   if (family) root.style.setProperty('--font-body', `${family}, "0xProto", monospace`);
   else root.style.removeProperty('--font-body');
+  if (scale) root.style.fontSize = `${scale}%`;
+  else root.style.removeProperty('font-size');
 }
 
 function applyAll() {
   const root = document.documentElement;
   const theme = choice(THEME_KEY, THEMES);
   const font = choice(FONT_KEY, FONTS);
+  const size = choice(SIZE_KEY, SIZES);
   if (theme === 'default') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', theme);
   if (font === 'default') root.removeAttribute('data-font');
   else root.setAttribute('data-font', font);
+  if (size === 'default') root.removeAttribute('data-size');
+  else root.setAttribute('data-size', size);
   applyCustom(
     theme === 'custom' ? storedColors() : {},
     font === 'custom' ? validFamily(readRaw(FAMILY_KEY)) : '',
+    size === 'custom' ? validScale(readRaw(SCALE_KEY)) : 0,
   );
-  return { theme, font };
+  return { theme, font, size };
 }
 
 applyAll();
@@ -167,8 +184,10 @@ function exportSettings() {
     version: 1,
     theme: choice(THEME_KEY, THEMES),
     font: choice(FONT_KEY, FONTS),
+    size: choice(SIZE_KEY, SIZES),
     colors: storedColors(),
     fontFamily: validFamily(readRaw(FAMILY_KEY)),
+    fontScale: validScale(readRaw(SCALE_KEY)),
   };
 }
 
@@ -189,20 +208,26 @@ function importSettings(text) {
   const from1998 = Number(parsed.version) === 1998;
   const theme = THEMES.includes(parsed.theme) ? parsed.theme : 'default';
   const font = FONTS.includes(parsed.font) ? parsed.font : 'default';
+  const size = SIZES.includes(parsed.size) ? parsed.size : 'default';
   const colors = validColors(parsed.colors);
   const family = validFamily(parsed.fontFamily);
+  const scale = validScale(parsed.fontScale);
   const dropped = [];
   if (parsed.theme && !THEMES.includes(parsed.theme)) dropped.push('theme');
   if (parsed.font && !FONTS.includes(parsed.font)) dropped.push('font');
+  if (parsed.size && !SIZES.includes(parsed.size)) dropped.push('text size');
   if (parsed.colors && Object.keys(validColors(parsed.colors)).length < Object.keys(parsed.colors).length) {
     dropped.push('colors that are not #rrggbb');
   }
   if (parsed.fontFamily && !family) dropped.push('font family');
+  if (parsed.fontScale && !scale) dropped.push('text size percentage');
   write(THEME_KEY, theme);
   if (from1998) write(KONAMI_KEY, 'unlocked');
   write(FONT_KEY, font);
+  write(SIZE_KEY, size);
   write(COLORS_KEY, Object.keys(colors).length ? JSON.stringify(colors) : null);
   write(FAMILY_KEY, family || null);
+  write(SCALE_KEY, scale ? String(scale) : null);
   applyAll();
   return {
     ok: true,
@@ -245,8 +270,10 @@ function wirePanel() {
   const showSections = () => {
     const theme = choice(THEME_KEY, THEMES);
     const font = choice(FONT_KEY, FONTS);
+    const size = choice(SIZE_KEY, SIZES);
     dialog.querySelectorAll('[data-accessibility-colors]').forEach((node) => { node.hidden = theme !== 'custom'; });
     dialog.querySelectorAll('[data-accessibility-family]').forEach((node) => { node.hidden = font !== 'custom'; });
+    dialog.querySelectorAll('[data-accessibility-scale]').forEach((node) => { node.hidden = size !== 'custom'; });
   };
   const syncPicker = (key, value) => {
     const picker = form.querySelector(`[data-color-picker="${key}"]`);
@@ -262,6 +289,7 @@ function wirePanel() {
     if (konamiTheme && readRaw(KONAMI_KEY) === 'unlocked') konamiTheme.hidden = false;
     check('accessibility_theme', choice(THEME_KEY, THEMES));
     check('accessibility_font', choice(FONT_KEY, FONTS));
+    check('accessibility_size', choice(SIZE_KEY, SIZES));
     const colors = storedColors();
     for (const key of COLOR_KEYS) {
       const field = form.querySelector(`[name="accessibility_color_${key}"]`);
@@ -270,6 +298,8 @@ function wirePanel() {
     }
     const family = form.querySelector('[name="accessibility_font_family"]');
     if (family) family.value = validFamily(readRaw(FAMILY_KEY));
+    const scale = form.querySelector('[name="accessibility_font_scale"]');
+    if (scale) scale.value = validScale(readRaw(SCALE_KEY)) || '';
     if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
     showSections();
     reportContrast();
@@ -297,6 +327,7 @@ function wirePanel() {
       }
     }
     if (field.name === 'accessibility_font' && FONTS.includes(field.value)) write(FONT_KEY, field.value);
+    if (field.name === 'accessibility_size' && SIZES.includes(field.value)) write(SIZE_KEY, field.value);
     applyAll();
     sync();
   });
@@ -364,6 +395,16 @@ function wirePanel() {
       applyAll();
       if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
     }
+    if (field.name === 'accessibility_font_scale') {
+      const scale = validScale(field.value);
+      if (field.value.trim() !== '' && !scale) {
+        return say(status, `A text size must be a whole percentage between ${SCALE_MIN} and ${SCALE_MAX}.`);
+      }
+      write(SCALE_KEY, scale ? String(scale) : null);
+      say(status, scale === 100 ? 'That is the size we started with.' : '');
+      applyAll();
+      if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
+    }
     return undefined;
   });
   dialog.querySelector('[data-accessibility-copy]')?.addEventListener('click', async () => {
@@ -391,8 +432,10 @@ function wirePanel() {
     resetCount += 1;
     write(THEME_KEY, null);
     write(FONT_KEY, null);
+    write(SIZE_KEY, null);
     write(COLORS_KEY, null);
     write(FAMILY_KEY, null);
+    write(SCALE_KEY, null);
     applyAll();
     say(status, resetCount > 1 ? 'Still default. NamelessNanashi would be proud.' : 'Everything is back to the site defaults.');
     sync();

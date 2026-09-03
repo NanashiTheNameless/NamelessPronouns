@@ -1195,6 +1195,15 @@ altcha-widget.email-obfuscation .email-reveal:hover,
 :root[data-font="mono"] {
   --font-body: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "Liberation Mono", monospace;
 }
+:root[data-size="large"] {
+  font-size: 112.5%;
+}
+:root[data-size="larger"] {
+  font-size: 125%;
+}
+:root[data-size="largest"] {
+  font-size: 150%;
+}
 :root[data-theme="light"] {
   color-scheme: light;
   --on-accent: #ffffff;

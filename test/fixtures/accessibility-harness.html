@@ -150,6 +150,28 @@
     const rejectedFamily = { message: status(), inlineFont: inline('--font-body') };
     typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
 
+    const scaleHidden = () => dialog.querySelector('[data-accessibility-scale]').hidden
+      && getComputedStyle(dialog.querySelector('[data-accessibility-scale]')).display === 'none';
+    pick('accessibility_size', 'larger');
+    const sizePreset = {
+      size: root.getAttribute('data-size'),
+      stored: localStorage.getItem('np-accessibility-size'),
+      rootFontSize: getComputedStyle(root).fontSize,
+      scaleHidden: scaleHidden(),
+    };
+    pick('accessibility_size', 'custom');
+    typeInto('[name="accessibility_font_scale"]', '250');
+    const rejectedScale = { message: status(), inlineSize: root.style.fontSize };
+    typeInto('[name="accessibility_font_scale"]', '175');
+    const sizeCustom = {
+      shown: scaleHidden() === false,
+      size: root.getAttribute('data-size'),
+      inlineSize: root.style.fontSize,
+      rootFontSize: getComputedStyle(root).fontSize,
+      stored: localStorage.getItem('np-accessibility-size-scale'),
+      exported: dialog.querySelector('[data-accessibility-transfer]').value,
+    };
+
     typeInto('[data-accessibility-transfer]', JSON.stringify({
       version: 1,
       theme: 'custom',
@@ -208,6 +230,11 @@
       storedColors: localStorage.getItem('np-accessibility-colors'),
       storedFamily: localStorage.getItem('np-accessibility-font-family'),
       colorsHidden: colorsHidden(),
+      size: root.getAttribute('data-size'),
+      storedSize: localStorage.getItem('np-accessibility-size'),
+      storedScale: localStorage.getItem('np-accessibility-size-scale'),
+      inlineSize: root.style.fontSize,
+      rootFontSize: getComputedStyle(root).fontSize,
     };
     clickAction('reset');
     const doubleReset = status();
@@ -279,6 +306,9 @@
       rejected,
       decade,
       rejectedFamily,
+      sizePreset,
+      rejectedScale,
+      sizeCustom,
       imported,
       pasted,
       badImport,

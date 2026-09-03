@@ -78,6 +78,20 @@
       <p class="fineprint">Only fonts already on your device can be used. Nothing is downloaded, so a name your device does not have falls back to the site font.</p>
     </div>
     <fieldset>
+      <legend>Text size</legend>
+      <label class="choice"><input type="radio" name="accessibility_size" value="default" checked><span>Site default (100 percent)</span></label>
+      <label class="choice"><input type="radio" name="accessibility_size" value="large"><span>Large (112 percent)</span></label>
+      <label class="choice"><input type="radio" name="accessibility_size" value="larger"><span>Larger (125 percent)</span></label>
+      <label class="choice"><input type="radio" name="accessibility_size" value="largest"><span>Largest (150 percent)</span></label>
+      <label class="choice"><input type="radio" name="accessibility_size" value="custom"><span>Arbitrary size, chosen by you</span></label>
+    </fieldset>
+    <div data-accessibility-scale hidden>
+      <label for="accessibility-font-scale">Text size percentage
+        <input id="accessibility-font-scale" name="accessibility_font_scale" type="number" min="75" max="200" step="1" inputmode="numeric" autocomplete="off" placeholder="A whole number between 75 and 200">
+      </label>
+      <p class="fineprint">This scales every size on the site, not only the lettering, so spacing keeps up with the text. Your browser zoom still works on top of it.</p>
+    </div>
+    <fieldset>
       <legend>Copy or paste your settings</legend>
       <label for="accessibility-transfer">Settings text
         <textarea id="accessibility-transfer" rows="6" spellcheck="false" data-accessibility-transfer placeholder="Your current settings appear here, ready to copy into another browser"></textarea>
