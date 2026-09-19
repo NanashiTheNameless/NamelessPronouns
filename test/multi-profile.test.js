@@ -336,7 +336,8 @@ test('each settings chip says what its page actually offers', async () => {
   assert.match(panel('Content flags'), /affected field, severity, flag status/);
   assert.match(panel('Content flags'), /never shown back to you/, 'it repeats that attempted text stays hidden');
   assert.match(panel('Security'), /recovery codes[\s\S]*change your password[\s\S]*change your email address[\s\S]*sign out/);
-  assert.match(panel('Recovery'), /self-service password reset[\s\S]*assumed denied/);
+  assert.match(panel('Recovery'), /Reset your password using your verified email and second factor/);
+  assert.match(panel('Recovery'), /lost second factor[\s\S]*Administrator or Owner[\s\S]*assumed denied/);
   assert.match(panel('Your data'), /emailed to your verified address/);
-  assert.match(panel('Delete account'), /30 days[\s\S]*cancellable/);
+  assert.match(panel('Delete account'), /cancel during those 30 days/);
 });
