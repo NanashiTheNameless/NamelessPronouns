@@ -258,6 +258,7 @@ function wirePanel() {
   const form = dialog.querySelector('form');
   const transfer = dialog.querySelector('[data-accessibility-transfer]');
   const status = dialog.querySelector('[data-accessibility-status]');
+  const fontStatus = dialog.querySelector('[data-accessibility-font-status]');
   const warning = dialog.querySelector('[data-accessibility-contrast]');
   const konamiTheme = dialog.querySelector('[data-konami-theme]');
   const condimentTheme = dialog.querySelector('[data-condiment-theme]');
@@ -271,6 +272,22 @@ function wirePanel() {
   };
   const say = (element, message) => {
     if (element) element.textContent = message;
+  };
+  const reportFont = (family) => {
+    const fontQuips = {
+      'comic sans ms': 'Bold choice. Genuinely: it helps some dyslexic readers.',
+      '0xproto': 'You came all this way to choose the default. Respect.',
+      'times new roman': 'The Times are new. The Roman is unchanged.',
+      papyrus: 'The ancient records warned us.',
+      wingdings: 'We cannot read that either.',
+      helvetica: 'There is a documentary about this.',
+      impact: 'Everything becomes a meme eventually.',
+      arial: 'Helvetica is right there.',
+      'courier new': 'Monospaced and unbothered.',
+      font: 'Recursive.',
+      cursive: 'A web-safe risk.',
+    };
+    say(fontStatus, fontQuips[family.toLowerCase()] || '');
   };
   const reportContrast = () => {
     const colors = storedColors();
@@ -311,6 +328,7 @@ function wirePanel() {
     }
     const family = form.querySelector('[name="accessibility_font_family"]');
     if (family) family.value = validFamily(readRaw(FAMILY_KEY));
+    reportFont(family?.value || '');
     const scale = form.querySelector('[name="accessibility_font_scale"]');
     if (scale) scale.value = validScale(readRaw(SCALE_KEY)) || '';
     if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
@@ -401,23 +419,10 @@ function wirePanel() {
     if (field.name === 'accessibility_font_family') {
       const family = validFamily(field.value);
       if (field.value.trim() !== '' && !family) {
-        return say(status, 'A font family may contain only letters, numbers, spaces, commas, quotes, and hyphens.');
+        return say(fontStatus, 'A font family may contain only letters, numbers, spaces, commas, quotes, and hyphens.');
       }
       write(FAMILY_KEY, family || null);
-      const fontQuips = {
-        'comic sans ms': 'Bold choice. Genuinely: it helps some dyslexic readers.',
-        '0xproto': 'You came all this way to choose the default. Respect.',
-        'times new roman': 'The Times are new. The Roman is unchanged.',
-        papyrus: 'The ancient records warned us.',
-        wingdings: 'We cannot read that either.',
-        helvetica: 'There is a documentary about this.',
-        impact: 'Everything becomes a meme eventually.',
-        arial: 'Helvetica is right there.',
-        'courier new': 'Monospaced and unbothered.',
-        font: 'Recursive.',
-        cursive: 'A web-safe risk.',
-      };
-      say(status, fontQuips[family.toLowerCase()] || '');
+      reportFont(family);
       applyAll();
       if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
     }

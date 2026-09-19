@@ -74,8 +74,9 @@
     </fieldset>
     <div data-accessibility-family hidden>
       <label for="accessibility-font-family">Font family
-        <input id="accessibility-font-family" name="accessibility_font_family" type="text" maxlength="120" autocomplete="off" spellcheck="false" placeholder="The name of a font installed on your device, with fallbacks after commas">
+        <input id="accessibility-font-family" name="accessibility_font_family" type="text" maxlength="120" autocomplete="off" spellcheck="false" aria-describedby="accessibility-font-status" placeholder="The name of a font installed on your device, with fallbacks after commas">
       </label>
+      <p id="accessibility-font-status" class="fineprint" role="status" aria-live="polite" data-accessibility-font-status></p>
       <p class="fineprint">Only fonts already on your device can be used. Nothing is downloaded, so a name your device does not have falls back to the site font.</p>
     </div>
     <fieldset>

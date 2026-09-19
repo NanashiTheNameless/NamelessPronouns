@@ -32,6 +32,7 @@
     const dialog = document.querySelector('[data-accessibility-panel]');
     const open = document.querySelector('[data-accessibility-open]');
     const status = () => dialog.querySelector('[data-accessibility-status]').textContent;
+    const fontStatus = () => dialog.querySelector('[data-accessibility-font-status]').textContent;
     const inline = (property) => root.style.getPropertyValue(property);
     const pick = (name, value) => dialog.querySelector(`input[name="${name}"][value="${value}"]`).click();
     const typeInto = (selector, value) => {
@@ -110,13 +111,13 @@
     typeInto('[name="accessibility_color_text"]', '#f0f4ff');
     typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
     typeInto('[name="accessibility_font_family"]', 'Comic Sans MS');
-    const fontQuip = status();
+    const fontQuip = fontStatus();
     typeInto('[name="accessibility_font_family"]', 'Times New Roman');
-    const timesQuip = status();
+    const timesQuip = fontStatus();
     typeInto('[name="accessibility_font_family"]', '0xProto');
-    const defaultFontQuip = status();
+    const defaultFontQuip = fontStatus();
     typeInto('[name="accessibility_font_family"]', 'Papyrus');
-    const papyrusQuip = status();
+    const papyrusQuip = fontStatus();
     typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
     const custom = {
       inlineBg: inline('--bg'),
@@ -148,7 +149,7 @@
     typeInto('[name="accessibility_color_bg"]', '#102030');
 
     typeInto('[name="accessibility_font_family"]', 'url(https://evil.example/f.woff)');
-    const rejectedFamily = { message: status(), inlineFont: inline('--font-body') };
+    const rejectedFamily = { message: fontStatus(), inlineFont: inline('--font-body') };
     typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
 
     const scaleHidden = () => dialog.querySelector('[data-accessibility-scale]').hidden
