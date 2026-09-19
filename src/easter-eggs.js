@@ -92,7 +92,7 @@ export const EASTER_EGGS = Object.freeze([
   {
     "name": "Day of Remembrance",
     "activation": "Visit on November 20",
-    "effect": "Adds \"Transgender Day of Remembrance. We remember the names, and the people who chose them.\" to the footer, written plainly rather than as a joke"
+    "effect": "Adds \"Transgender Day of Remembrance. We remember the names, and the people who chose them.\" to the footer"
   },
   {
     "name": "Leap-day visitor",
@@ -325,12 +325,12 @@ export const EASTER_EGGS = Object.freeze([
   {
     "name": "Null profile",
     "activation": "Visit /u/null",
-    "effect": "Shows Null's fully written joke profile about intentionally having no value"
+    "effect": "Shows Null's profile about having no value"
   },
   {
     "name": "Undefined profile",
     "activation": "Visit /u/undefined",
-    "effect": "Shows Undefined's fully written joke profile about never being assigned a value"
+    "effect": "Shows Undefined's profile about never being assigned a value"
   },
   {
     "name": "Not a Name",
@@ -340,17 +340,17 @@ export const EASTER_EGGS = Object.freeze([
   {
     "name": "True profile",
     "activation": "Visit /u/true",
-    "effect": "Shows True's fully written joke profile agreeing with itself"
+    "effect": "Shows True's profile agreeing with itself"
   },
   {
     "name": "False profile",
     "activation": "Visit /u/false",
-    "effect": "Shows False's fully written joke profile disputing its own claims"
+    "effect": "Shows False's profile disputing its own claims"
   },
   {
     "name": "Void profile",
     "activation": "Visit /u/void",
-    "effect": "Shows a fully written profile that contains nothing and has excellent boundaries"
+    "effect": "Shows a profile that contains nothing and has excellent boundaries"
   },
   {
     "name": "Infinity profile",
@@ -370,12 +370,12 @@ export const EASTER_EGGS = Object.freeze([
   {
     "name": "Root profile",
     "activation": "Visit /u/root",
-    "effect": "Shows a fully written superuser profile whose pronouns require elevated privileges"
+    "effect": "Shows a superuser profile whose pronouns require elevated privileges"
   },
   {
     "name": "Anonymous profile",
     "activation": "Visit /u/anonymous",
-    "effect": "Shows Anonymous's fully written, deliberately unidentifiable joke profile"
+    "effect": "Shows Anonymous's profile with its identity redacted"
   },
   {
     "name": "Someone profile",
@@ -390,7 +390,7 @@ export const EASTER_EGGS = Object.freeze([
   {
     "name": "Unknown profile",
     "activation": "Visit /u/unknown",
-    "effect": "Shows a complete profile whose identity remains under investigation"
+    "effect": "Shows a profile whose identity remains under investigation"
   },
   {
     "name": "Else profile",
@@ -400,17 +400,17 @@ export const EASTER_EGGS = Object.freeze([
   {
     "name": "Everyone profile",
     "activation": "Visit /u/everyone",
-    "effect": "Shows a collective profile with they/them, we/us, and you/all jokes"
+    "effect": "Shows a collective profile with they/them, we/us, and you/all pronouns"
   },
   {
     "name": "Everything profile",
     "activation": "Visit /u/everything",
-    "effect": "Shows a fully written profile containing all of the above and several things not invented yet"
+    "effect": "Shows a profile containing all of the above and several things not invented yet"
   },
   {
     "name": "Nobody profile",
     "activation": "Visit /u/nobody",
-    "effect": "Shows Nobody's suspiciously detailed profile and deliberately unhelpful pronouns"
+    "effect": "Shows Nobody's profile with no/pronouns and who/whom"
   },
   {
     "name": "Nothing profile",

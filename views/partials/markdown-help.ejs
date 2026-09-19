@@ -22,7 +22,7 @@
         <div><dt><code>| a | b |</code> then <code>| --- | --- |</code></dt><dd>Table, with <code>:---:</code> and <code>---:</code> for centered and right-aligned columns</dd></div>
         <div><dt><code>---</code> on its own line</dt><dd>Horizontal rule</dd></div>
         <div><dt><code>&lt;https://example.com&gt;</code> or a bare HTTPS URL</dt><dd>Automatic link</dd></div>
-        <div><dt><code>[label](&lt;https://example.com&gt;)</code></dt><dd>Hyperlink with the address wrapped in angle brackets, the same as a plain one</dd></div>
+        <div><dt><code>[label](&lt;https://example.com&gt;)</code></dt><dd>Hyperlink with the address wrapped in angle brackets</dd></div>
         <div><dt><code>![alt](https://example.com/picture.png)</code></dt><dd>Image from any HTTPS address, or a path on this site</dd></div>
         <div><dt><code>- [x] done</code></dt><dd>Task list with ticked and unticked boxes</dd></div>
         <div><dt>A term, then <code>: meaning</code> on the next line</dt><dd>Definition list</dd></div>
@@ -51,7 +51,7 @@
     </ul>
     <p class="fineprint">Email addresses you write are automatically hidden behind a click-to-reveal widget.</p>
     <% if (full) { %>
-      <p class="fineprint">Worth knowing: anything a viewer's browser loads from another site, such as an embedded video, tells that site the viewer's address. Only the hosts your own content refers to are allowed to load on your page.</p>
+      <p class="fineprint">Anything a viewer's browser loads from another site, such as an embedded video, tells that site the viewer's IP address. Only the hosts your own content refers to are allowed to load on your page.</p>
       <p class="fineprint">Code you write here runs in the browser of everyone who opens the page. A page whose only code is in <code>script</code> blocks keeps the stricter signed-script policy; using an event handler or a <code>javascript:</code> address relaxes it for that page, so prefer <code>script</code> blocks and <code>addEventListener</code> where you can.</p>
     <% } %>
   </div>

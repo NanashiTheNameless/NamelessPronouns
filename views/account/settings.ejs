@@ -26,7 +26,7 @@
       </section>
       <section class="panel">
         <h2>Content flags</h2>
-        <p>Lists profile edits that matched an enforcing content rule, with the affected field, severity, flag status, and date. The attempted text is never shown back to you. A pending flag can be disputed there by writing why it is wrong and requesting Administrator review.</p>
+        <p>Review profile edits that matched an enforcing content rule, with the affected field, severity, flag status, and date. The attempted text is never shown back to you. You can dispute a pending flag and request Administrator review.</p>
         <p><a class="button secondary" href="/account/content-flags">View content flags</a></p>
       </section>
       <section class="panel">
@@ -37,12 +37,12 @@
       </section>
       <section class="panel">
         <h2>Recovery</h2>
-        <p>Explains the two paths back into an account: self-service password reset, which needs your verified email and your second factor, and lost-second-factor recovery, which is handled case by case by an Administrator or Owner, is not guaranteed, and should be assumed denied.</p>
+        <p>Reset your password using your verified email and second factor. Recovery for a lost second factor is handled case by case by an Administrator or Owner, is not guaranteed, and should be assumed denied.</p>
         <p><a href="/recover">Read the recovery policy</a></p>
       </section>
       <section class="panel">
         <h2>Your data</h2>
-        <p>Requests a ZIP of your account, profiles, names, pronouns, words, links, flags, policy acceptances, username claims, and audit entries, in both plain text and JSON. The archive is only ever collected through a link emailed to your verified address, valid 14 days before first use and 7 days after it.</p>
+        <p>Request a ZIP of your account, profiles, names, pronouns, words, links, flags, policy acceptances, username claims, and audit entries, in both plain text and JSON. Download it through a link emailed to your verified address, valid 14 days before first use and 7 days after it.</p>
         <p><a class="button secondary" href="/account/export">Download my data</a></p>
       </section>
       <section class="panel stack" id="profile-icon">
@@ -51,15 +51,15 @@
         <img id="avatar-preview" class="avatar avatar-large" src="<%= avatar %>" alt="Avatar preview" width="96" height="96">
         <form method="post" action="/account/avatar" id="avatar-form" class="stack" data-max-bytes="<%= maxAvatarBytes %>" data-current-source="<%= avatarSource %>" data-identicon="<%= identiconAvatar %>" data-gravatar="<%= gravatarAvatar %>" data-libravatar="<%= libravatarAvatar %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <label><input type="radio" name="avatar_source" value="identicon" <%= avatarSource === 'identicon' ? 'checked' : '' %>> Deterministic identicon</label>
+          <label><input type="radio" name="avatar_source" value="identicon" <%= avatarSource === 'identicon' ? 'checked' : '' %>> Generated geometric icon</label>
           <label><input type="radio" name="avatar_source" value="gravatar" <%= avatarSource === 'gravatar' ? 'checked' : '' %>> Gravatar for the verified email</label>
           <label><input type="radio" name="avatar_source" value="libravatar" <%= avatarSource === 'libravatar' ? 'checked' : '' %>> Libravatar for the verified email</label>
-          <label><input type="radio" name="avatar_source" value="data" <%= avatarSource === 'data' ? 'checked' : '' %>> Uploaded image stored as a small data URI</label>
+          <label><input type="radio" name="avatar_source" value="data" <%= avatarSource === 'data' ? 'checked' : '' %>> Uploaded image</label>
           <label>Choose image
             <input id="avatar-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
           </label>
           <input id="avatar-data-uri" type="hidden" name="avatar_data_uri" value="">
-          <p id="avatar-size" aria-live="polite">Select a raster image to resize and compress, or a safe SVG icon to sanitize, entirely in this browser.</p>
+          <p id="avatar-size" aria-live="polite">Choose a PNG, JPEG, WebP, or SVG image. Images are resized and compressed in your browser; SVGs are checked for unsupported content.</p>
           <p id="avatar-error" class="error" role="alert" hidden></p>
           <button id="avatar-strip-svg" type="button" hidden>Strip disallowed SVG content</button>
           <button id="avatar-save" type="submit">Save profile icon</button>
@@ -67,7 +67,7 @@
       </section>
       <section class="panel">
         <h2>Delete account</h2>
-        <p>Requesting deletion unpublishes every profile and restricts the account at once, then erases it after 30 days. The whole window stays cancellable from that page, which also shows the scheduled purge date and whether a legal hold is pausing it.</p>
+        <p>Requesting deletion immediately unpublishes every profile and restricts your account, then erases it after 30 days. In deletion settings, you can cancel during those 30 days, check the scheduled deletion date, and see whether a legal hold has paused deletion.</p>
         <p><a class="button secondary" href="/account/deletion">Deletion settings</a></p>
       </section>
     </div>
