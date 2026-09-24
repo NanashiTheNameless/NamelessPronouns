@@ -677,7 +677,7 @@ function wirePageEggs() {
     });
   }
 
-  const legalDocument = document.querySelector('.legal-document');
+  const legalDocument = document.querySelector('[data-policy-document]');
   if (legalDocument) {
     const key = `np-easter-policy-read:${location.pathname}`;
     const checkRead = () => {

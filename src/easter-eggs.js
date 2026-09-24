@@ -1,13 +1,26 @@
+// Related eggs stay together, with easier groups and entries first; staff-only groups come last.
 export const EASTER_EGGS = Object.freeze([
+  // Everyday pages and consent.
   {
     "name": "Empty-state optimism",
     "activation": "Open a dashboard with no profiles",
     "effect": "Displays \"No profiles are available. Yet.\""
   },
   {
-    "name": "Flag collector",
-    "activation": "View a profile containing at least 11 flags",
-    "effect": "Adds \"Collector.\" beneath the flags"
+    "name": "Actually read it",
+    "activation": "Scroll the Terms of Service or Privacy Policy to the very bottom",
+    "effect": "Says \"You read it. Genuinely rare.\""
+  },
+  {
+    "name": "Hasty consent",
+    "activation": "Tick both consent boxes within two seconds of the page loading",
+    "effect": "Adds \"You did not read it. It is short, so try.\" under the form"
+  },
+  // Profile content.
+  {
+    "name": "Maximum flexibility",
+    "activation": "View a profile listing any/all as a pronoun set",
+    "effect": "Adds \"Maximum flexibility detected.\" beneath the pronouns"
   },
   {
     "name": "Confident no",
@@ -20,9 +33,56 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Adds \"Nothing here is serious. Including this line.\" beneath the pronouns"
   },
   {
+    "name": "Flag collector",
+    "activation": "View a profile containing at least 11 flags",
+    "effect": "Adds \"Collector.\" beneath the flags"
+  },
+  // Profile editing.
+  {
+    "name": "Twice the pronouns",
+    "activation": "Enter the same pronoun set in two rows of the profile editor",
+    "effect": "Says \"Twice is a preference, not a typo.\""
+  },
+  {
+    "name": "Full to the brim",
+    "activation": "Fill a profile bio or notes field to its exact character limit",
+    "effect": "Says \"Perfectly full. Not one character wasted.\""
+  },
+  {
+    "name": "Unchanged save",
+    "activation": "Save a profile three times without changing anything",
+    "effect": "Says \"Nothing changed. Saved anyway.\""
+  },
+  {
     "name": "Placeholder prose",
     "activation": "Type lorem ipsum into a profile bio or notes field",
     "effect": "Says \"Placeholder detected. You are allowed to be real.\""
+  },
+  {
+    "name": "Script tag",
+    "activation": "Type a script tag into a profile bio or notes field",
+    "effect": "Says \"Sanitized. This is not 2005.\""
+  },
+  {
+    "name": "Retired tags",
+    "activation": "Type a blink or marquee tag into a profile bio or notes field",
+    "effect": "Says \"Removed, with respect for history.\""
+  },
+  // Signup and passwords.
+  {
+    "name": "Plus addressing",
+    "activation": "Type a plus-addressed email into any email field",
+    "effect": "Shows a \"Plus addressing. A person of taste.\" toast, once per browser session"
+  },
+  {
+    "name": "Test signup",
+    "activation": "Request an account using test@test.com",
+    "effect": "Answers \"This is production. Probably.\""
+  },
+  {
+    "name": "Nobody signs up",
+    "activation": "Request an account using nobody@example.com",
+    "effect": "Answers \"Nobody already has a profile. See /u/nobody.\""
   },
   {
     "name": "Classic password",
@@ -34,21 +94,28 @@ export const EASTER_EGGS = Object.freeze([
     "activation": "Submit g00dPa$$w0rD as a new password",
     "effect": "Adds \"Leetspeak fools no one. Also in the list.\" to the common-password refusal"
   },
+  // Printing and export.
   {
-    "name": "Nobody signs up",
-    "activation": "Request an account using nobody@example.com",
-    "effect": "Answers \"Nobody already has a profile. See /u/nobody.\""
+    "name": "Print escape",
+    "activation": "Print a profile",
+    "effect": "Adds \"This profile escaped the internet.\" only to the printed page"
+  },
+  {
+    "name": "Owner print signature",
+    "activation": "Print the Owner's profile",
+    "effect": "Adds approval for its escape by NamelessNanashi"
+  },
+  {
+    "name": "Nobody print line",
+    "activation": "Print /u/nobody",
+    "effect": "Adds \"Nobody printed this.\" only to the printed page"
   },
   {
     "name": "Export ownership",
     "activation": "Download your account data",
     "effect": "The export metadata records owned_by: you"
   },
-  {
-    "name": "Patient rate limit",
-    "activation": "Reach any rate limit",
-    "effect": "Adds X-Patience: required to every 429, and ends the message with \"Slow down. The pronouns are not going anywhere.\" on the ones that render an error page"
-  },
+  // Connectivity and errors.
   {
     "name": "Offline Owner",
     "activation": "Lose connectivity while a page is open",
@@ -60,102 +127,35 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Shows a \"Connection restored. NamelessNanashi accepts the credit.\" toast"
   },
   {
+    "name": "Patient rate limit",
+    "activation": "Reach any rate limit",
+    "effect": "Adds X-Patience: required to every 429, and ends the message with \"Slow down. The pronouns are not going anywhere.\" on the ones that render an error page"
+  },
+  {
+    "name": "Blameless error",
+    "activation": "Reach a page that fails unexpectedly",
+    "effect": "The 500 page says \"Something broke. It was not you.\""
+  },
+  {
+    "name": "Patient outage",
+    "activation": "Reach /healthz or /readyz while the database is unavailable",
+    "effect": "Adds note: \"Back soon. Nanashi is holding a wire.\" to the 503 JSON"
+  },
+  {
     "name": "No-script message",
     "activation": "Disable JavaScript",
     "effect": "Shows \"No script? No problem. You are still a person.\""
   },
-  {
-    "name": "Late-night visit",
-    "activation": "Open any page between 02:00 and 04:00 by the device clock",
-    "effect": "Shows a \"Go to sleep. The profile will still be here tomorrow.\" toast, once per browser session"
-  },
-  {
-    "name": "Epoch birthday",
-    "activation": "Visit on January 1",
-    "effect": "Adds \"Epoch says happy birthday.\" to the footer"
-  },
-  {
-    "name": "Pi Day",
-    "activation": "Visit on March 14",
-    "effect": "Adds \"Approximately 3.14 people are reading this.\" to the footer"
-  },
-  {
-    "name": "April first",
-    "activation": "Visit on April 1",
-    "effect": "Adds \"Everything here is true, except False.\" to the footer"
-  },
-  {
-    "name": "Day of Visibility",
-    "activation": "Visit on March 31",
-    "effect": "Adds \"Transgender Day of Visibility. You are seen, and you are welcome here.\" to the footer"
-  },
-  {
-    "name": "Day of Remembrance",
-    "activation": "Visit on November 20",
-    "effect": "Adds \"Transgender Day of Remembrance. We remember the names, and the people who chose them.\" to the footer"
-  },
-  {
-    "name": "Leap-day visitor",
-    "activation": "Visit on February 29",
-    "effect": "Adds \"This message appears approximately once every four years.\" to the footer"
-  },
-  {
-    "name": "Owner admin greeting",
-    "activation": "Open Admin while signed in as Owner",
-    "effect": "Says everything is somehow still running",
-    "staff": true
-  },
-  {
-    "name": "Staff badge descriptions",
-    "activation": "Hover over or keyboard-focus a staff badge",
-    "effect": "Shows: Support \"fixes things quietly\"; Moderator \"reads everything\"; Administrator \"keeps the lights on\"; Owner \"wrote this bit\""
-  },
-  {
-    "name": "Quiet queue",
-    "activation": "Open the content flag reviews with none pending",
-    "effect": "Adds \"Nothing to moderate. Suspicious.\"",
-    "staff": true
-  },
-  {
-    "name": "Staff egg catalog",
-    "activation": "Visit /admin/easter-eggs as any staff member",
-    "effect": "Lists every documented Easter egg and how to activate it",
-    "staff": true
-  },
-  {
-    "name": "Admin Nanashi",
-    "activation": "Enter nanashi in the admin account lookup",
-    "effect": "Responds \"That account is looking back.\"",
-    "staff": true
-  },
-  {
-    "name": "Admin placeholders",
-    "activation": "Enter null or undefined in the admin account lookup",
-    "effect": "Responds \"Both already have profiles. See /u/null and /u/undefined.\"",
-    "staff": true
-  },
-  {
-    "name": "Admin root",
-    "activation": "Enter root in the admin account lookup",
-    "effect": "Responds \"Wrong tree.\"",
-    "staff": true
-  },
-  {
-    "name": "Admin sudo",
-    "activation": "Enter sudo in the admin account lookup",
-    "effect": "Responds \"Nice try. This is not a shell.\"",
-    "staff": true
-  },
-  {
-    "name": "Admin SQL",
-    "activation": "Enter select * in the admin account lookup",
-    "effect": "Responds \"Please step away from the database.\"",
-    "staff": true
-  },
+  // Keyboard navigation.
   {
     "name": "Keyboard shortcuts",
     "activation": "Press Shift + ? outside a text field",
     "effect": "Opens a panel documenting Tab, Shift+Tab, Enter, Space, arrow-key navigation, Escape, Shift+?, and the Konami code"
+  },
+  {
+    "name": "Shortcut inception",
+    "activation": "Press Shift + ? while the shortcuts panel is open",
+    "effect": "Temporarily changes its heading to \"You are already here.\""
   },
   {
     "name": "Keyboard lap",
@@ -167,20 +167,11 @@ export const EASTER_EGGS = Object.freeze([
     "activation": "Use Shift+Tab to visit every interactive element and return to the first",
     "effect": "Says \"Keyboard lap completed in reverse.\""
   },
+  // Custom fonts.
   {
-    "name": "Shortcut inception",
-    "activation": "Press Shift + ? while the shortcuts panel is open",
-    "effect": "Temporarily changes its heading to \"You are already here.\""
-  },
-  {
-    "name": "Default enthusiast",
-    "activation": "Enter 0xProto as the custom font",
-    "effect": "Says \"You came all this way to choose the default. Respect.\""
-  },
-  {
-    "name": "Comic Sans",
-    "activation": "Select the custom font and enter Comic Sans MS",
-    "effect": "Says \"Bold choice. Genuinely: it helps some dyslexic readers.\""
+    "name": "Arial",
+    "activation": "Enter Arial as the custom font",
+    "effect": "Says \"Helvetica is right there.\""
   },
   {
     "name": "Times New Roman",
@@ -188,9 +179,34 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Says \"The Times are new. The Roman is unchanged.\""
   },
   {
+    "name": "Courier New",
+    "activation": "Enter Courier New as the custom font",
+    "effect": "Says \"Monospaced and unbothered.\""
+  },
+  {
     "name": "Helvetica",
     "activation": "Enter Helvetica as the custom font",
     "effect": "Says \"There is a documentary about this.\""
+  },
+  {
+    "name": "Cursive",
+    "activation": "Enter cursive as the custom font",
+    "effect": "Says \"A web-safe risk.\""
+  },
+  {
+    "name": "Impact",
+    "activation": "Enter Impact as the custom font",
+    "effect": "Says \"Everything becomes a meme eventually.\""
+  },
+  {
+    "name": "Comic Sans",
+    "activation": "Select the custom font and enter Comic Sans MS",
+    "effect": "Says \"Bold choice. Genuinely: it helps some dyslexic readers.\""
+  },
+  {
+    "name": "Default enthusiast",
+    "activation": "Enter 0xProto as the custom font",
+    "effect": "Says \"You came all this way to choose the default. Respect.\""
   },
   {
     "name": "Papyrus warning",
@@ -203,9 +219,46 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Says \"We cannot read that either.\""
   },
   {
+    "name": "Recursive font",
+    "activation": "Enter font as the custom font",
+    "effect": "Says \"Recursive.\""
+  },
+  // Custom text sizes.
+  {
     "name": "Default text size",
     "activation": "Enter 100 as the arbitrary text size percentage",
     "effect": "Says \"That is the size we started with.\""
+  },
+  {
+    "name": "Answer text size",
+    "activation": "Enter 42 as the arbitrary text size percentage",
+    "effect": "Says \"The answer, rendered small.\" before repeating the allowed range"
+  },
+  {
+    "name": "Missing text size",
+    "activation": "Enter 404 as the arbitrary text size percentage",
+    "effect": "Says \"Not found, but very large.\" before repeating the allowed range"
+  },
+  {
+    "name": "Nineties text size",
+    "activation": "Enter 1998 as the arbitrary text size percentage",
+    "effect": "Says \"The nineties were not that big.\" before repeating the allowed range"
+  },
+  // Custom colors.
+  {
+    "name": "Monochrome verdict",
+    "activation": "Set the custom background and text colors to #000000 and #ffffff",
+    "effect": "Says \"You have chosen sides.\""
+  },
+  {
+    "name": "Same-color warning",
+    "activation": "Give the custom background and text the same color",
+    "effect": "Says \"Stealth mode enabled. Readability was not invited.\" while preserving the contrast warning"
+  },
+  {
+    "name": "Transparent colors",
+    "activation": "Enter an eight-digit color code such as #1a2b3ccc in a custom color field",
+    "effect": "Accepts it as a valid HTML color code, transparency included"
   },
   {
     "name": "Ordered color",
@@ -228,9 +281,34 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Says \"Coffee detected. No beans were harmed.\""
   },
   {
+    "name": "Decaffeinated color",
+    "activation": "Enter #decaf0 in a custom color field",
+    "effect": "Says \"Decaffeinated. Somehow still awake.\""
+  },
+  {
     "name": "Badass color",
     "activation": "Enter #bada55 in a custom color field",
     "effect": "Says \"That color has excellent credentials.\""
+  },
+  {
+    "name": "Dead beef color",
+    "activation": "Enter #deadbeef in a custom color field",
+    "effect": "Says \"A classic. Now with transparency.\""
+  },
+  {
+    "name": "Cafe babe color",
+    "activation": "Enter #cafebabe in a custom color field",
+    "effect": "Says \"Java called. It wants its constant back.\""
+  },
+  {
+    "name": "Feed face color",
+    "activation": "Enter #feedface in a custom color field",
+    "effect": "Says \"Fed.\""
+  },
+  {
+    "name": "Bad food color",
+    "activation": "Enter #8badf00d in a custom color field",
+    "effect": "Says \"Crash report filed.\""
   },
   {
     "name": "Facade color",
@@ -258,29 +336,35 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Says \"Office hours are over.\""
   },
   {
-    "name": "Monochrome verdict",
-    "activation": "Set the custom background and text colors to #000000 and #ffffff",
-    "effect": "Says \"You have chosen sides.\""
+    "name": "Oddball color",
+    "activation": "Enter #0ddba1 in a custom color field",
+    "effect": "Says \"Oddball. Fits right in.\""
   },
   {
-    "name": "Same-color warning",
-    "activation": "Give the custom background and text the same color",
-    "effect": "Says \"Stealth mode enabled. Readability was not invited.\" while preserving the contrast warning"
+    "name": "Accede color",
+    "activation": "Enter #accede in a custom color field",
+    "effect": "Says \"We accede.\""
   },
+  {
+    "name": "Efface color",
+    "activation": "Enter #efface in a custom color field",
+    "effect": "Says \"Effaced. Still visible.\""
+  },
+  // Accessibility settings.
   {
     "name": "Double reset",
     "activation": "Press the accessibility reset button twice without changing another setting",
     "effect": "Says \"Still default. NamelessNanashi would be proud.\""
   },
   {
-    "name": "Backup backup",
-    "activation": "Copy accessibility settings three times consecutively",
-    "effect": "Says \"Backup of backup complete.\""
-  },
-  {
     "name": "Theme tourist",
     "activation": "Try all four standard themes in one browser session",
     "effect": "Says \"You have seen all our possible selves.\""
+  },
+  {
+    "name": "Backup backup",
+    "activation": "Copy accessibility settings three times consecutively",
+    "effect": "Says \"Backup of backup complete.\""
   },
   {
     "name": "Settings time machine",
@@ -292,21 +376,89 @@ export const EASTER_EGGS = Object.freeze([
     "activation": "Import an accessibility settings object with \"version\": 57",
     "effect": "Unlocks the Ketchup and Mustard theme in that browser until its site data is cleared, while continuing to use the theme selected by the imported settings"
   },
+  // Clock and calendar.
   {
-    "name": "Print escape",
-    "activation": "Print a profile",
-    "effect": "Adds \"This profile escaped the internet.\" only to the printed page"
+    "name": "Late-night visit",
+    "activation": "Open any page between 02:00 and 04:00 by the device clock",
+    "effect": "Shows a \"Go to sleep. The profile will still be here tomorrow.\" toast, once per browser session"
   },
   {
-    "name": "Owner print signature",
-    "activation": "Print the Owner's profile",
-    "effect": "Adds approval for its escape by NamelessNanashi"
+    "name": "Eleven eleven",
+    "activation": "Open any page at 11:11 by the device clock",
+    "effect": "Shows a \"Make a wish. Or do not.\" toast, once per browser session"
   },
   {
-    "name": "Nobody print line",
-    "activation": "Print /u/nobody",
-    "effect": "Adds \"Nobody printed this.\" only to the printed page"
+    "name": "Leet o'clock",
+    "activation": "Open any page at 13:37 by the device clock",
+    "effect": "Shows a \"Leet o'clock.\" toast, once per browser session"
   },
+  {
+    "name": "Time not found",
+    "activation": "Open any page at 04:04 by the device clock",
+    "effect": "Shows a \"Time not found.\" toast, once per browser session"
+  },
+  {
+    "name": "Epoch birthday",
+    "activation": "Visit on January 1",
+    "effect": "Adds \"Epoch says happy birthday.\" to the footer"
+  },
+  {
+    "name": "Pi Day",
+    "activation": "Visit on March 14",
+    "effect": "Adds \"Approximately 3.14 people are reading this.\" to the footer"
+  },
+  {
+    "name": "Day of Visibility",
+    "activation": "Visit on March 31",
+    "effect": "Adds \"Transgender Day of Visibility. You are seen, and you are welcome here.\" to the footer"
+  },
+  {
+    "name": "April first",
+    "activation": "Visit on April 1",
+    "effect": "Adds \"Everything here is true, except False.\" to the footer"
+  },
+  {
+    "name": "Day of Remembrance",
+    "activation": "Visit on November 20",
+    "effect": "Adds \"Transgender Day of Remembrance. We remember the names, and the people who chose them.\" to the footer"
+  },
+  {
+    "name": "Leap-day visitor",
+    "activation": "Visit on February 29",
+    "effect": "Adds \"This message appears approximately once every four years.\" to the footer"
+  },
+  // Badges and repeat interactions.
+  {
+    "name": "Staff badge descriptions",
+    "activation": "Hover over or keyboard-focus a staff badge",
+    "effect": "Shows: Support \"fixes things quietly\"; Moderator \"reads everything\"; Administrator \"keeps the lights on\"; Owner \"wrote this bit\""
+  },
+  {
+    "name": "Owner badge encore",
+    "activation": "Hover or focus the Owner badge five times",
+    "effect": "Changes its tooltip to \"still wrote this bit\""
+  },
+  {
+    "name": "Profile deja vu",
+    "activation": "Visit the same profile seven times in one browser session",
+    "effect": "Says \"You two have met before.\""
+  },
+  {
+    "name": "Avatar inspection",
+    "activation": "Activate any profile's avatar seven times without reloading",
+    "effect": "Briefly mirrors it and says \"Identity check inconclusive.\""
+  },
+  {
+    "name": "Footer persistence",
+    "activation": "Click NamelessNanashi in the footer seven times",
+    "effect": "Temporarily changes the line to \"Still Operated by NamelessNanashi.\" and shows a \"NamelessNanashi keeps working on this site.\" toast"
+  },
+  {
+    "name": "Owner profile title",
+    "activation": "Click the heading on the Owner's profile seven times",
+    "effect": "Temporarily changes it to \"Yes, this is the Owner.\" and shows a \"Yes, this is still the Owner.\" toast"
+  },
+  // Profile URLs and their follow-ups.
   {
     "name": "Your profile shortcut",
     "activation": "Visit /u/me while signed in",
@@ -323,54 +475,29 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Redirects to the Owner's own profile at /u/NamelessNanashi"
   },
   {
-    "name": "Null profile",
-    "activation": "Visit /u/null",
-    "effect": "Shows Null's profile about having no value"
+    "name": "Owner profile",
+    "activation": "Visit /u/owner",
+    "effect": "Shows the Owner role rather than the person holding it, status probably debugging"
   },
   {
-    "name": "Undefined profile",
-    "activation": "Visit /u/undefined",
-    "effect": "Shows Undefined's profile about never being assigned a value"
+    "name": "Staff profile",
+    "activation": "Visit /u/staff",
+    "effect": "Shows Staff as a collective noun wearing a badge, with we/us listed jokingly"
   },
   {
-    "name": "Not a Name",
-    "activation": "Visit /u/nan",
-    "effect": "Shows NaN, short for \"Not a Name,\" with not/a/name pronouns"
+    "name": "Titles are not people",
+    "activation": "Visit /u/admin, /u/administrator, /u/moderator, or /u/support",
+    "effect": "Returns HTTP 404 with \"Titles are not people.\""
   },
   {
-    "name": "True profile",
-    "activation": "Visit /u/true",
-    "effect": "Shows True's profile agreeing with itself"
+    "name": "Nobody profile",
+    "activation": "Visit /u/nobody",
+    "effect": "Shows Nobody's profile with no/pronouns and who/whom"
   },
   {
-    "name": "False profile",
-    "activation": "Visit /u/false",
-    "effect": "Shows False's profile disputing its own claims"
-  },
-  {
-    "name": "Void profile",
-    "activation": "Visit /u/void",
-    "effect": "Shows a profile that contains nothing and has excellent boundaries"
-  },
-  {
-    "name": "Infinity profile",
-    "activation": "Visit /u/infinity",
-    "effect": "Shows a profile that never quite finishes introducing itself, with on/and/on pronouns"
-  },
-  {
-    "name": "Epoch profile",
-    "activation": "Visit /u/epoch",
-    "effect": "Shows a profile that has been waiting since the Unix timestamp was zero"
-  },
-  {
-    "name": "Localhost profile",
-    "activation": "Visit /u/localhost",
-    "effect": "Insists there is no place like 127.0.0.1"
-  },
-  {
-    "name": "Root profile",
-    "activation": "Visit /u/root",
-    "effect": "Shows a superuser profile whose pronouns require elevated privileges"
+    "name": "Alternate profile URLs",
+    "activation": "Visit /@nobody or /user/nobody, in any capitalisation",
+    "effect": "Redirects to /u/nobody, so every reserved profile answers the same URL shapes a real profile does"
   },
   {
     "name": "Anonymous profile",
@@ -393,24 +520,9 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Shows a profile whose identity remains under investigation"
   },
   {
-    "name": "Else profile",
-    "activation": "Visit /u/else",
-    "effect": "Shows a profile that appears because every prior condition was false"
-  },
-  {
     "name": "Everyone profile",
     "activation": "Visit /u/everyone",
     "effect": "Shows a collective profile with they/them, we/us, and you/all pronouns"
-  },
-  {
-    "name": "Everything profile",
-    "activation": "Visit /u/everything",
-    "effect": "Shows a profile containing all of the above and several things not invented yet"
-  },
-  {
-    "name": "Nobody profile",
-    "activation": "Visit /u/nobody",
-    "effect": "Shows Nobody's profile with no/pronouns and who/whom"
   },
   {
     "name": "Nothing profile",
@@ -418,60 +530,76 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Shows Nothing's conspicuously present profile and complicates several definitions"
   },
   {
-    "name": "Staff profile",
-    "activation": "Visit /u/staff",
-    "effect": "Shows Staff as a collective noun wearing a badge, with we/us listed jokingly"
+    "name": "Everything profile",
+    "activation": "Visit /u/everything",
+    "effect": "Shows a profile containing all of the above and several things not invented yet"
   },
   {
-    "name": "Owner profile",
-    "activation": "Visit /u/owner",
-    "effect": "Shows the Owner role rather than the person holding it, status probably debugging"
+    "name": "Null profile",
+    "activation": "Visit /u/null",
+    "effect": "Shows Null's profile about having no value"
   },
   {
-    "name": "Titles are not people",
-    "activation": "Visit /u/admin, /u/administrator, /u/moderator, or /u/support",
-    "effect": "Returns HTTP 404 with \"Titles are not people.\""
+    "name": "Undefined profile",
+    "activation": "Visit /u/undefined",
+    "effect": "Shows Undefined's profile about never being assigned a value"
   },
   {
-    "name": "Recursive 404",
-    "activation": "Visit /u/404",
-    "effect": "Returns HTTP 404 with \"Recursion detected.\""
+    "name": "True profile",
+    "activation": "Visit /u/true",
+    "effect": "Shows True's profile agreeing with itself"
   },
   {
-    "name": "Alternate profile URLs",
-    "activation": "Visit /@nobody or /user/nobody, in any capitalisation",
-    "effect": "Redirects to /u/nobody, so every reserved profile answers the same URL shapes a real profile does"
+    "name": "False profile",
+    "activation": "Visit /u/false",
+    "effect": "Shows False's profile disputing its own claims"
   },
   {
-    "name": "Profile deja vu",
-    "activation": "Visit the same profile seven times in one browser session",
-    "effect": "Says \"You two have met before.\""
+    "name": "Void profile",
+    "activation": "Visit /u/void",
+    "effect": "Shows a profile that contains nothing and has excellent boundaries"
   },
   {
-    "name": "Avatar inspection",
-    "activation": "Activate any profile's avatar seven times without reloading",
-    "effect": "Briefly mirrors it and says \"Identity check inconclusive.\""
-  },
-  {
-    "name": "Footer persistence",
-    "activation": "Click NamelessNanashi in the footer seven times",
-    "effect": "Temporarily changes the line to \"Still Operated by NamelessNanashi.\" and shows a \"NamelessNanashi keeps working on this site.\" toast"
-  },
-  {
-    "name": "Owner profile title",
-    "activation": "Click the heading on the Owner's profile seven times",
-    "effect": "Temporarily changes it to \"Yes, this is the Owner.\" and shows a \"Yes, this is still the Owner.\" toast"
-  },
-  {
-    "name": "Owner badge encore",
-    "activation": "Hover or focus the Owner badge five times",
-    "effect": "Changes its tooltip to \"still wrote this bit\""
+    "name": "Infinity profile",
+    "activation": "Visit /u/infinity",
+    "effect": "Shows a profile that never quite finishes introducing itself, with on/and/on pronouns"
   },
   {
     "name": "Infinity encore",
     "activation": "Remain on /u/infinity for 60 seconds",
     "effect": "Says \"Still going.\""
   },
+  {
+    "name": "Localhost profile",
+    "activation": "Visit /u/localhost",
+    "effect": "Insists there is no place like 127.0.0.1"
+  },
+  {
+    "name": "Root profile",
+    "activation": "Visit /u/root",
+    "effect": "Shows a superuser profile whose pronouns require elevated privileges"
+  },
+  {
+    "name": "Epoch profile",
+    "activation": "Visit /u/epoch",
+    "effect": "Shows a profile that has been waiting since the Unix timestamp was zero"
+  },
+  {
+    "name": "Not a Name",
+    "activation": "Visit /u/nan",
+    "effect": "Shows NaN, short for \"Not a Name,\" with not/a/name pronouns"
+  },
+  {
+    "name": "Else profile",
+    "activation": "Visit /u/else",
+    "effect": "Shows a profile that appears because every prior condition was false"
+  },
+  {
+    "name": "Recursive 404",
+    "activation": "Visit /u/404",
+    "effect": "Returns HTTP 404 with \"Recursion detected.\""
+  },
+  // Hidden keyboard commands.
   {
     "name": "Help command",
     "activation": "Type help outside a text field",
@@ -488,6 +616,11 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Says \"Correct. You found the subject.\""
   },
   {
+    "name": "Singular they",
+    "activation": "Type they outside a text field",
+    "effect": "Says \"Singular. In English since the 1300s.\""
+  },
+  {
     "name": "Name sequence",
     "activation": "Type nanashi outside a text field",
     "effect": "Shows an Owner-located toast with a 3-5 business-eternity response time"
@@ -498,9 +631,55 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Shows a toast saying the answer was found but the question remains unavailable"
   },
   {
+    "name": "List sequence",
+    "activation": "Type ls outside a text field",
+    "effect": "Says \"You are looking at it.\""
+  },
+  {
+    "name": "Print working directory",
+    "activation": "Type pwd outside a text field",
+    "effect": "Shows the path of the page you are on"
+  },
+  {
+    "name": "Vim escape",
+    "activation": "Type vim outside a text field",
+    "effect": "Says \"Nothing is trapping you. Escape, then :q, also works.\""
+  },
+  {
+    "name": "Sudo sequence",
+    "activation": "Type sudo outside a text field",
+    "effect": "Says \"Still not a shell.\""
+  },
+  {
+    "name": "Undo sequence",
+    "activation": "Type undo outside a text field",
+    "effect": "Says \"Ctrl+Z was right there.\""
+  },
+  {
+    "name": "Coffee sequence",
+    "activation": "Type coffee outside a text field",
+    "effect": "Says \"Wrong appliance.\""
+  },
+  {
+    "name": "Tea sequence",
+    "activation": "Type tea outside a text field",
+    "effect": "Points at /teapot and the four minutes eighteen seconds it needs"
+  },
+  {
+    "name": "Git blame",
+    "activation": "Type git blame outside a text field",
+    "effect": "Says \"NamelessNanashi. Every line.\""
+  },
+  {
     "name": "XYZZY",
     "activation": "Type xyzzy outside a text field",
     "effect": "Says \"Nothing happens. Documented.\""
+  },
+  // Konami and condiment codes.
+  {
+    "name": "Konami spelled out",
+    "activation": "Type konami outside a text field",
+    "effect": "Says \"Close. Use the arrows.\""
   },
   {
     "name": "Konami theme",
@@ -508,14 +687,19 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Unlocks the accessible \"1998\" theme in that browser until its site data is cleared, and shows a toast"
   },
   {
+    "name": "Konami attribution",
+    "activation": "Unlock the 1998 theme",
+    "effect": "Credits its preservation to NamelessNanashi"
+  },
+  {
     "name": "Konami encore",
     "activation": "Enter the Konami code after unlocking the theme",
     "effect": "Shows an \"Achievement already achieved.\" toast"
   },
   {
-    "name": "Konami attribution",
-    "activation": "Unlock the 1998 theme",
-    "effect": "Credits its preservation to NamelessNanashi"
+    "name": "Konami misordered",
+    "activation": "Enter the Konami code with A and B the wrong way round",
+    "effect": "Says \"Almost. Order matters.\""
   },
   {
     "name": "Condiment code",
@@ -527,186 +711,7 @@ export const EASTER_EGGS = Object.freeze([
     "activation": "Type ketchup after unlocking the theme",
     "effect": "Shows a \"The condiments are already out.\" toast"
   },
-  {
-    "name": "Error dimensions",
-    "activation": "Resize the viewport to exactly 404 by 418 pixels",
-    "effect": "Says \"Not found, but properly steeped.\""
-  },
-  {
-    "name": "Status endpoint",
-    "activation": "Visit /status",
-    "effect": "Returns \"Somehow still running.\""
-  },
-  {
-    "name": "Humans file",
-    "activation": "Visit /humans.txt",
-    "effect": "Credits the humans behind NamelessPronouns"
-  },
-  {
-    "name": "Robots comment",
-    "activation": "Visit /robots.txt",
-    "effect": "Disallows every crawler and says \"Please do not crawl. You would not remember this place anyway.\""
-  },
-  {
-    "name": "Robots annotation",
-    "activation": "Inspect /robots.txt",
-    "effect": "Reveals that Nanashi was there and the crawler saw nothing"
-  },
-  {
-    "name": "Ads file",
-    "activation": "Visit /ads.txt",
-    "effect": "Returns \"No advertisements are available. Yet is not implied.\""
-  },
-  {
-    "name": "Pronouns file",
-    "activation": "Visit /pronouns.txt",
-    "effect": "Returns a plain-text identity card ending with \"This file uses it/its.\""
-  },
-  {
-    "name": "Security contact",
-    "activation": "Visit /.well-known/security.txt",
-    "effect": "Returns a real RFC 9116 contact file ending with \"Nanashi reads these. Eventually.\""
-  },
-  {
-    "name": "Well-known identity",
-    "activation": "Visit /.well-known/nameless",
-    "effect": "Returns JSON containing name: null, pronouns: any/all, and owner: NamelessNanashi"
-  },
-  {
-    "name": "No algorithm",
-    "activation": "Visit /algorithm",
-    "effect": "Returns HTTP 404 with \"No algorithm lives here. You choose what to read.\""
-  },
-  {
-    "name": "Intentional 404",
-    "activation": "Visit /404",
-    "effect": "Returns a real HTTP 404 saying \"Congratulations. You found it.\""
-  },
-  {
-    "name": "Owner 404",
-    "activation": "Visit /404?owner",
-    "effect": "Asks that the found page be returned to NamelessNanashi"
-  },
-  {
-    "name": "Persistent 404 recovery",
-    "activation": "Return home from /404 three times in the same browser within one hour",
-    "effect": "Counts returns in localStorage and says \"The missing page was safely returned. Repeatedly.\" only after the third return"
-  },
-  {
-    "name": "Teapot",
-    "activation": "Visit /teapot",
-    "effect": "Returns HTTP 418 with \"I'm a teapot. It/its, thanks.\""
-  },
-  {
-    "name": "Wrong appliance",
-    "activation": "Visit /teapot?coffee",
-    "effect": "Returns HTTP 406 with \"Wrong appliance.\""
-  },
-  {
-    "name": "Coffee endpoint",
-    "activation": "Visit /coffee",
-    "effect": "Returns HTTP 418 with \"Wrong appliance. Other direction.\" and a Link header pointing at /teapot"
-  },
-  {
-    "name": "Patient teapot",
-    "activation": "Revisit /teapot in the same browser between 4 minutes 18 seconds and one hour later",
-    "effect": "Returns \"Properly steeped\" with X-Tea-Steeped: precisely"
-  },
-  {
-    "name": "Teapot options",
-    "activation": "Send OPTIONS /teapot",
-    "effect": "Returns Allow: GET, HEAD, OPTIONS and X-Brew: not-standardized"
-  },
-  {
-    "name": "Headless tea",
-    "activation": "Send HEAD /teapot",
-    "effect": "Returns HTTP 418 with an empty body and X-Tea: omitted"
-  },
-  {
-    "name": "Nothing endpoint",
-    "activation": "Visit /nothing",
-    "effect": "Returns HTTP 204 No Content with X-Nothing: successfully-returned"
-  },
-  {
-    "name": "Nothing encore",
-    "activation": "Visit /nothing?again",
-    "effect": "Returns nothing again with X-Nothing-Again: yes"
-  },
-  {
-    "name": "Something in nothing",
-    "activation": "Visit /nothing?something=true",
-    "effect": "Returns HTTP 409 with \"That defeats the purpose.\""
-  },
-  {
-    "name": "Headless nothing",
-    "activation": "Send HEAD /nothing",
-    "effect": "Returns an empty response with X-Head: nothing-to-see"
-  },
-  {
-    "name": "Fast nothing",
-    "activation": "Send HEAD /nothing",
-    "effect": "Adds X-Nothing-Speed: optimal"
-  },
-  {
-    "name": "Powered by",
-    "activation": "Inspect any response's headers",
-    "effect": "Adds X-Powered-By: caffeine-and-spite"
-  },
-  {
-    "name": "Nanashi header",
-    "activation": "Inspect any response's headers",
-    "effect": "Adds X-Nanashi: was-here"
-  },
-  {
-    "name": "Semantic human credit",
-    "activation": "Inspect the response headers",
-    "effect": "Adds Link: </humans.txt>; rel=\"author\""
-  },
-  {
-    "name": "Pronoun response header",
-    "activation": "Inspect a profile page's HTTP headers",
-    "effect": "Adds X-Pronouns with the profile's first pronoun pair"
-  },
-  {
-    "name": "Teapot adjacent",
-    "activation": "Inspect the headers of a profile that lists it/its",
-    "effect": "Adds X-Teapot-Adjacent: yes"
-  },
-  {
-    "name": "Owner status header",
-    "activation": "Inspect the Owner profile response",
-    "effect": "Adds X-Owner-Status: probably-debugging"
-  },
-  {
-    "name": "Nothing attribution",
-    "activation": "Visit /nothing and inspect its headers",
-    "effect": "Adds X-Nothing-By: NamelessNanashi"
-  },
-  {
-    "name": "Teapot proprietor",
-    "activation": "Inspect /teapot headers",
-    "effect": "Adds X-Tea-Made-By: NamelessNanashi"
-  },
-  {
-    "name": "Curl acknowledgement",
-    "activation": "Request any page using curl",
-    "effect": "Adds X-Curl: excellent-choice without logging the request"
-  },
-  {
-    "name": "Text browser respect",
-    "activation": "Request any page using Lynx, w3m, Links, or ELinks",
-    "effect": "Adds X-Text-Browser: respect"
-  },
-  {
-    "name": "Do Not Track",
-    "activation": "Send DNT: 1",
-    "effect": "Adds X-Tracking: was-never-here"
-  },
-  {
-    "name": "Global privacy",
-    "activation": "Send Sec-GPC: 1",
-    "effect": "Adds X-Privacy-Preference: acknowledged"
-  },
+  // Source and console.
   {
     "name": "View-source note",
     "activation": "View any HTML page's source",
@@ -747,20 +752,36 @@ export const EASTER_EGGS = Object.freeze([
     "activation": "Run NamelessNanashi.fix() in the console",
     "effect": "Returns \"Have you tried turning it off and on again?\""
   },
+  // Text files and well-known URLs.
   {
-    "name": "Everything endpoint",
-    "activation": "Visit /everything",
-    "effect": "Returns HTTP 413 with \"Everything did not fit.\""
+    "name": "Robots comment",
+    "activation": "Visit /robots.txt",
+    "effect": "Disallows every crawler and says \"Please do not crawl. You would not remember this place anyway.\""
   },
   {
-    "name": "Multiple choices",
-    "activation": "Visit /something or /anything",
-    "effect": "Returns HTTP 300 with \"Several things are available. Pick one.\" and Link headers to the reserved profiles"
+    "name": "Robots annotation",
+    "activation": "Inspect /robots.txt",
+    "effect": "Reveals that Nanashi was there and the crawler saw nothing"
   },
   {
-    "name": "It endpoint",
-    "activation": "Visit /it",
-    "effect": "Returns HTTP 418 with \"It/its. Same as the teapot.\" and X-Teapot-Solidarity: yes"
+    "name": "Humans file",
+    "activation": "Visit /humans.txt",
+    "effect": "Credits the humans behind NamelessPronouns"
+  },
+  {
+    "name": "Ads file",
+    "activation": "Visit /ads.txt",
+    "effect": "Returns \"No advertisements are available. Yet is not implied.\""
+  },
+  {
+    "name": "Pronouns file",
+    "activation": "Visit /pronouns.txt",
+    "effect": "Returns a plain-text identity card ending with \"This file uses it/its.\""
+  },
+  {
+    "name": "Security contact",
+    "activation": "Visit /.well-known/security.txt",
+    "effect": "Returns a real RFC 9116 contact file ending with \"Nanashi reads these. Eventually.\""
   },
   {
     "name": "Change your password",
@@ -768,9 +789,173 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Returns HTTP 302 to the account security page, as RFC 8615 asks"
   },
   {
-    "name": "No tracing",
-    "activation": "Send a TRACE request to any path",
-    "effect": "Returns HTTP 405 with \"We do not trace. Ever.\""
+    "name": "Well-known identity",
+    "activation": "Visit /.well-known/nameless",
+    "effect": "Returns JSON containing name: null, pronouns: any/all, and owner: NamelessNanashi"
+  },
+  // Status and missing pages.
+  {
+    "name": "Status endpoint",
+    "activation": "Visit /status",
+    "effect": "Returns \"Somehow still running.\""
+  },
+  {
+    "name": "Intentional 404",
+    "activation": "Visit /404",
+    "effect": "Returns a real HTTP 404 saying \"Congratulations. You found it.\""
+  },
+  {
+    "name": "Owner 404",
+    "activation": "Visit /404?owner",
+    "effect": "Asks that the found page be returned to NamelessNanashi"
+  },
+  {
+    "name": "Persistent 404 recovery",
+    "activation": "Return home from /404 three times in the same browser within one hour",
+    "effect": "Counts returns in localStorage and says \"The missing page was safely returned. Repeatedly.\" only after the third return"
+  },
+  {
+    "name": "No algorithm",
+    "activation": "Visit /algorithm",
+    "effect": "Returns HTTP 404 with \"No algorithm lives here. You choose what to read.\""
+  },
+  // Teapot and coffee.
+  {
+    "name": "Teapot",
+    "activation": "Visit /teapot",
+    "effect": "Returns HTTP 418 with \"I'm a teapot. It/its, thanks.\""
+  },
+  {
+    "name": "Coffee endpoint",
+    "activation": "Visit /coffee",
+    "effect": "Returns HTTP 418 with \"Wrong appliance. Other direction.\" and a Link header pointing at /teapot"
+  },
+  {
+    "name": "It endpoint",
+    "activation": "Visit /it",
+    "effect": "Returns HTTP 418 with \"It/its. Same as the teapot.\" and X-Teapot-Solidarity: yes"
+  },
+  {
+    "name": "Wrong appliance",
+    "activation": "Visit /teapot?coffee",
+    "effect": "Returns HTTP 406 with \"Wrong appliance.\""
+  },
+  {
+    "name": "Teapot proprietor",
+    "activation": "Inspect /teapot headers",
+    "effect": "Adds X-Tea-Made-By: NamelessNanashi"
+  },
+  {
+    "name": "Headless tea",
+    "activation": "Send HEAD /teapot",
+    "effect": "Returns HTTP 418 with an empty body and X-Tea: omitted"
+  },
+  {
+    "name": "Teapot options",
+    "activation": "Send OPTIONS /teapot",
+    "effect": "Returns Allow: GET, HEAD, OPTIONS and X-Brew: not-standardized"
+  },
+  {
+    "name": "Patient teapot",
+    "activation": "Revisit /teapot in the same browser between 4 minutes 18 seconds and one hour later",
+    "effect": "Returns \"Properly steeped\" with X-Tea-Steeped: precisely"
+  },
+  {
+    "name": "Error dimensions",
+    "activation": "Resize the viewport to exactly 404 by 418 pixels",
+    "effect": "Says \"Not found, but properly steeped.\""
+  },
+  // Nothing, something, and everything.
+  {
+    "name": "Nothing endpoint",
+    "activation": "Visit /nothing",
+    "effect": "Returns HTTP 204 No Content with X-Nothing: successfully-returned"
+  },
+  {
+    "name": "Nothing encore",
+    "activation": "Visit /nothing?again",
+    "effect": "Returns nothing again with X-Nothing-Again: yes"
+  },
+  {
+    "name": "Something in nothing",
+    "activation": "Visit /nothing?something=true",
+    "effect": "Returns HTTP 409 with \"That defeats the purpose.\""
+  },
+  {
+    "name": "Multiple choices",
+    "activation": "Visit /something or /anything",
+    "effect": "Returns HTTP 300 with \"Several things are available. Pick one.\" and Link headers to the reserved profiles"
+  },
+  {
+    "name": "Everything endpoint",
+    "activation": "Visit /everything",
+    "effect": "Returns HTTP 413 with \"Everything did not fit.\""
+  },
+  {
+    "name": "Nothing attribution",
+    "activation": "Visit /nothing and inspect its headers",
+    "effect": "Adds X-Nothing-By: NamelessNanashi"
+  },
+  {
+    "name": "Headless nothing",
+    "activation": "Send HEAD /nothing",
+    "effect": "Returns an empty response with X-Head: nothing-to-see"
+  },
+  {
+    "name": "Fast nothing",
+    "activation": "Send HEAD /nothing",
+    "effect": "Adds X-Nothing-Speed: optimal"
+  },
+  // Response headers and special requests.
+  {
+    "name": "Powered by",
+    "activation": "Inspect any response's headers",
+    "effect": "Adds X-Powered-By: caffeine-and-spite"
+  },
+  {
+    "name": "Nanashi header",
+    "activation": "Inspect any response's headers",
+    "effect": "Adds X-Nanashi: was-here"
+  },
+  {
+    "name": "Semantic human credit",
+    "activation": "Inspect the response headers",
+    "effect": "Adds Link: </humans.txt>; rel=\"author\""
+  },
+  {
+    "name": "Pronoun response header",
+    "activation": "Inspect a profile page's HTTP headers",
+    "effect": "Adds X-Pronouns with the profile's first pronoun pair"
+  },
+  {
+    "name": "Owner status header",
+    "activation": "Inspect the Owner profile response",
+    "effect": "Adds X-Owner-Status: probably-debugging"
+  },
+  {
+    "name": "Teapot adjacent",
+    "activation": "Inspect the headers of a profile that lists it/its",
+    "effect": "Adds X-Teapot-Adjacent: yes"
+  },
+  {
+    "name": "Curl acknowledgement",
+    "activation": "Request any page using curl",
+    "effect": "Adds X-Curl: excellent-choice without logging the request"
+  },
+  {
+    "name": "Text browser respect",
+    "activation": "Request any page using Lynx, w3m, Links, or ELinks",
+    "effect": "Adds X-Text-Browser: respect"
+  },
+  {
+    "name": "Do Not Track",
+    "activation": "Send DNT: 1",
+    "effect": "Adds X-Tracking: was-never-here"
+  },
+  {
+    "name": "Global privacy",
+    "activation": "Send Sec-GPC: 1",
+    "effect": "Adds X-Privacy-Preference: acknowledged"
   },
   {
     "name": "Plain-text home",
@@ -778,219 +963,77 @@ export const EASTER_EGGS = Object.freeze([
     "effect": "Serves the home page as plain text"
   },
   {
-    "name": "Patient outage",
-    "activation": "Reach /healthz or /readyz while the database is unavailable",
-    "effect": "Adds note: \"Back soon. Nanashi is holding a wire.\" to the 503 JSON"
+    "name": "No tracing",
+    "activation": "Send a TRACE request to any path",
+    "effect": "Returns HTTP 405 with \"We do not trace. Ever.\""
+  },
+  // Staff pages and queues.
+  {
+    "name": "Staff egg catalog",
+    "activation": "Visit /admin/easter-eggs as any staff member",
+    "effect": "Lists every documented Easter egg and how to activate it",
+    "staff": true
   },
   {
-    "name": "Blameless error",
-    "activation": "Reach a page that fails unexpectedly",
-    "effect": "The 500 page says \"Something broke. It was not you.\""
+    "name": "Owner admin greeting",
+    "activation": "Open Admin while signed in as Owner",
+    "effect": "Says everything is somehow still running",
+    "staff": true
   },
   {
-    "name": "Oddball color",
-    "activation": "Enter #0ddba1 in a custom color field",
-    "effect": "Says \"Oddball. Fits right in.\""
+    "name": "Quiet queue",
+    "activation": "Open the content flag reviews with none pending",
+    "effect": "Adds \"Nothing to moderate. Suspicious.\"",
+    "staff": true
   },
   {
-    "name": "Accede color",
-    "activation": "Enter #accede in a custom color field",
-    "effect": "Says \"We accede.\""
+    "name": "Cleared backlog",
+    "activation": "Open the content flag reviews with none pending after five or more decisions in a day",
+    "effect": "Adds \"Queue empty. Go outside.\"",
+    "staff": true
   },
   {
-    "name": "Efface color",
-    "activation": "Enter #efface in a custom color field",
-    "effect": "Says \"Effaced. Still visible.\""
+    "name": "Quiet audit log",
+    "activation": "Open the Administrator audit log with no matching events",
+    "effect": "Adds \"Nobody did anything. Allegedly.\"",
+    "staff": true
+  },
+  // Staff account lookup.
+  {
+    "name": "Admin mirror",
+    "activation": "Enter me in the admin account lookup",
+    "effect": "Looks up your own account and says \"That is you. Hello.\"",
+    "staff": true
   },
   {
-    "name": "Decaffeinated color",
-    "activation": "Enter #decaf0 in a custom color field",
-    "effect": "Says \"Decaffeinated. Somehow still awake.\""
+    "name": "Admin Nanashi",
+    "activation": "Enter nanashi in the admin account lookup",
+    "effect": "Responds \"That account is looking back.\"",
+    "staff": true
   },
   {
-    "name": "Dead beef color",
-    "activation": "Enter #deadbeef in a custom color field",
-    "effect": "Says \"A classic. Now with transparency.\""
+    "name": "Admin root",
+    "activation": "Enter root in the admin account lookup",
+    "effect": "Responds \"Wrong tree.\"",
+    "staff": true
   },
   {
-    "name": "Cafe babe color",
-    "activation": "Enter #cafebabe in a custom color field",
-    "effect": "Says \"Java called. It wants its constant back.\""
+    "name": "Admin placeholders",
+    "activation": "Enter null or undefined in the admin account lookup",
+    "effect": "Responds \"Both already have profiles. See /u/null and /u/undefined.\"",
+    "staff": true
   },
   {
-    "name": "Feed face color",
-    "activation": "Enter #feedface in a custom color field",
-    "effect": "Says \"Fed.\""
+    "name": "Admin sudo",
+    "activation": "Enter sudo in the admin account lookup",
+    "effect": "Responds \"Nice try. This is not a shell.\"",
+    "staff": true
   },
   {
-    "name": "Bad food color",
-    "activation": "Enter #8badf00d in a custom color field",
-    "effect": "Says \"Crash report filed.\""
-  },
-  {
-    "name": "Transparent colors",
-    "activation": "Enter an eight-digit color code such as #1a2b3ccc in a custom color field",
-    "effect": "Accepts it as a valid HTML color code, transparency included"
-  },
-  {
-    "name": "Impact",
-    "activation": "Enter Impact as the custom font",
-    "effect": "Says \"Everything becomes a meme eventually.\""
-  },
-  {
-    "name": "Arial",
-    "activation": "Enter Arial as the custom font",
-    "effect": "Says \"Helvetica is right there.\""
-  },
-  {
-    "name": "Courier New",
-    "activation": "Enter Courier New as the custom font",
-    "effect": "Says \"Monospaced and unbothered.\""
-  },
-  {
-    "name": "Recursive font",
-    "activation": "Enter font as the custom font",
-    "effect": "Says \"Recursive.\""
-  },
-  {
-    "name": "Cursive",
-    "activation": "Enter cursive as the custom font",
-    "effect": "Says \"A web-safe risk.\""
-  },
-  {
-    "name": "Missing text size",
-    "activation": "Enter 404 as the arbitrary text size percentage",
-    "effect": "Says \"Not found, but very large.\" before repeating the allowed range"
-  },
-  {
-    "name": "Answer text size",
-    "activation": "Enter 42 as the arbitrary text size percentage",
-    "effect": "Says \"The answer, rendered small.\" before repeating the allowed range"
-  },
-  {
-    "name": "Nineties text size",
-    "activation": "Enter 1998 as the arbitrary text size percentage",
-    "effect": "Says \"The nineties were not that big.\" before repeating the allowed range"
-  },
-  {
-    "name": "Leet o'clock",
-    "activation": "Open any page at 13:37 by the device clock",
-    "effect": "Shows a \"Leet o'clock.\" toast, once per browser session"
-  },
-  {
-    "name": "Time not found",
-    "activation": "Open any page at 04:04 by the device clock",
-    "effect": "Shows a \"Time not found.\" toast, once per browser session"
-  },
-  {
-    "name": "Eleven eleven",
-    "activation": "Open any page at 11:11 by the device clock",
-    "effect": "Shows a \"Make a wish. Or do not.\" toast, once per browser session"
-  },
-  {
-    "name": "Singular they",
-    "activation": "Type they outside a text field",
-    "effect": "Says \"Singular. In English since the 1300s.\""
-  },
-  {
-    "name": "List sequence",
-    "activation": "Type ls outside a text field",
-    "effect": "Says \"You are looking at it.\""
-  },
-  {
-    "name": "Print working directory",
-    "activation": "Type pwd outside a text field",
-    "effect": "Shows the path of the page you are on"
-  },
-  {
-    "name": "Vim escape",
-    "activation": "Type vim outside a text field",
-    "effect": "Says \"Nothing is trapping you. Escape, then :q, also works.\""
-  },
-  {
-    "name": "Git blame",
-    "activation": "Type git blame outside a text field",
-    "effect": "Says \"NamelessNanashi. Every line.\""
-  },
-  {
-    "name": "Sudo sequence",
-    "activation": "Type sudo outside a text field",
-    "effect": "Says \"Still not a shell.\""
-  },
-  {
-    "name": "Tea sequence",
-    "activation": "Type tea outside a text field",
-    "effect": "Points at /teapot and the four minutes eighteen seconds it needs"
-  },
-  {
-    "name": "Coffee sequence",
-    "activation": "Type coffee outside a text field",
-    "effect": "Says \"Wrong appliance.\""
-  },
-  {
-    "name": "Undo sequence",
-    "activation": "Type undo outside a text field",
-    "effect": "Says \"Ctrl+Z was right there.\""
-  },
-  {
-    "name": "Konami spelled out",
-    "activation": "Type konami outside a text field",
-    "effect": "Says \"Close. Use the arrows.\""
-  },
-  {
-    "name": "Konami misordered",
-    "activation": "Enter the Konami code with A and B the wrong way round",
-    "effect": "Says \"Almost. Order matters.\""
-  },
-  {
-    "name": "Maximum flexibility",
-    "activation": "View a profile listing any/all as a pronoun set",
-    "effect": "Adds \"Maximum flexibility detected.\" beneath the pronouns"
-  },
-  {
-    "name": "Full to the brim",
-    "activation": "Fill a profile bio or notes field to its exact character limit",
-    "effect": "Says \"Perfectly full. Not one character wasted.\""
-  },
-  {
-    "name": "Script tag",
-    "activation": "Type a script tag into a profile bio or notes field",
-    "effect": "Says \"Sanitized. This is not 2005.\""
-  },
-  {
-    "name": "Retired tags",
-    "activation": "Type a blink or marquee tag into a profile bio or notes field",
-    "effect": "Says \"Removed, with respect for history.\""
-  },
-  {
-    "name": "Twice the pronouns",
-    "activation": "Enter the same pronoun set in two rows of the profile editor",
-    "effect": "Says \"Twice is a preference, not a typo.\""
-  },
-  {
-    "name": "Unchanged save",
-    "activation": "Save a profile three times without changing anything",
-    "effect": "Says \"Nothing changed. Saved anyway.\""
-  },
-  {
-    "name": "Test signup",
-    "activation": "Request an account using test@test.com",
-    "effect": "Answers \"This is production. Probably.\""
-  },
-  {
-    "name": "Plus addressing",
-    "activation": "Type a plus-addressed email into any email field",
-    "effect": "Shows a \"Plus addressing. A person of taste.\" toast, once per browser session"
-  },
-  {
-    "name": "Hasty consent",
-    "activation": "Tick both consent boxes within two seconds of the page loading",
-    "effect": "Adds \"You did not read it. It is short, so try.\" under the form"
-  },
-  {
-    "name": "Actually read it",
-    "activation": "Scroll the Terms of Service or Privacy Policy to the very bottom",
-    "effect": "Says \"You read it. Genuinely rare.\""
+    "name": "Admin SQL",
+    "activation": "Enter select * in the admin account lookup",
+    "effect": "Responds \"Please step away from the database.\"",
+    "staff": true
   },
   {
     "name": "Admin injection",
@@ -1002,24 +1045,6 @@ export const EASTER_EGGS = Object.freeze([
     "name": "Admin script",
     "activation": "Enter a script tag in the admin account lookup",
     "effect": "Responds \"Escaped, as intended.\"",
-    "staff": true
-  },
-  {
-    "name": "Admin mirror",
-    "activation": "Enter me in the admin account lookup",
-    "effect": "Looks up your own account and says \"That is you. Hello.\"",
-    "staff": true
-  },
-  {
-    "name": "Quiet audit log",
-    "activation": "Open the Administrator audit log with no matching events",
-    "effect": "Adds \"Nobody did anything. Allegedly.\"",
-    "staff": true
-  },
-  {
-    "name": "Cleared backlog",
-    "activation": "Open the content flag reviews with none pending after five or more decisions in a day",
-    "effect": "Adds \"Queue empty. Go outside.\"",
     "staff": true
   }
 ].map(Object.freeze));

@@ -3,7 +3,7 @@
 <head><%- await include('../partials/head', { title: document.title }) %></head>
 <body>
   <%- await include('../partials/site-header') %>
-  <main class="container legal-document">
+  <main class="container legal-document" data-policy-document>
     <h1><%= document.title %></h1>
     <% for (const block of document.blocks) { %>
       <% if (block.type === 'heading') { %>

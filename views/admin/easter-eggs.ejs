@@ -7,7 +7,7 @@
     <p class="eyebrow">Staff tools</p>
     <h1>Easter eggs</h1>
     <% const findable = eggs.filter((egg) => !egg.staff); const staffOnly = eggs.filter((egg) => egg.staff); %>
-    <p>All <%= findable.length %> documented Easter eggs anyone can find, ordered from most mundane to least mundane. <%= staffOnly.length %> more only exist inside staff pages and are marked below; they do not count.</p>
+    <p>All <%= findable.length %> documented Easter eggs anyone can find, grouped by similarity and generally ordered from easiest to hardest to discover. <%= staffOnly.length %> more only exist inside staff pages and are grouped at the bottom in the same way; they do not count.</p>
     <p><a href="/admin">Back to Administration</a></p>
     <div class="table-scroll" tabindex="0" role="region" aria-label="Easter egg catalog">
       <table>
