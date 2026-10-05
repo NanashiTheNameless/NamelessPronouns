@@ -1382,6 +1382,12 @@ altcha-widget.email-obfuscation .email-reveal:hover,
   font-size: 0.9rem;
   font-weight: 700;
 }
+.accessibility-colors [data-color-status] {
+  margin: 0.25rem 0 0;
+}
+.accessibility-colors [data-color-status]:empty {
+  margin: 0;
+}
 .accessibility-color-row {
   display: flex;
   gap: 0.4rem;

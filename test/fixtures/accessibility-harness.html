@@ -33,6 +33,8 @@
     const open = document.querySelector('[data-accessibility-open]');
     const status = () => dialog.querySelector('[data-accessibility-status]').textContent;
     const fontStatus = () => dialog.querySelector('[data-accessibility-font-status]').textContent;
+    const colorStatus = (key) => dialog.querySelector(`[data-color-status="${key}"]`).textContent;
+    const scaleStatus = () => dialog.querySelector('[data-accessibility-scale-status]').textContent;
     const inline = (property) => root.style.getPropertyValue(property);
     const pick = (name, value) => dialog.querySelector(`input[name="${name}"][value="${value}"]`).click();
     const typeInto = (selector, value) => {
@@ -91,22 +93,22 @@
     };
     typeInto('[name="accessibility_color_bg"]', '#102030');
     typeInto('[name="accessibility_color_bg"]', '#c0ffee');
-    const colorQuip = status();
+    const colorQuip = colorStatus('bg');
     typeInto('[name="accessibility_color_bg"]', '#deface');
-    const defaceQuip = status();
+    const defaceQuip = colorStatus('bg');
     typeInto('[name="accessibility_color_bg"]', '#123456');
-    const orderedColorQuip = status();
+    const orderedColorQuip = colorStatus('bg');
     typeInto('[name="accessibility_color_bg"]', '#777777');
-    const luckyColorQuip = status();
+    const luckyColorQuip = colorStatus('bg');
     typeInto('[name="accessibility_color_bg"]', '#abcdef');
-    const alphabeticalColorQuip = status();
+    const alphabeticalColorQuip = colorStatus('bg');
     typeInto('[name="accessibility_color_bg"]', '#102030');
     typeInto('[name="accessibility_color_text"]', '#f0f4ff');
     typeInto('[name="accessibility_color_bg"]', '#000000');
     typeInto('[name="accessibility_color_text"]', '#ffffff');
-    const monochromeQuip = status();
+    const monochromeQuip = colorStatus('text');
     typeInto('[name="accessibility_color_text"]', '#000000');
-    const stealthQuip = status();
+    const stealthQuip = colorStatus('text');
     typeInto('[name="accessibility_color_bg"]', '#102030');
     typeInto('[name="accessibility_color_text"]', '#f0f4ff');
     typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
@@ -143,9 +145,9 @@
     };
 
     typeInto('[name="accessibility_color_bg"]', 'not-a-color');
-    const rejected = { message: status(), inlineBg: inline('--bg') };
+    const rejected = { message: colorStatus('bg'), inlineBg: inline('--bg') };
     typeInto('[name="accessibility_color_bg"]', '#decade');
-    const decade = { message: status(), inlineBg: inline('--bg') };
+    const decade = { message: colorStatus('bg'), inlineBg: inline('--bg') };
     typeInto('[name="accessibility_color_bg"]', '#102030');
 
     typeInto('[name="accessibility_font_family"]', 'url(https://evil.example/f.woff)');
@@ -163,7 +165,7 @@
     };
     pick('accessibility_size', 'custom');
     typeInto('[name="accessibility_font_scale"]', '250');
-    const rejectedScale = { message: status(), inlineSize: root.style.fontSize };
+    const rejectedScale = { message: scaleStatus(), inlineSize: root.style.fontSize };
     typeInto('[name="accessibility_font_scale"]', '175');
     const sizeCustom = {
       shown: scaleHidden() === false,

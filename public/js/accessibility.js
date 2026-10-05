@@ -259,6 +259,7 @@ function wirePanel() {
   const transfer = dialog.querySelector('[data-accessibility-transfer]');
   const status = dialog.querySelector('[data-accessibility-status]');
   const fontStatus = dialog.querySelector('[data-accessibility-font-status]');
+  const scaleStatus = dialog.querySelector('[data-accessibility-scale-status]');
   const warning = dialog.querySelector('[data-accessibility-contrast]');
   const konamiTheme = dialog.querySelector('[data-konami-theme]');
   const condimentTheme = dialog.querySelector('[data-condiment-theme]');
@@ -377,11 +378,13 @@ function wirePanel() {
     }
     const colorKey = /^accessibility_color_(\w+)$/.exec(field.name || '')?.[1];
     if (colorKey && COLOR_KEYS.includes(colorKey)) {
+      dialog.querySelectorAll('[data-color-status]').forEach((node) => say(node, ''));
+      const colorStatus = dialog.querySelector(`[data-color-status="${colorKey}"]`);
       const colors = storedColors();
       const value = field.value.trim();
       if (value === '') delete colors[colorKey];
       else if (HEX.test(value)) colors[colorKey] = value.toLowerCase();
-      else return say(status, `${field.dataset.colorLabel || 'That color'} needs an HTML color code such as #1a2b3c, or #1a2b3ccc with transparency.`);
+      else return say(colorStatus, `${field.dataset.colorLabel || 'That color'} needs an HTML color code such as #1a2b3c, or #1a2b3ccc with transparency.`);
       write(COLORS_KEY, Object.keys(colors).length ? JSON.stringify(colors) : null);
       const quips = {
         '#c0ffee': 'Coffee detected. No beans were harmed.',
@@ -410,7 +413,7 @@ function wirePanel() {
           && [colors.bg, colors.text].every((color) => ['#000000', '#ffffff'].includes(color))
           ? 'You have chosen sides.'
           : '';
-      say(status, paletteQuip || quips[value.toLowerCase()] || '');
+      say(colorStatus, paletteQuip || quips[value.toLowerCase()] || '');
       applyAll();
       syncPicker(colorKey, colors[colorKey]);
       if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
@@ -435,10 +438,10 @@ function wirePanel() {
           1998: 'The nineties were not that big.',
         }[field.value.trim()];
         const limits = `A text size must be a whole percentage between ${SCALE_MIN} and ${SCALE_MAX}.`;
-        return say(status, refused ? `${refused} ${limits}` : limits);
+        return say(scaleStatus, refused ? `${refused} ${limits}` : limits);
       }
       write(SCALE_KEY, scale ? String(scale) : null);
-      say(status, scale === 100 ? 'That is the size we started with.' : '');
+      say(scaleStatus, scale === 100 ? 'That is the size we started with.' : '');
       applyAll();
       if (transfer) transfer.value = JSON.stringify(exportSettings(), null, 2);
     }

@@ -31,36 +31,66 @@
       <legend>Your colors</legend>
       <p class="fineprint">Each one takes an HTML color code such as <code>#1a2b3c</code>, or <code>#1a2b3ccc</code> to add transparency. Leave a box empty to keep the site default for it.</p>
       <div class="accessibility-colors">
-        <label for="accessibility-color-bg">Page background
-          <span class="accessibility-color-row"><input type="color" data-color-picker="bg" aria-label="Pick the page background"><input id="accessibility-color-bg" name="accessibility_color_bg" type="text" inputmode="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The page background" placeholder="The color behind the whole page"></span>
-        </label>
-        <label for="accessibility-color-surface">Panels and entry fields
-          <span class="accessibility-color-row"><input type="color" data-color-picker="surface" aria-label="Pick the panel and field color"><input id="accessibility-color-surface" name="accessibility_color_surface" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The panel color" placeholder="The color of cards, panels, and text boxes"></span>
-        </label>
-        <label for="accessibility-color-text">Body text
-          <span class="accessibility-color-row"><input type="color" data-color-picker="text" aria-label="Pick the body text color"><input id="accessibility-color-text" name="accessibility_color_text" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The body text color" placeholder="The color of ordinary reading text"></span>
-        </label>
-        <label for="accessibility-color-muted">Secondary text
-          <span class="accessibility-color-row"><input type="color" data-color-picker="muted" aria-label="Pick the secondary text color"><input id="accessibility-color-muted" name="accessibility_color_muted" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The secondary text color" placeholder="The color of hints and small print"></span>
-        </label>
-        <label for="accessibility-color-border">Borders
-          <span class="accessibility-color-row"><input type="color" data-color-picker="border" aria-label="Pick the border color"><input id="accessibility-color-border" name="accessibility_color_border" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The border color" placeholder="The outline around fields and panels"></span>
-        </label>
-        <label for="accessibility-color-accent">Buttons and highlights
-          <span class="accessibility-color-row"><input type="color" data-color-picker="accent" aria-label="Pick the button color"><input id="accessibility-color-accent" name="accessibility_color_accent" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The button color" placeholder="The fill behind primary buttons"></span>
-        </label>
-        <label for="accessibility-color-accentText">Text on buttons
-          <span class="accessibility-color-row"><input type="color" data-color-picker="accentText" aria-label="Pick the button label color"><input id="accessibility-color-accentText" name="accessibility_color_accentText" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The button label color" placeholder="The lettering shown on primary buttons"></span>
-        </label>
-        <label for="accessibility-color-link">Links in profile text
-          <span class="accessibility-color-row"><input type="color" data-color-picker="link" aria-label="Pick the profile link color"><input id="accessibility-color-link" name="accessibility_color_link" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The link color" placeholder="The color of links inside a profile bio"></span>
-        </label>
-        <label for="accessibility-color-focus">Keyboard focus ring
-          <span class="accessibility-color-row"><input type="color" data-color-picker="focus" aria-label="Pick the focus ring color"><input id="accessibility-color-focus" name="accessibility_color_focus" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The focus ring color" placeholder="The outline that follows keyboard focus"></span>
-        </label>
-        <label for="accessibility-color-placeholder">Placeholder text
-          <span class="accessibility-color-row"><input type="color" data-color-picker="placeholder" aria-label="Pick the placeholder color"><input id="accessibility-color-placeholder" name="accessibility_color_placeholder" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The placeholder color" placeholder="The color of the hint inside an empty field"></span>
-        </label>
+        <div>
+          <label for="accessibility-color-bg">Page background
+            <span class="accessibility-color-row"><input type="color" data-color-picker="bg" aria-label="Pick the page background"><input id="accessibility-color-bg" name="accessibility_color_bg" aria-describedby="accessibility-color-bg-status" type="text" inputmode="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The page background" placeholder="The color behind the whole page"></span>
+          </label>
+          <p id="accessibility-color-bg-status" class="fineprint" role="status" aria-live="polite" data-color-status="bg"></p>
+        </div>
+        <div>
+          <label for="accessibility-color-surface">Panels and entry fields
+            <span class="accessibility-color-row"><input type="color" data-color-picker="surface" aria-label="Pick the panel and field color"><input id="accessibility-color-surface" name="accessibility_color_surface" aria-describedby="accessibility-color-surface-status" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The panel color" placeholder="The color of cards, panels, and text boxes"></span>
+          </label>
+          <p id="accessibility-color-surface-status" class="fineprint" role="status" aria-live="polite" data-color-status="surface"></p>
+        </div>
+        <div>
+          <label for="accessibility-color-text">Body text
+            <span class="accessibility-color-row"><input type="color" data-color-picker="text" aria-label="Pick the body text color"><input id="accessibility-color-text" name="accessibility_color_text" aria-describedby="accessibility-color-text-status" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The body text color" placeholder="The color of ordinary reading text"></span>
+          </label>
+          <p id="accessibility-color-text-status" class="fineprint" role="status" aria-live="polite" data-color-status="text"></p>
+        </div>
+        <div>
+          <label for="accessibility-color-muted">Secondary text
+            <span class="accessibility-color-row"><input type="color" data-color-picker="muted" aria-label="Pick the secondary text color"><input id="accessibility-color-muted" name="accessibility_color_muted" aria-describedby="accessibility-color-muted-status" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The secondary text color" placeholder="The color of hints and small print"></span>
+          </label>
+          <p id="accessibility-color-muted-status" class="fineprint" role="status" aria-live="polite" data-color-status="muted"></p>
+        </div>
+        <div>
+          <label for="accessibility-color-border">Borders
+            <span class="accessibility-color-row"><input type="color" data-color-picker="border" aria-label="Pick the border color"><input id="accessibility-color-border" name="accessibility_color_border" aria-describedby="accessibility-color-border-status" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The border color" placeholder="The outline around fields and panels"></span>
+          </label>
+          <p id="accessibility-color-border-status" class="fineprint" role="status" aria-live="polite" data-color-status="border"></p>
+        </div>
+        <div>
+          <label for="accessibility-color-accent">Buttons and highlights
+            <span class="accessibility-color-row"><input type="color" data-color-picker="accent" aria-label="Pick the button color"><input id="accessibility-color-accent" name="accessibility_color_accent" aria-describedby="accessibility-color-accent-status" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The button color" placeholder="The fill behind primary buttons"></span>
+          </label>
+          <p id="accessibility-color-accent-status" class="fineprint" role="status" aria-live="polite" data-color-status="accent"></p>
+        </div>
+        <div>
+          <label for="accessibility-color-accentText">Text on buttons
+            <span class="accessibility-color-row"><input type="color" data-color-picker="accentText" aria-label="Pick the button label color"><input id="accessibility-color-accentText" name="accessibility_color_accentText" aria-describedby="accessibility-color-accentText-status" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The button label color" placeholder="The lettering shown on primary buttons"></span>
+          </label>
+          <p id="accessibility-color-accentText-status" class="fineprint" role="status" aria-live="polite" data-color-status="accentText"></p>
+        </div>
+        <div>
+          <label for="accessibility-color-link">Links in profile text
+            <span class="accessibility-color-row"><input type="color" data-color-picker="link" aria-label="Pick the profile link color"><input id="accessibility-color-link" name="accessibility_color_link" aria-describedby="accessibility-color-link-status" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The link color" placeholder="The color of links inside a profile bio"></span>
+          </label>
+          <p id="accessibility-color-link-status" class="fineprint" role="status" aria-live="polite" data-color-status="link"></p>
+        </div>
+        <div>
+          <label for="accessibility-color-focus">Keyboard focus ring
+            <span class="accessibility-color-row"><input type="color" data-color-picker="focus" aria-label="Pick the focus ring color"><input id="accessibility-color-focus" name="accessibility_color_focus" aria-describedby="accessibility-color-focus-status" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The focus ring color" placeholder="The outline that follows keyboard focus"></span>
+          </label>
+          <p id="accessibility-color-focus-status" class="fineprint" role="status" aria-live="polite" data-color-status="focus"></p>
+        </div>
+        <div>
+          <label for="accessibility-color-placeholder">Placeholder text
+            <span class="accessibility-color-row"><input type="color" data-color-picker="placeholder" aria-label="Pick the placeholder color"><input id="accessibility-color-placeholder" name="accessibility_color_placeholder" aria-describedby="accessibility-color-placeholder-status" type="text" maxlength="9" pattern="#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})" autocomplete="off" spellcheck="false" data-color-label="The placeholder color" placeholder="The color of the hint inside an empty field"></span>
+          </label>
+          <p id="accessibility-color-placeholder-status" class="fineprint" role="status" aria-live="polite" data-color-status="placeholder"></p>
+        </div>
       </div>
       <p class="fineprint" role="status" aria-live="polite" data-accessibility-contrast></p>
     </fieldset>
@@ -89,8 +119,9 @@
     </fieldset>
     <div data-accessibility-scale hidden>
       <label for="accessibility-font-scale">Text size percentage
-        <input id="accessibility-font-scale" name="accessibility_font_scale" type="number" min="75" max="200" step="1" inputmode="numeric" autocomplete="off" placeholder="A whole number between 75 and 200">
+        <input id="accessibility-font-scale" name="accessibility_font_scale" type="number" min="75" max="200" step="1" inputmode="numeric" autocomplete="off" aria-describedby="accessibility-scale-status" placeholder="A whole number between 75 and 200">
       </label>
+      <p id="accessibility-scale-status" class="fineprint" role="status" aria-live="polite" data-accessibility-scale-status></p>
       <p class="fineprint">This scales every size on the site, not only the lettering, so spacing keeps up with the text. Your browser zoom still works on top of it.</p>
     </div>
     <fieldset>
