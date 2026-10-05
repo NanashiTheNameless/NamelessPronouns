@@ -259,6 +259,7 @@ function wirePanel() {
   const transfer = dialog.querySelector('[data-accessibility-transfer]');
   const status = dialog.querySelector('[data-accessibility-status]');
   const fontStatus = dialog.querySelector('[data-accessibility-font-status]');
+  const colorStatus = dialog.querySelector('[data-accessibility-color-status]');
   const scaleStatus = dialog.querySelector('[data-accessibility-scale-status]');
   const warning = dialog.querySelector('[data-accessibility-contrast]');
   const konamiTheme = dialog.querySelector('[data-konami-theme]');
@@ -378,8 +379,6 @@ function wirePanel() {
     }
     const colorKey = /^accessibility_color_(\w+)$/.exec(field.name || '')?.[1];
     if (colorKey && COLOR_KEYS.includes(colorKey)) {
-      dialog.querySelectorAll('[data-color-status]').forEach((node) => say(node, ''));
-      const colorStatus = dialog.querySelector(`[data-color-status="${colorKey}"]`);
       const colors = storedColors();
       const value = field.value.trim();
       if (value === '') delete colors[colorKey];

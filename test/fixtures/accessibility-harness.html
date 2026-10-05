@@ -33,7 +33,7 @@
     const open = document.querySelector('[data-accessibility-open]');
     const status = () => dialog.querySelector('[data-accessibility-status]').textContent;
     const fontStatus = () => dialog.querySelector('[data-accessibility-font-status]').textContent;
-    const colorStatus = (key) => dialog.querySelector(`[data-color-status="${key}"]`).textContent;
+    const colorStatus = () => dialog.querySelector('[data-accessibility-color-status]').textContent;
     const scaleStatus = () => dialog.querySelector('[data-accessibility-scale-status]').textContent;
     const inline = (property) => root.style.getPropertyValue(property);
     const pick = (name, value) => dialog.querySelector(`input[name="${name}"][value="${value}"]`).click();
@@ -93,22 +93,22 @@
     };
     typeInto('[name="accessibility_color_bg"]', '#102030');
     typeInto('[name="accessibility_color_bg"]', '#c0ffee');
-    const colorQuip = colorStatus('bg');
+    const colorQuip = colorStatus();
     typeInto('[name="accessibility_color_bg"]', '#deface');
-    const defaceQuip = colorStatus('bg');
+    const defaceQuip = colorStatus();
     typeInto('[name="accessibility_color_bg"]', '#123456');
-    const orderedColorQuip = colorStatus('bg');
+    const orderedColorQuip = colorStatus();
     typeInto('[name="accessibility_color_bg"]', '#777777');
-    const luckyColorQuip = colorStatus('bg');
+    const luckyColorQuip = colorStatus();
     typeInto('[name="accessibility_color_bg"]', '#abcdef');
-    const alphabeticalColorQuip = colorStatus('bg');
+    const alphabeticalColorQuip = colorStatus();
     typeInto('[name="accessibility_color_bg"]', '#102030');
     typeInto('[name="accessibility_color_text"]', '#f0f4ff');
     typeInto('[name="accessibility_color_bg"]', '#000000');
     typeInto('[name="accessibility_color_text"]', '#ffffff');
-    const monochromeQuip = colorStatus('text');
+    const monochromeQuip = colorStatus();
     typeInto('[name="accessibility_color_text"]', '#000000');
-    const stealthQuip = colorStatus('text');
+    const stealthQuip = colorStatus();
     typeInto('[name="accessibility_color_bg"]', '#102030');
     typeInto('[name="accessibility_color_text"]', '#f0f4ff');
     typeInto('[name="accessibility_font_family"]', 'Georgia, serif');
@@ -145,9 +145,9 @@
     };
 
     typeInto('[name="accessibility_color_bg"]', 'not-a-color');
-    const rejected = { message: colorStatus('bg'), inlineBg: inline('--bg') };
+    const rejected = { message: colorStatus(), inlineBg: inline('--bg') };
     typeInto('[name="accessibility_color_bg"]', '#decade');
-    const decade = { message: colorStatus('bg'), inlineBg: inline('--bg') };
+    const decade = { message: colorStatus(), inlineBg: inline('--bg') };
     typeInto('[name="accessibility_color_bg"]', '#102030');
 
     typeInto('[name="accessibility_font_family"]', 'url(https://evil.example/f.woff)');
