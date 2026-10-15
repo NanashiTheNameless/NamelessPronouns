@@ -19,6 +19,7 @@ test('the init schema stays consolidated and later migrations are additive', asy
     '0009_profile_owner_constraint.sql',
     '0010_forced_password_resets.sql',
     '0011_libravatar_avatar_source.sql',
+    '0012_formally_opinion.sql',
   ]);
   const sql = await readFile(new URL('../db/migrations/0001_init.sql', import.meta.url), 'utf8');
   assert.doesNotMatch(sql, /\bALTER\s+TABLE\b/i);
@@ -186,4 +187,20 @@ test('the Libravatar migration widens the avatar CHECK on both backends', async 
   for (const index of ['idx_users_signup_status', 'idx_users_signup_ip_prefix', 'idx_users_password_reset_required']) {
     assert.match(d1, new RegExp(`CREATE INDEX ${index} ON users`), `${index} is rebuilt`);
   }
+});
+test('the Formally migration widens every opinion CHECK on both backends', async () => {
+  const sql = await readFile(new URL('../db/migrations/0012_formally_opinion.sql', import.meta.url), 'utf8');
+  const postgres = selectStatements(sql, 'postgres').join('\n');
+  const d1 = selectStatements(sql, 'd1').join('\n');
+  const widened = /CHECK \(opinion IN \('yes', 'jokingly', 'formally', 'close', 'okay', 'nope'\)\)/g;
+  assert.equal((postgres.match(widened) || []).length, 4, 'Postgres replaces all four constraints');
+  assert.equal((d1.match(widened) || []).length, 4, 'SQLite rebuilds all four tables');
+  for (const table of ['profile_names', 'pronoun_sets', 'profile_pronoun_preferences', 'profile_words']) {
+    assert.match(postgres, new RegExp(`ALTER TABLE ${table} DROP CONSTRAINT IF EXISTS ${table}_opinion_check`));
+    assert.match(d1, new RegExp(`CREATE TABLE mig12_${table} AS SELECT \\* FROM ${table}`), `${table} is copied out first`);
+    assert.match(d1, new RegExp(`FROM mig12_${table}`), `${table} is restored after`);
+    assert.match(d1, new RegExp(`DROP TABLE mig12_${table}`), `the ${table} scratch copy is removed`);
+  }
+  assert.doesNotMatch(postgres, /mig12_/, 'Postgres alters the constraints in place');
+  assert.match(d1, /CREATE INDEX idx_profile_words_group ON profile_words/);
 });

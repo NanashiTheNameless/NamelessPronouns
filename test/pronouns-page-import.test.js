@@ -98,7 +98,7 @@ test('Pronouns.page profiles map into reviewable local fields', () => {
   assert.equal(result.skippedFlags, 1);
 });
 
-test('Pronouns.page opinions map onto the local Yes/Jokingly/Close/Okay/Nope scale', () => {
+test('Pronouns.page opinions map onto the local Yes/Jokingly/Formally/Close/Okay/Nope scale', () => {
   const result = mapPronounsPageProfile({
     profiles: [{
       locale: 'en',
@@ -107,12 +107,13 @@ test('Pronouns.page opinions map onto the local Yes/Jokingly/Close/Okay/Nope sca
         { value: 'A', opinion: 'yes' }, { value: 'B', opinion: 'jokingly' },
         { value: 'C', opinion: 'close' }, { value: 'D', opinion: 'meh' },
         { value: 'E', opinion: 'no' }, { value: 'F', opinion: 'something-else' }, 'G',
+        { value: 'H', opinion: 'formally' }, { value: 'I', opinion: 'formal' },
       ],
       pronouns: [{ value: 'any', opinion: 'jokingly' }],
     }],
   }, { locale: 'en', current });
   assert.deepEqual(result.values.names.map((row) => row.opinion), [
-    'yes', 'jokingly', 'close', 'okay', 'nope', 'yes', 'yes',
+    'yes', 'jokingly', 'close', 'okay', 'nope', 'yes', 'yes', 'formally', 'formally',
   ]);
   assert.deepEqual(result.values.pronounPreferences, [{ key: 'any_pronouns', opinion: 'jokingly' }]);
 });

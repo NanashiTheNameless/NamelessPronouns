@@ -238,7 +238,7 @@ test('profile editor renders one row per empty category and add-another controls
   assert.match(html, /name="pronoun_opinion"/);
   assert.match(html, /name="pronoun_pref_ask_me"/);
   assert.doesNotMatch(html, /type="checkbox" name="pronoun_pref_/);
-  for (const opinion of ['Yes', 'Jokingly', 'Only if we&#39;re close', 'Okay', 'Nope']) {
+  for (const opinion of ['Yes', 'Jokingly', 'Formally', 'Only if we&#39;re close', 'Okay', 'Nope']) {
     assert.match(html, new RegExp(`>${opinion}</option>`));
   }
   assert.match(html, /<option value="" selected>Not listed<\/option>/);

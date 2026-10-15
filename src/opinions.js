@@ -3,6 +3,7 @@ export const OPINIONS = Object.freeze([
   Object.freeze({ key: 'okay', label: 'Okay' }),
   Object.freeze({ key: 'close', label: "Only if we're close" }),
   Object.freeze({ key: 'jokingly', label: 'Jokingly' }),
+  Object.freeze({ key: 'formally', label: 'Formally' }),
   Object.freeze({ key: 'nope', label: 'Nope' }),
 ]);
 export const DEFAULT_OPINION = 'yes';
@@ -13,6 +14,8 @@ const IMPORT_ALIASES = Object.freeze({
   favourite: 'yes',
   favorite: 'yes',
   jokingly: 'jokingly',
+  formally: 'formally',
+  formal: 'formally',
   close: 'close',
   friends: 'close',
   meh: 'okay',

@@ -572,6 +572,11 @@ button[data-remove] {
   color: var(--link);
   border-style: dashed;
 }
+.opinion[data-opinion="formally"] {
+  color: var(--link);
+  border-style: double;
+  border-width: 4px;
+}
 .word-group h3 {
   margin: 1rem 0 0.4rem;
   font-size: 1.05rem;
