@@ -15,15 +15,15 @@
       <div><dt><code>&gt; quoted</code></dt><dd>Block quote</dd></div>
       <div><dt>Blank line</dt><dd>New paragraph; a single line break stays a line break</dd></div>
       <% if (full) { %>
-        <div><dt><code>[label](https://example.com)</code></dt><dd>Hyperlink, HTTPS only</dd></div>
+        <div><dt><code>[label](https://example.invalid)</code></dt><dd>Hyperlink, HTTPS only</dd></div>
         <div><dt><code>1. item</code></dt><dd>Numbered list</dd></div>
         <div><dt>Two spaces of indent</dt><dd>Nested list under the item above</dd></div>
         <div><dt><code>```</code> fenced block <code>```</code></dt><dd>Code block, with an optional language after the opening fence</dd></div>
         <div><dt><code>| a | b |</code> then <code>| --- | --- |</code></dt><dd>Table, with <code>:---:</code> and <code>---:</code> for centered and right-aligned columns</dd></div>
         <div><dt><code>---</code> on its own line</dt><dd>Horizontal rule</dd></div>
-        <div><dt><code>&lt;https://example.com&gt;</code> or a bare HTTPS URL</dt><dd>Automatic link</dd></div>
-        <div><dt><code>[label](&lt;https://example.com&gt;)</code></dt><dd>Hyperlink with the address wrapped in angle brackets</dd></div>
-        <div><dt><code>![alt](https://example.com/picture.png)</code></dt><dd>Image from any HTTPS address, or a path on this site</dd></div>
+        <div><dt><code>&lt;https://example.invalid&gt;</code> or a bare HTTPS URL</dt><dd>Automatic link</dd></div>
+        <div><dt><code>[label](&lt;https://example.invalid&gt;)</code></dt><dd>Hyperlink with the address wrapped in angle brackets</dd></div>
+        <div><dt><code>![alt](https://example.invalid/picture.png)</code></dt><dd>Image from any HTTPS address, or a path on this site</dd></div>
         <div><dt><code>- [x] done</code></dt><dd>Task list with ticked and unticked boxes</dd></div>
         <div><dt>A term, then <code>: meaning</code> on the next line</dt><dd>Definition list</dd></div>
         <div><dt><code>text[^1]</code> and <code>[^1]: the note</code></dt><dd>Footnote, collected at the end with a link back</dd></div>

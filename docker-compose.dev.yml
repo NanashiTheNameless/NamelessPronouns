@@ -10,6 +10,11 @@ services:
       SECURE_COOKIES: "false"
       MAIL_DEV_LOG: "true"
       DB_BACKEND: postgres
+      BOT_TRUST_CLOUDFLARE: "false"
+      IOCAINE_URL: http://iocaine:42069
+      BOT_IP_CACHE_PATH: /app/bot-cache/crawler-ips.json
+    volumes:
+      - crawler-cache:/app/bot-cache
     command: ["sh", "-c", "node scripts/migrate.js && exec node src/server.js"]
     ports:
       - "127.0.0.1:3000:3000"
@@ -29,6 +34,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - internal
+  iocaine:
+    image: git.madhouse-project.org/iocaine/iocaine:3
+    restart: unless-stopped
+    command: ["--config-path", "/data/etc/config.d"]
+    volumes:
+      - ./config/iocaine:/data/etc/config.d:ro
+    read_only: true
+    tmpfs:
+      - /run/iocaine
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+    security_opt:
+      - no-new-privileges:true
     networks:
       - internal
   postgres:
@@ -61,6 +82,7 @@ services:
     networks:
       - internal
 volumes:
+  crawler-cache:
   pronouns-postgres:
     name: pronouns-postgres
 networks:

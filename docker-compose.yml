@@ -5,6 +5,11 @@ services:
     env_file: .env
     environment:
       DB_BACKEND: d1
+      BOT_TRUST_CLOUDFLARE: "true"
+      IOCAINE_URL: http://iocaine:42069
+      BOT_IP_CACHE_PATH: /app/bot-cache/crawler-ips.json
+    volumes:
+      - crawler-cache:/app/bot-cache
     command: ["sh", "-c", "node scripts/migrate.js && exec node src/server.js"]
     expose:
       - "3000"
@@ -21,6 +26,22 @@ services:
       start_period: 20s
     networks:
       - internal
+  iocaine:
+    image: git.madhouse-project.org/iocaine/iocaine:3
+    restart: unless-stopped
+    command: ["--config-path", "/data/etc/config.d"]
+    volumes:
+      - ./config/iocaine:/data/etc/config.d:ro
+    read_only: true
+    tmpfs:
+      - /run/iocaine
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - internal
   cloudflared:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
@@ -32,6 +53,8 @@ services:
         condition: service_healthy
     networks:
       - internal
+volumes:
+  crawler-cache:
 networks:
   internal:
     driver: bridge

@@ -18,6 +18,7 @@
     "create-owner": "node scripts/create-owner.js",
     "backup": "node scripts/backup.js",
     "restore": "node scripts/restore.js",
+    "refresh-crawler-ips": "node scripts/refresh-crawler-ips.js",
     "test": "node --test"
   },
   "dependencies": {

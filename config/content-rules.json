@@ -13,7 +13,7 @@
       "explanation": "Adults-only / pornographic destination. The adults-only rule is never a content exception.",
       "tests": {
         "shouldMatch": ["https://pornhub.com/", "https://www.pornhub.com/view_video.php"],
-        "shouldNotMatch": ["https://notpornhub.com/", "https://example.com/?next=pornhub.com"]
+        "shouldNotMatch": ["https://notpornhub.com/", "https://example.invalid/?next=pornhub.com"]
       }
     },
     {
@@ -26,7 +26,7 @@
       "explanation": "Adults-only / pornographic destination. Host matching observes DNS label boundaries.",
       "tests": {
         "shouldMatch": ["https://xvideos.com/", "https://www.xvideos.com/video"],
-        "shouldNotMatch": ["https://notxvideos.com/", "https://example.com/xvideos.com"]
+        "shouldNotMatch": ["https://notxvideos.com/", "https://example.invalid/xvideos.com"]
       }
     },
     {
@@ -39,7 +39,7 @@
       "explanation": "Adults-only destination matched on DNS label boundaries.",
       "tests": {
         "shouldMatch": ["https://xhamster.com/", "https://www.xhamster.com/videos/example"],
-        "shouldNotMatch": ["https://notxhamster.com/", "https://example.com/xhamster.com"]
+        "shouldNotMatch": ["https://notxhamster.com/", "https://example.invalid/xhamster.com"]
       }
     },
     {
@@ -52,7 +52,7 @@
       "explanation": "Adults-only destination matched on DNS label boundaries.",
       "tests": {
         "shouldMatch": ["https://xnxx.com/", "https://www.xnxx.com/video-example"],
-        "shouldNotMatch": ["https://notxnxx.com/", "https://example.com/xnxx.com"]
+        "shouldNotMatch": ["https://notxnxx.com/", "https://example.invalid/xnxx.com"]
       }
     },
     {
@@ -65,7 +65,7 @@
       "explanation": "Adults-only destination matched on DNS label boundaries.",
       "tests": {
         "shouldMatch": ["https://redtube.com/", "https://www.redtube.com/example"],
-        "shouldNotMatch": ["https://notredtube.com/", "https://example.com/redtube.com"]
+        "shouldNotMatch": ["https://notredtube.com/", "https://example.invalid/redtube.com"]
       }
     },
     {
@@ -78,7 +78,7 @@
       "explanation": "Adults-only destination matched on DNS label boundaries.",
       "tests": {
         "shouldMatch": ["https://youporn.com/", "https://www.youporn.com/watch/example"],
-        "shouldNotMatch": ["https://notyouporn.com/", "https://example.com/youporn.com"]
+        "shouldNotMatch": ["https://notyouporn.com/", "https://example.invalid/youporn.com"]
       }
     },
     {

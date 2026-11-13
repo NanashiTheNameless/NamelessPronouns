@@ -7,6 +7,8 @@ import config from './config.js';
 import db from './db/index.js';
 import logger from './logger.js';
 import { securityHeaders } from './middleware/security-headers.js';
+import { botDefense } from './middleware/bot-defense.js';
+import { createCrawlerBanlist, scheduleCrawlerRefresh } from './crawler-banlist.js';
 import { sessionMiddleware, requireAuth, requireApproved } from './middleware/session.js';
 import { policyGate } from './middleware/policy-gate.js';
 import { csrfProtection } from './middleware/csrf.js';
@@ -49,7 +51,10 @@ function requestCookie(req, name) {
     return '';
   }
 }
-export function createApp() {
+export function createApp({ crawlerBanlist = createCrawlerBanlist({
+  extraCidrs: config.BOT_BLOCKED_CIDRS, cachePath: config.BOT_IP_CACHE_PATH,
+  warn: (message) => logger.warn(message),
+}), botConfig = config, botOptions = {} } = {}) {
   const app = express();
   app.set('trust proxy', 1);
   app.engine('ejs', (file, data, callback) => {
@@ -59,6 +64,8 @@ export function createApp() {
   app.set('views', path.join(root, 'views'));
   app.disable('x-powered-by');
   app.use(securityHeaders);
+  app.locals.crawlerBanlist = crawlerBanlist;
+  app.use(botDefense({ ...botOptions, config: botConfig, banlist: crawlerBanlist }));
   app.use((req, res, next) => {
     res.append('Link', '</humans.txt>; rel="author"');
     res.setHeader('X-Nanashi', 'was-here');
@@ -301,11 +308,14 @@ export async function start() {
   const maintenance = scheduleMaintenance();
   const communityRefresh = scheduleCommunityRefresh();
   const mailDrain = scheduleMailDrain();
+  const crawlerRefresh = config.BOT_DEFENSE_ENABLED && config.BOT_IP_REFRESH_ENABLED
+    ? scheduleCrawlerRefresh(app.locals.crawlerBanlist, { warn: (message) => logger.warn(message) }) : null;
   async function shutdown(signal) {
     logger.info('shutting down', { signal });
     clearInterval(maintenance);
     if (communityRefresh) clearInterval(communityRefresh);
     clearInterval(mailDrain);
+    if (crawlerRefresh) clearInterval(crawlerRefresh);
     server.close(async () => {
       await db.close().catch(() => {});
       process.exit(0);

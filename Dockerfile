@@ -16,6 +16,7 @@ COPY public ./public
 COPY db ./db
 COPY config ./config
 COPY docs/legal ./docs/legal
+RUN mkdir -p /app/bot-cache && chown node:node /app/bot-cache
 FROM runtime-base AS operations
 RUN apk add --no-cache postgresql-client
 USER node

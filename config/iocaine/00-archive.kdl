@@ -1,0 +1,22 @@
+// Only the application can reach this service; no host ports are published.
+http-server default {
+    bind "0.0.0.0:42069"
+}
+
+declare-handler default {
+    // The app creates this header itself and never forwards incoming headers.
+    trusted-decision-header "iocaine-decision"
+    poison-id "np-reference-archive"
+    garbage {
+        paragraphs {
+            min-count 4
+            max-count 8
+            min-words 30
+            max-words 60
+        }
+        links {
+            min-count 20
+            max-count 24
+        }
+    }
+}
