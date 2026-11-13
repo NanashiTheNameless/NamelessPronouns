@@ -13,7 +13,7 @@ only GET and HEAD. Ordinary browsers, curl and text browsers retain normal acces
 `/robots.txt`, `/healthz` and `/readyz` remain available for GET and HEAD.
 
 To test the trap on yourself, set your browser's user agent to
-`NamelessPronouns-Tarpit-Test/1.0` (or append that token to your normal user agent).
+`Tarpit-Test/1.0` (or append that token to your normal user agent).
 Reload an ordinary page such as `/` or `/status` to receive Iocaine's labyrinth.
 Restore your normal user agent and open `/` again to leave it. The opt-in applies
 only to requests carrying that token: it sets no cookies, creates no IP ban,
@@ -23,7 +23,7 @@ the defense/trap enable settings and the monitoring/robots exemptions above.
 You can also test a single request from a terminal:
 
 ```sh
-curl -A 'NamelessPronouns-Tarpit-Test/1.0' https://pronouns.example.invalid/status
+curl -A 'Tarpit-Test/1.0' https://pronouns.example.invalid/status
 ```
 
 Operator-published IP feeds refresh automatically at startup and every six hours,

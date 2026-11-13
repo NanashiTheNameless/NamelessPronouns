@@ -5,7 +5,7 @@ import { ROBOTS_DIRECTIVES } from './security-headers.js';
 
 export const mazeRoot = '/reference-archive';
 // A request-only opt-in for testing: changing the user agent back undoes it.
-const selfTestAgent = /(?:^|\s)NamelessPronouns-Tarpit-Test(?:\/[0-9.]+)?(?=\s|$)/i;
+const selfTestAgent = /(?:^|\s)Tarpit-Test(?:\/[0-9.]+)?(?=\s|$)/i;
 // Match crawler identities, not tools also used by people (curl, text browsers,
 // browser automation for accessibility/tests), or device names such as CUBOT.
 const crawlerAgent = /\b(?:GPTBot|OAI-SearchBot|OAI-AdsBot|ChatGPT-User|ClaudeBot|Claude-User|Claude-SearchBot|Claude-Agent|anthropic-ai|PerplexityBot|Perplexity-User|Google-Extended|GoogleOther|Googlebot|Google-CloudVertexBot|GoogleAgent-Mariner|Bingbot|bingpreview|DuckDuckBot|DuckAssistBot|Applebot(?:-Extended)?|Amazonbot|Amzn-SearchBot|Amzn-User|Bytespider|CCBot|Diffbot|cohere-ai|cohere-training-data-crawler|AI2Bot|Meta-ExternalAgent|Meta-ExternalFetcher|facebookexternalhit|YandexBot|Baiduspider|PetalBot|SemrushBot|AhrefsBot|AhrefsSiteAudit|DataForSeoBot|Firecrawl|Scrapy|crawler|spider|scraper)\b/i;

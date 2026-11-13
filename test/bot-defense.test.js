@@ -79,7 +79,7 @@ test('the test user agent opts into Iocaine per request and restoring it leaves 
   } });
   const cookie = 'np_session=same-browser-session';
   assert.equal(await (await site.get('/status', { 'user-agent': browser, cookie })).text(), 'Real application');
-  for (const agent of ['NamelessPronouns-Tarpit-Test/1.0', `${browser} NamelessPronouns-Tarpit-Test/1.0`]) {
+  for (const agent of ['Tarpit-Test/1.0', `${browser} Tarpit-Test/1.0`]) {
     const res = await site.get('/status', { 'user-agent': agent, cookie });
     assert.equal(res.status, 200);
     assert.equal(await res.text(), '<html>Iocaine test decoy</html>');
