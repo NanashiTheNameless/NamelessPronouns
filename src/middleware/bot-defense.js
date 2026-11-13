@@ -1,9 +1,10 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { isIP } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import { ROBOTS_DIRECTIVES } from './security-headers.js';
+import { mazeRoot, mazeGeneratorPath, extractMazeContent, renderMazeContent } from '../bot-maze.js';
 
-export const mazeRoot = '/reference-archive';
+export { mazeRoot };
 // A request-only opt-in for testing: changing the user agent back undoes it.
 const selfTestAgent = /(?:^|\s)Tarpit-Test(?:\/[0-9.]+)?(?=\s|$)/i;
 // Match crawler identities, not tools also used by people (curl, text browsers,
@@ -95,20 +96,18 @@ export function botDefense({ config, banlist, fetcher = fetch, waitMs = 250,
     try {
       await delay(waitMs, undefined, { signal: controller.signal });
       let html;
-      if (upstream && now() >= retryAt) {
+      const generatorPath = mazeGeneratorPath(path);
+      if (upstream && generatorPath && now() >= retryAt) {
         try {
           const url = new URL(upstream);
           // Never send profile/account paths, query tokens, cookies, auth headers,
           // or caller-controlled decision headers to the decoy service.
-          url.pathname = maze && path.length < 1024 ? `${path.replace(/\/$/, '')}/`
-            : `${mazeRoot}/${createHash('sha256').update(path).digest('hex').slice(0, 16)}/`;
-          // URL normalizes encoded dot segments; never let these escape the archive.
-          if (!url.pathname.startsWith(`${mazeRoot}/`)) url.pathname = `${mazeRoot}/index/`;
+          url.pathname = generatorPath;
           const response = await fetcher(url, {
             redirect: 'error', signal: AbortSignal.any([controller.signal, AbortSignal.timeout(timeoutMs)]),
             headers: { accept: 'text/html', 'user-agent': 'NamelessPronouns-Archive', 'iocaine-decision': 'garbage' },
           });
-          html = await readDecoy(response);
+          html = renderMazeContent(extractMazeContent(await readDecoy(response)));
         } catch {
           // Short circuit outages so each bot request does not wait on a dead service.
           retryAt = now() + 30_000;

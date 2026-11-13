@@ -11,6 +11,12 @@ actions are processed. A hidden link leads into `/reference-archive/`; generated
 links stay under that path. Crawler writes receive 403, and the archive accepts
 only GET and HEAD. Ordinary browsers, curl and text browsers retain normal access;
 `/robots.txt`, `/healthz` and `/readyz` remain available for GET and HEAD.
+The bundled corpus in `config/iocaine` comes from the order-system archive, paired
+with an expanded neutral URL word list. These replace Iocaine's default source-code corpus. The app rebuilds its
+output as escaped paragraphs beneath a fixed archive heading, with generated
+paths encoded into `/reference-archive/entry/...` links. Generator headings,
+footer, markup, and raw URL words are not exposed. Restart Iocaine after changing
+its corpus or word list; both Compose files mount them read-only.
 
 To test the trap on yourself, set your browser's user agent to
 `Tarpit-Test/1.0` (or append that token to your normal user agent).

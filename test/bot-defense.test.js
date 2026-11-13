@@ -11,6 +11,7 @@ import { securityHeaders } from '../src/middleware/security-headers.js';
 const browser = 'Mozilla/5.0 (Linux; Android 14; CUBOT X70) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36';
 const botConfig = { ...config, IOCAINE_URL: '', BOT_DEFENSE_ENABLED: true, BOT_TRAP_ENABLED: true, BOT_TRUST_CLOUDFLARE: false };
 const banlist = { has: address => address === '203.0.113.8' };
+const decoy = '<main><p>The amber lantern rests beside the garden.<p>The river returns to the chamber.<nav><a href=/quartz/harbor/>Harbor &amp; gate</a></nav></main>';
 
 async function serve(t, { options = {}, cfg = {}, realApp = false } = {}) {
   const settings = { ...botConfig, ...cfg };
@@ -75,21 +76,21 @@ test('only explicitly trusted tunnel IPs classify browser-looking crawlers', asy
 test('the test user agent opts into Iocaine per request and restoring it leaves no persistent trap', async t => {
   let calls = 0;
   const site = await serve(t, { cfg: { IOCAINE_URL: 'http://iocaine:42069' }, options: {
-    fetcher: async () => { calls++; return new Response('<html>Iocaine test decoy</html>', { headers: { 'content-type': 'text/html' } }); },
+    fetcher: async () => { calls++; return new Response(decoy, { headers: { 'content-type': 'text/html' } }); },
   } });
   const cookie = 'np_session=same-browser-session';
   assert.equal(await (await site.get('/status', { 'user-agent': browser, cookie })).text(), 'Real application');
   for (const agent of ['Tarpit-Test/1.0', `${browser} Tarpit-Test/1.0`]) {
     const res = await site.get('/status', { 'user-agent': agent, cookie });
     assert.equal(res.status, 200);
-    assert.equal(await res.text(), '<html>Iocaine test decoy</html>');
+    assert.match(await res.text(), /The amber lantern rests beside the garden/);
     assert.equal(res.headers.get('set-cookie'), null);
     assert.equal(res.headers.get('cache-control'), 'private, no-store');
     assert.equal(await (await site.get('/status', { 'user-agent': browser, cookie })).text(), 'Real application');
   }
   assert.equal(calls, 2);
   // Explicit archive URLs stay in the maze regardless of the user agent.
-  assert.equal(await (await site.get(mazeRoot, { 'user-agent': browser, cookie })).text(), '<html>Iocaine test decoy</html>');
+  assert.match(await (await site.get(mazeRoot, { 'user-agent': browser, cookie })).text(), /The amber lantern rests beside the garden/);
   assert.equal(await (await site.get('/status', { 'user-agent': browser, cookie })).text(), 'Real application');
 });
 
@@ -115,25 +116,27 @@ test('archive links stay local, do not reflect input, accept only reads and can 
   assert.equal(await (await off.get('/', { 'user-agent': 'GPTBot/1' })).text(), 'Real application');
 });
 
-test('Iocaine gets only generated trap paths and application-created headers', async t => {
+test('Iocaine gets only decoded generator paths and application-created headers', async t => {
   const calls = [];
   const site = await serve(t, { cfg: { IOCAINE_URL: 'http://iocaine:42069' }, options: {
-    fetcher: async (url, options) => { calls.push({ url, options }); return new Response('<html>Iocaine decoy</html>', { headers: { 'content-type': 'text/html', 'set-cookie': 'leak=1', location: 'https://external.invalid' } }); },
+    fetcher: async (url, options) => { calls.push({ url, options }); return new Response(decoy, { headers: { 'content-type': 'text/html', 'set-cookie': 'leak=1', location: 'https://external.invalid' } }); },
   } });
   const res = await site.get('/account/export?token=secret', { 'user-agent': 'GPTBot/1', cookie: 'np_session=private', authorization: 'Bearer secret', 'iocaine-decision': 'default' });
-  assert.equal(await res.text(), '<html>Iocaine decoy</html>');
+  const html = await res.text();
+  assert.match(html, /The amber lantern rests beside the garden/);
   assert.equal(res.headers.get('set-cookie'), null);
   assert.equal(res.headers.get('location'), null);
   assert.equal(calls.length, 1);
   const { url, options } = calls[0];
   assert.equal(url.origin, 'http://iocaine:42069');
-  assert.ok(url.pathname.startsWith(`${mazeRoot}/`));
+  assert.equal(url.pathname, '/');
   assert.doesNotMatch(url.href, /account|export|token|secret/);
   assert.equal(url.search, '');
   assert.deepEqual(options.headers, { accept: 'text/html', 'user-agent': 'NamelessPronouns-Archive', 'iocaine-decision': 'garbage' });
   assert.equal(options.redirect, 'error');
-  await site.get(`${mazeRoot}/generated/link/`);
-  assert.equal(calls[1].url.pathname, `${mazeRoot}/generated/link/`);
+  const next = /href="([^"]+)"/.exec(html)[1];
+  await site.get(next);
+  assert.equal(calls[1].url.pathname, '/quartz/harbor/');
   await new Promise((resolve, reject) => {
     // Raw HTTP preserves encoded dot segments that fetch would normalize locally.
     const req = httpRequest(`${site.base}`, { path: `${mazeRoot}/%2e%2e/outside` }, response => {
@@ -143,14 +146,15 @@ test('Iocaine gets only generated trap paths and application-created headers', a
     req.on('error', reject);
     req.end();
   });
-  assert.equal(calls[2].url.pathname, `${mazeRoot}/index/`);
+  assert.equal(calls[2].url.pathname, '/');
 });
 
 test('Iocaine errors, redirects, fallthrough and oversized output use bounded fallback with backoff', async t => {
   for (const response of [() => { throw new Error('offline'); }, () => new Response(null, { status: 421 }),
     () => new Response(null, { status: 302, headers: { location: 'https://outside.invalid' } }),
     () => new Response('x'.repeat(65 * 1024), { headers: { 'content-type': 'text/html' } }),
-    () => new Response('not HTML')]) {
+    () => new Response('not HTML'),
+    () => new Response('<html>Missing maze content</html>', { headers: { 'content-type': 'text/html' } })]) {
     let calls = 0;
     let clock = 1000;
     const site = await serve(t, { cfg: { IOCAINE_URL: 'http://iocaine:42069' }, options: {

@@ -7,6 +7,11 @@ declare-handler default {
     // The app creates this header itself and never forwards incoming headers.
     trusted-decision-header "iocaine-decision"
     poison-id "np-reference-archive"
+    // Keep implementation names and source code out of public text and URLs.
+    sources {
+        training-corpus "/data/etc/config.d/archive-corpus.txt"
+        wordlists "/data/etc/config.d/archive-words.txt"
+    }
     garbage {
         paragraphs {
             min-count 4
