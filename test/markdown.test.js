@@ -1,7 +1,7 @@
 import './setup.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hasMarkdownLink, markdownLinkUrls, renderProfileMarkdown } from '../src/markdown.js';
+import { hasMarkdownLink, markdownLinkUrls, renderInlineMarkdown, renderProfileMarkdown } from '../src/markdown.js';
 test('markdown: renders the supported inline set', async () => {
   assert.equal(
     await renderProfileMarkdown('**bold** *italic* _also italic_ __underline__ ~~gone~~ `code`'),
@@ -223,4 +223,13 @@ test('markdown: the full level adds task lists, definitions, footnotes and headi
   assert.equal(await renderProfileMarkdown('- [x] done', {}), '<ul><li>[x] done</li></ul>', 'the limited level keeps it literal');
   assert.equal(await renderProfileMarkdown('## About me', {}), '<h3>About me</h3>', 'and adds no anchors');
   assert.equal(await renderProfileMarkdown('Boring[^why].\n\n[^why]: quiet', {}), '<p>Boring[^why].</p><p>[^why]: quiet</p>');
+});
+test('markdown: inline names render emphasis only and escape punctuation', async () => {
+  assert.equal(
+    await renderInlineMarkdown('*Al* **ex** __L__ ~~x~~ `y`'),
+    '<em>Al</em> <strong>ex</strong> <u class="md-underline">L</u> <s>x</s> <code>y</code>',
+  );
+  assert.equal(await renderInlineMarkdown('# <b>A & B</b> (c) @d'), '# &lt;b&gt;A &amp; B&lt;/b&gt; (c) @d');
+  assert.equal(await renderInlineMarkdown('- [x](https://example.com)'), '- [x](https://example.com)');
+  assert.equal(await renderInlineMarkdown('\\*not em\\* \\_x\\_ \\~\\~y\\~\\~ \\\\ a\\b'), '*not em* _x_ ~~y~~ \\ a\\b');
 });

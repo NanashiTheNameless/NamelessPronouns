@@ -120,8 +120,13 @@ test('profile editor: word groups drop empty rows and demand complete groups', (
 });
 test('profile editor: short display fields reject punctuation and non-ASCII', () => {
   assert.throws(() => validateProfileForm(validBody({ display_name: 'bad<script>' })), ValidationError);
-  assert.throws(() => validateProfileForm(validBody({ name_0: 'na<b>me' })), ValidationError);
   assert.throws(() => validateProfileForm(validBody({ display_name: 'naïve' })), ValidationError);
+});
+test('profile editor: names allow markdown and ASCII punctuation but reject non-ASCII', () => {
+  const value = '*Al* **ex** __L__ ~~x~~ `y` . ! ? < > ( ) & ^ % $ # @ \\*not\\*';
+  assert.equal(validateProfileForm(validBody({ name_0: value })).names[0].value, value);
+  assert.throws(() => validateProfileForm(validBody({ name_0: 'naïve' })), ValidationError);
+  assert.throws(() => validateProfileForm(validBody({ name_0: 'emoji \u{1F600}' })), ValidationError);
 });
 test('profile editor: prose fields allow punctuation but reject fancy/special characters', () => {
   const ok = validateProfileForm(validBody({ description: "Hi! I'm Alex (they/them) - nice to meet you." }));

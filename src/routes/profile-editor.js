@@ -180,7 +180,7 @@ export function validateProfileForm(body, { full = false, max = PROSE_MAX } = {}
     names: raw.names
       .filter((row) => row.value.trim() !== '')
       .map((row) => ({
-        value: V.displayText(row.value, { field: 'Name', max: 80 }),
+        value: V.nameText(row.value, { field: 'Name', max: 80 }),
         opinion: row.opinion,
       })),
     pronouns: [],

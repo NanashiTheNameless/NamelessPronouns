@@ -11,6 +11,7 @@ const RESERVED_USERNAMES = new Set([
 export class ValidationError extends Error {}
 const DISPLAY_CHARACTER = /[A-Za-z0-9 -]/;
 const PROSE_CHARACTER = /[\x20-\x7E\n]/;
+const NAME_CHARACTER = /[\x20-\x7E]/;
 const INVISIBLE = /[\p{C}\p{M}\p{Z}]/u;
 function characterLabel(character) {
   const hex = character.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
@@ -44,6 +45,20 @@ export function displayText(input, { field = 'value', min = 1, max = 200 } = {})
   if (!/^[A-Za-z0-9 -]+$/.test(value)) {
     throw new ValidationError(
       `${field} may contain only letters, numbers, spaces, and dashes.${illegalCharacterNotice(value, DISPLAY_CHARACTER)}`,
+    );
+  }
+  return value;
+}
+export function nameText(input, { field = 'value', min = 1, max = 80 } = {}) {
+  const value = normalizeText(input);
+  if (value.length < min) {
+    throw new ValidationError(min > 1 ? `${field} must be at least ${min} characters.` : `${field} is required.`);
+  }
+  if (value.length > max) throw new ValidationError(`${field} must be at most ${max} characters.`);
+  if (!/^[\x20-\x7E]+$/.test(value)) {
+    throw new ValidationError(
+      `${field} may contain only standard English letters, numbers, punctuation, and spaces.`
+      + illegalCharacterNotice(value, NAME_CHARACTER),
     );
   }
   return value;

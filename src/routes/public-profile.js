@@ -9,7 +9,7 @@ import { flagLabel, pronounsPageFlagUrl } from '../pronouns-page-import.js';
 import { pronounPreferenceLabel } from '../pronoun-preferences.js';
 import { opinionView } from '../opinions.js';
 import { fullMarkdownAllowed, roleAtLeast, staffRoleDescription, staffRoleLabel } from '../middleware/staff.js';
-import { renderProfileMarkdown } from '../markdown.js';
+import { renderInlineMarkdown, renderProfileMarkdown } from '../markdown.js';
 import { collectCodeUsage, collectEmbeddedOrigins, withScriptNonce } from '../html-sanitize.js';
 import { obfuscateEmails } from '../email-obfuscation.js';
 import { groupProfileWords, PROFILE_WORD_GROUPS_SQL, PROFILE_WORDS_SQL } from '../profile-words.js';
@@ -246,7 +246,11 @@ async function placeholderProfile(res, username) {
     staffBadgeLine: null,
     ownerEgg: false,
     avatar: avatarUrl({ id: `placeholder:${username}` }),
-    names: placeholder.names.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
+    names: await Promise.all(placeholder.names.map(async (row) => ({
+      ...row,
+      html: await renderInlineMarkdown(row.value),
+      opinion: opinionView(row.opinion),
+    }))),
     pronouns: placeholder.pronouns.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
     pronounOpinionEgg: pronounOpinionEgg(placeholder.pronouns.map((row) => row.opinion)),
     pronounSetEgg: pronounSetEgg(placeholder.pronouns.map((row) => row.short)),
@@ -399,7 +403,11 @@ router.get('/u/:username', async (req, res) => {
       { id: profile.id, avatar_source: profile.profile_avatar_source, avatar_data_uri: profile.profile_avatar_data_uri },
       { id: profile.owner_id, email: profile.owner_email, avatar_source: profile.avatar_source, avatar_data_uri: profile.avatar_data_uri },
     ),
-    names: names.rows.map((row) => ({ value: row.value, opinion: opinionView(row.opinion) })),
+    names: await Promise.all(names.rows.map(async (row) => ({
+      value: row.value,
+      html: await renderInlineMarkdown(row.value),
+      opinion: opinionView(row.opinion),
+    }))),
     pronouns: pronouns.rows.map((row) => ({ ...row, opinion: opinionView(row.opinion) })),
     pronounOpinionEgg: pronounOpinionEgg(pronouns.rows.map((row) => row.opinion)),
     pronounSetEgg: pronounSetEgg(pronouns.rows.map((row) => `${row.subject}/${row.object}`)),

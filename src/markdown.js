@@ -466,6 +466,9 @@ export async function renderProfileMarkdown(text, { full = false, headingOffset 
   const rendered = await renderBlocks(parseBlocks(body, full), options);
   return rendered + await renderFootnotes(footnotes, options);
 }
+export async function renderInlineMarkdown(text, { inlineText = escapeOnly } = {}) {
+  return renderInline(String(text ?? ''), { full: false, headingOffset: 0, linked: false, inlineText, footnotes: null });
+}
 export function hasMarkdownLink(text) {
   return LINK_SYNTAX.test(String(text ?? ''));
 }

@@ -45,7 +45,7 @@
         <div data-repeater-rows class="repeat-rows">
           <% for (const [i, name] of values.names.entries()) { %>
             <section data-repeater-row data-row-label="Name" class="repeat-row" aria-label="Name <%= i + 1 %>">
-              <label><span data-row-heading>Name <%= i + 1 %></span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." value="<%= name.value %>" placeholder="A name you go by"></label>
+              <label><span data-row-heading>Name <%= i + 1 %></span><input name="name" maxlength="80" pattern="[\x20-\x7E]+" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces. Markdown like *italic*, **bold**, __underline__, ~~strikethrough~~, and `code` is supported." value="<%= name.value %>" placeholder="A name you go by"></label>
               <%- await include('partials/opinion-select', { name: 'name_opinion', selected: name.opinion, opinionOptions }) %>
               <div class="row-actions">
                 <button type="button" class="secondary compact" data-move="up">Move up</button>
@@ -56,7 +56,7 @@
           <% } %>
         </div>
         <button type="button" class="secondary add-row" data-add>Add another name</button>
-        <template><section data-repeater-row data-row-label="Name" class="repeat-row"><label><span data-row-heading>Name</span><input name="name" maxlength="80" pattern="[A-Za-z0-9 \-]+" data-character-constraint data-character-hint="Use only letters, numbers, spaces, and dashes." placeholder="A name you go by"></label><%- await include('partials/opinion-select', { name: 'name_opinion', selected: '', opinionOptions }) %><div class="row-actions"><button type="button" class="secondary compact" data-move="up">Move up</button><button type="button" class="secondary compact" data-move="down">Move down</button><button type="button" class="secondary compact" data-remove>Remove</button></div></section></template>
+        <template><section data-repeater-row data-row-label="Name" class="repeat-row"><label><span data-row-heading>Name</span><input name="name" maxlength="80" pattern="[\x20-\x7E]+" data-character-constraint data-character-hint="Use only standard English letters, numbers, punctuation, and spaces. Markdown like *italic*, **bold**, __underline__, ~~strikethrough~~, and `code` is supported." placeholder="A name you go by"></label><%- await include('partials/opinion-select', { name: 'name_opinion', selected: '', opinionOptions }) %><div class="row-actions"><button type="button" class="secondary compact" data-move="up">Move up</button><button type="button" class="secondary compact" data-move="down">Move down</button><button type="button" class="secondary compact" data-remove>Remove</button></div></section></template>
       </fieldset>
 
       <fieldset data-repeater>

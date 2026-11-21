@@ -34,7 +34,7 @@
     <% if (names.length) { %>
       <section aria-labelledby="names-h">
         <h2 id="names-h">Names</h2>
-        <ul class="opinion-list"><% for (const n of names) { %><li><%- await include('partials/opinion', { opinion: n.opinion }) %><span class="opinion-value"><%= n.value %></span></li><% } %></ul>
+        <ul class="opinion-list"><% for (const n of names) { %><li><%- await include('partials/opinion', { opinion: n.opinion }) %><span class="opinion-value"><% if (typeof n.html === 'string') { %><%- n.html %><% } else { %><%= n.value %><% } %></span></li><% } %></ul>
       </section>
     <% } %>
 
